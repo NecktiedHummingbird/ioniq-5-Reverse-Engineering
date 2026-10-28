@@ -628,6 +628,17 @@ class PrivacyTests(unittest.TestCase):
             self.assertIn("operator-home-path", categories)
             self.assertNotIn("/Users/privateperson/private", json.dumps(result))
 
+    def test_public_mode_ignores_private_untracked_raw_checkout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "PUBLIC-RELEASE.md").write_text("public snapshot\n")
+            (root / "evidence" / "vehicle-usb").mkdir(parents=True)
+            (root / "evidence" / "vehicle-usb" / "private.dlt").write_bytes(b"private")
+            subprocess.run(["git", "-C", str(root), "add", "PUBLIC-RELEASE.md"], check=True)
+            result = privacy.privacy_scan(root)
+            self.assertEqual(result["status"], common.STATUS_PASS)
+
 
 class DocsTests(unittest.TestCase):
     def _ledger(self, root: Path, state: str, write_paths=None) -> Path:

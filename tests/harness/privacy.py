@@ -7,6 +7,7 @@ category only, so a scan cannot itself leak the value it found.
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 from . import common
@@ -62,12 +63,23 @@ VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")
 MAX_FINDINGS = 200
 
 
-def privacy_scope_files(root: Path) -> list[Path]:
-    """Return Ioniq-owned files in scan scope, excluding Kona and tests."""
+def privacy_scope_files(root: Path, *, tracked_only: bool = False) -> list[Path]:
+    """Return Ioniq-owned files in scope; public mode inspects Git's index."""
     root = Path(root)
     files: list[Path] = []
     if not root.is_dir():
         return files
+    if tracked_only and (root / ".git").exists():
+        paths = subprocess.check_output(
+            ["git", "-C", str(root), "ls-files", "-z", "--cached"]
+        ).decode("utf-8").split("\0")
+        return [
+            root / path
+            for path in paths
+            if path
+            and not set(Path(path).parts) & EXCLUDED_PARTS
+            and (Path(path).parent == Path(".") or Path(path).parts[0] in {"evidence", "council", "tools"})
+        ]
     for path in sorted(root.iterdir()):
         if path.is_file():
             files.append(path)
@@ -119,9 +131,12 @@ def privacy_scan(root: Path) -> dict:
             entry["line"] = line
         findings.append(entry)
 
-    for path in privacy_scope_files(root):
+    for path in privacy_scope_files(root, tracked_only=public_mode):
         relative = path.relative_to(root).as_posix()
         suffix = path.suffix.lower()
+        if path.is_symlink():
+            add(path, "symlink-in-public-tree", common.STATUS_FAIL)
+            continue
         if public_mode and (
             (relative.startswith("evidence/vehicle-usb/") and relative != "evidence/vehicle-usb/README.md")
             or relative.startswith("evidence/upstream/")

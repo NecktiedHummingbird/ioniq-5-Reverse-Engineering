@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -50,7 +51,13 @@ def runner_collect(
         if public_mode and name in ("ledger", "artifacts", "council"):
             return common.common_result(name, common.STATUS_INFO, "private source records omitted from public snapshot", {})
         if public_mode and name == "json":
-            records = [p for p in root.rglob("*.json") if ".git" not in p.parts]
+            if (root / ".git").exists():
+                paths = subprocess.check_output(
+                    ["git", "-C", str(root), "ls-files", "-z", "--cached"]
+                ).decode("utf-8").split("\0")
+                records = [root / path for path in paths if path.endswith(".json")]
+            else:
+                records = [p for p in root.rglob("*.json") if ".git" not in p.parts]
             invalid = []
             for path in records:
                 try:
