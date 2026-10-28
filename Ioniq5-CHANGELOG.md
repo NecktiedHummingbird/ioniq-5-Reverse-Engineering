@@ -11,6 +11,30 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.64.0 - advisor claims validated: one confirmed root command injection
+
+- Validated the three 2026-10-28 advisor claims offline against the recovered
+  `260128` rootfs. **V-006 upgraded to a confirmed static command injection**
+  (CWE-78) in `/app/bin/usb-automount`: `system()` at `0x535f` and `popen()` at
+  `0x53b9` build shell commands from `ID_SERIAL_SHORT`, reachable on the PTP
+  (`060101`) or vendor-specific (`ffff00`) branch and running as uid 0. The
+  advisor's "mount script" mechanism and literal payload were both wrong: udev's
+  `util_replace_whitespace` neutralises spaces, so only parameter expansion works.
+- **V-007** confirmed as configuration only (media parsers configured uid 0, no
+  seccomp or capability limits, zero setuid binaries image-wide) and reclassified
+  as informational hardening rather than a vulnerability.
+- **V-008** confirmed as shipped configuration (root console on ttyS2, autologin
+  commented out, `$6$` SHA-512 verifier with unique salt, other accounts locked)
+  but **not** as a vulnerability: no bypass, no weak hash. Fail-open ordering in
+  `esinit` and dormant Dropbear key material noted.
+- Astra triaged and corrected several overstatements, including that a
+  system-service default is not an observed uid and that a password verifier is
+  not evidence of weakness. Astra advised holding the technical dossiers
+  privately pending vendor contact; the public mirror remains at its conservative
+  "unverified" text.
+- Fable returned no output on two attempts, so Astra performed the triage and is
+  attributed. All evidence is static; no VM boot and no hardware contact.
+
 ## 0.63.0 - unverified physical-access vectors logged
 
 - Added V-006/V-007/V-008 to the defensive register from a third-party advisor

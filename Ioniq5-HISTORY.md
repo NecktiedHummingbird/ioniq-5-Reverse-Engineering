@@ -644,3 +644,51 @@ and are superseded by corrections rather than silently rewritten.
 - All three require physical access and none is a remote vector. Validation is
   scoped to the isolated VM snapshot or offline analysis of the recovered rootfs.
   No experiment was run against hardware.
+
+
+## 2026-10-28 — advisor claims validated offline against the recovered rootfs
+
+- Tested the three third-party claims of 2026-10-28 against the recovered
+  `260128` rootfs. None was accepted as originally stated; one was upgraded to a
+  confirmed vulnerability on different mechanics.
+- V-006 upgraded to a CONFIRMED static command injection (CWE-78) in
+  `/app/bin/usb-automount`. `__sprintf_chk` at 0x5326 builds `"%s %s %s %s &"`
+  from `ID_SERIAL_SHORT` and `system()` is called at 0x535f; `popen()` at 0x53b9
+  runs `cat /proc/mounts | grep %s` with the same string. Reachable only on the
+  PTP (`060101`) or vendor-specific (`ffff00`) branch; the mass-storage branch
+  uses mount(2)/umount2/mkdir with no shell. The advisor's "mount script"
+  mechanism was wrong.
+- The usual udev mitigation does not apply: `usb_id` sanitises through
+  `util_replace_whitespace` and tests only the `_ISspace` ctype bit at 0x22b72,
+  so only whitespace is rewritten. The serial filter at 0x1c2df allows
+  0x20-0x7f and rejects comma, which neutralises literal spaces and comma-list
+  brace expansion but not parameter expansion. The advisor's literal payload
+  would therefore have failed; a parameter-expansion variant would not.
+- Aggravating: `/tmp` is tmpfs read-write from `esinit:10`; `/usr/bin/go-mtpfs`
+  is absent but the shell expands the whole line before execution, so a missing
+  helper does not block an injected command. Service has no `User=` so runs as
+  uid 0.
+- V-007 confirmed as configuration only: no media unit sets `User=`,
+  lightmediascannerd/thumbnail_extractor/mediamanager/playerengine/MediaBrowser
+  are configured uid 0, no seccomp or capability restrictions exist and the
+  image has zero setuid binaries. Reclassified as informational hardening, not a
+  demonstrated vulnerability; no parser defect was found and runtime uid was not
+  observed.
+- V-008 confirmed as shipped configuration, not as a vulnerability: agetty on
+  ttyS2 115200 with autologin commented out, securetty permits ttyS2,
+  passwd.legacy gives root /bin/sh, and shadow.Global root is a $6$ SHA-512-crypt
+  verifier with a unique salt and no locked marker; the other 18 accounts are
+  locked. esinit is fail-open because it creates the enable marker before testing
+  it. Dropbear is absent and inert despite one static authorized_keys entry.
+- Astra triaged the three findings and corrected several overstatements: a
+  system-service default is not an observed uid; absence of seccomp directives is
+  not proof of no filtering; comma rejection blocks only comma-list brace forms;
+  and a password verifier is not evidence of password weakness. Astra also
+  advised that head-unit root does not establish vehicle-bus, safety-system or
+  key-material access, and recommended holding V-006/7/8 technical dossiers
+  privately pending vendor contact. The public mirror was left unchanged at its
+  conservative "unverified" text.
+- Fable was requested twice for this triage and returned neither text nor the
+  requested output file, so no Fable execution is claimed. Astra performed the
+  triage instead and is attributed as such.
+- No VM was booted and no device was touched; all evidence is static.
