@@ -692,3 +692,31 @@ and are superseded by corrections rather than silently rewritten.
   requested output file, so no Fable execution is claimed. Astra performed the
   triage instead and is attributed as such.
 - No VM was booted and no device was touched; all evidence is static.
+
+
+## 2026-10-29 — EC-02 blocked by over-specification
+
+- Reviewed the EC-02 hardware-breakpoint mechanism four times. Round 3 took the
+  instructed change of approach: a normative machine-readable state machine
+  (17 states, 48 transitions, 21-row classify-only decision table, mechanically
+  derived budget) became the single source of truth, with the prose report and
+  facts reduced to citations.
+- Round 4 still returned REQUEST_CHANGES. Defects found were structural rather
+  than editorial: absent pre-arm and subsequent revalidation failure edges; no
+  ST_SEIZE -> ST_STOP0 transition and no initial interrupt; already-forwarded
+  signals left pending and therefore redeliverable; budget operation sums that
+  disagree with their own declarations plus unreachable maxima; a detach-error
+  terminal that falsely reports the tracee detached; classifier row 8 shadowing
+  nested and protocol rows; and inconsistent single-step routing and activation
+  counters.
+- Recorded the root cause instead of running a fifth textual round: the spec is
+  over-specified for its purpose. The mechanism report grew from 771 to 1,931
+  lines and gained a 1,187-line state machine for what is a bounded diagnostic
+  observer, and each correction surfaces a new edge because edge policy is being
+  authored with no implementation feedback.
+- Recommendation recorded: rescope EC-03 to a minimal verifiable core - SEIZE,
+  the four hardware observation points, bounded capture, restoration and a
+  host-owned timeout - then let EC-04 fixtures settle the remaining edge policy
+  empirically. EC-03 stays gated pending the owner's decision.
+- No VM was booted, no target executed, no fixture run and no EGL behaviour
+  measured. Ledger validates; EC-02 artifacts re-hashed in the ledger.

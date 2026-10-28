@@ -11,6 +11,30 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.65.0 - EC-02 blocked by over-specification; rescope recommended
+
+- Ran four lead reviews of the EC-02 hardware-breakpoint mechanism. Round 3
+  changed approach as instructed: policy moved into a new normative
+  `ec02-state-machine.json` (17 states, 48 transitions, 21-row classify-only
+  decision table, mechanically derived budget) with the report and facts reduced
+  to citations of it.
+- The fourth review still returned REQUEST_CHANGES, with real structural defects:
+  missing pre-arm and subsequent revalidation failure edges, a missing
+  `ST_SEIZE -> ST_STOP0` transition and initial interrupt, already-forwarded
+  signals staying pending for redelivery, budget sums that disagree with their
+  declarations, unreachable maxima, a detach-error terminal falsely reporting
+  "detached", classifier row shadowing, and single-step routing inconsistencies.
+- Diagnosis recorded rather than looping again: the defect is over-specification.
+  The mechanism report grew from 771 to 1,931 lines plus a 1,187-line state machine
+  for a bounded diagnostic tool, and each correction exposes a new edge because
+  edge policy is being authored without implementation feedback.
+- Recommendation: rescope EC-03 to a minimal verifiable core (SEIZE, four
+  hardware observation points, bounded capture, restoration, host-owned timeout)
+  and let the EC-04 fixtures settle the remaining edge policy empirically. No
+  fifth textual correction round was run.
+- EC-03 remains gated. No VM boot, no target execution, no fixture run and no
+  measured EGL claim. Ledger validates; artifacts re-hashed.
+
 ## 0.64.0 - advisor claims validated: one confirmed root command injection
 
 - Validated the three 2026-10-28 advisor claims offline against the recovered
