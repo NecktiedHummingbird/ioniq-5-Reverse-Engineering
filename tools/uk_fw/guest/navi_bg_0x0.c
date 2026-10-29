@@ -30,14 +30,18 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 
 #define DEFAULT_TRIGGER "/tmp/navi-bg-trigger"
-#define FORCED_ATTACHES 2
-/* Let the client paint real frames before collapsing the surface. Forcing the
- * first attaches of a process that has not drawn yet leaves it blank, which is
- * what the first attempt did (manager still reported 11/11). */
-#define MIN_ATTACHES_BEFORE_FORCE 40u
+/*
+ * Behaviour when the trigger file exists: every attach on the target surface is
+ * replaced with a NULL-buffer attach, i.e. the surface is held at 0x0 for as long
+ * as the trigger exists. A short burst of two attaches was tried first and the
+ * manager still reported no change; a single frame is likely too brief for the
+ * compositor to act on, so the surface is held instead. Removing the trigger file
+ * restores normal attaching.
+ */
 /* Probe the trigger file at most once per this many attach calls. */
 #define PROBE_INTERVAL 64u
 
@@ -48,10 +52,26 @@ typedef void (*attach_fn)(wl_surface *, wl_buffer *, int, int);
 
 static attach_fn real_attach;
 static wl_surface *target_surface;
-static int triggered;
-static int forced;
+static int hits;
 static unsigned int calls;
-static unsigned int target_attaches;
+static int held;
+static int logged_first;
+static unsigned int hold_count;
+
+/* Append a line to the audit log so a run can prove the interposer executed and
+ * how often it suppressed an attach. Without this, "no manager change" is
+ * indistinguishable from "adapter never fired". */
+static void audit(const char *what, unsigned int n)
+{
+    FILE *f = fopen("/tmp/navi-bg.log", "a");
+
+    if (f == NULL) {
+        return;
+    }
+    fprintf(f, "%s n=%u\n", what, n);
+    fflush(f);
+    fclose(f);
+}
 
 /* True only inside the authentic AppNavi process. LD_PRELOAD is inherited by
  * every launcher child, so acting on the first attaching app would hide Home
@@ -122,23 +142,30 @@ void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
         return;
     }
 
-    target_attaches++;
-    if (!triggered) {
-        calls++;
-        if ((calls % PROBE_INTERVAL) == 0u && trigger_present()) {
-            triggered = 1;
-        }
+    /*
+     * Probe the trigger on a sample of calls, then act on the cached answer so a
+     * stat() does not run on every frame.
+     */
+    calls++;
+    if ((calls % PROBE_INTERVAL) == 0u) {
+        held = trigger_present();
     }
 
-    if (triggered && forced == 0 && target_attaches < MIN_ATTACHES_BEFORE_FORCE) {
-        /* Not yet painted enough; count and pass through. */
-        real_attach(surface, buffer, x, y);
-        return;
-    }
-    if (triggered && forced < FORCED_ATTACHES) {
-        forced++;
+    if (held) {
+        hits++;
+        hold_count++;
+        if (!logged_first) {
+            logged_first = 1;
+            audit("first-hold", hold_count);
+        } else if ((hold_count % 64u) == 0u) {
+            audit("hold", hold_count);
+        }
         real_attach(surface, NULL, 0, 0);
         return;
+    }
+    if (logged_first && !held) {
+        audit("released", hold_count);
+        logged_first = 0;
     }
 
     real_attach(surface, buffer, x, y);

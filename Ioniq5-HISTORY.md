@@ -1087,3 +1087,26 @@ and are superseded by corrections rather than silently rewritten.
   manager still reported 11/11, so BG was not reached and the Home-to-Navigation
   transition is unchanged. Triggering on an attach count rather than on an observed
   event is the likely remaining flaw.
+
+## 2026-10-29 — navi 0x0 adapter never fired; diagnosis narrowed
+
+- Replaced the attach-count trigger with a sustained hold: while the trigger file
+  exists, every attach on AppNavi's target surface is replaced by a null-buffer attach,
+  holding the surface at 0x0 rather than flipping it for one frame. The hold lasted six
+  seconds, then was released and observed again.
+- The manager reported 11/11 during the hold and 11/11 after release, so BG was again
+  not reached.
+- Because "no manager change" and "adapter never ran" were indistinguishable, the
+  interposer was given an audit write on first hold. The run produced no audit file at
+  all, which shows the interposer never executed a hold. The manager readings from both
+  attempts therefore say nothing about whether BG is reachable by this route.
+- Two candidate causes remain indistinguishable. Either the preload never reaches
+  AppNavi, which could happen if AppLauncher execs child applications with a sanitised
+  environment, or SMACK denies access to the trigger file and the audit path for
+  AppNavi's label, failing silently in exactly the observed way.
+- The next step was recorded: take the filesystem out of the probe, logging to stderr
+  which the launcher captures, and deriving the trigger from a monotonic clock or a
+  launch-time environment variable so neither SMACK policy nor exec environment handling
+  can block it without leaving a trace.
+- Build and injection remain clean, the chain completes with exit 0 in about 418
+  seconds, and screenshots were captured both during the hold and after release.

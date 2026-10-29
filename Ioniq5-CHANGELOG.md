@@ -11,6 +11,30 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.80.0 - navi 0x0 adapter not reaching BG; diagnosis narrowed to "never fired"
+
+- Replaced the attach-count trigger with a **sustained hold**: while the trigger file
+  exists, every attach on AppNavi's target surface is replaced by a null-buffer attach,
+  so the surface is held at `0x0` instead of flipping for a single frame. Held for 6 s,
+  then released and observed again.
+- Manager reported **11/11 during the hold and 11/11 after release**. No change, so BG
+  was still not reached.
+- Added an audit write from the interposer on first hold, because "no manager change"
+  and "adapter never ran" were indistinguishable. The run produced **no
+  `/tmp/navi-bg.log` at all**, which means the interposer never executed a hold. The
+  manager numbers from both attempts therefore say nothing about whether BG is
+  reachable this way.
+- Two candidate causes, currently indistinguishable: the preload may not reach AppNavi
+  (AppLauncher may exec child apps with a sanitised environment), or SMACK denies the
+  `/tmp` trigger read and the audit write for AppNavi's label, which would fail silently
+  and produce exactly the observed evidence.
+- Next step recorded: remove the filesystem from the probe entirely — log to stderr
+  (captured in `launcher.log`) and derive the trigger from a monotonic clock or a
+  launch-time environment variable, so neither SMACK nor exec-environment handling can
+  block it silently.
+- Everything still builds and injects cleanly, the chain completes with exit 0 in
+  ~418 s, and screenshots were captured during the hold and after release.
+
 ## 0.79.0 - engineering mode research published; navi 0x0 still not reaching BG
 
 - Wrote `evidence/engineering-mode-research.md` and published the same document to the
