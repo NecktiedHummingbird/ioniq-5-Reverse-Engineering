@@ -853,3 +853,30 @@ and are superseded by corrections rather than silently rewritten.
   PTRACE_O_TRACECLONE was not examined.
 - No disclosure decision taken; no VM image modified; no vendor binary executed by
   the probe.
+
+## 2026-10-29 — null-buffer BG question narrowed, with a reversed inference
+
+- Returned to the main navigation workstream, which is independent of the EC-02
+  gate, to settle whether a Qt hide can ever produce the BG notification that
+  ApplicationManager requires.
+- Established by disassembly that the FG/BG predicate lives in ivi-window-manager.so
+  at 0xf981 and tests the surface size fields 0x68 and 0x6c, reproducing the known
+  rule that any positive dimension selects FG. ivi_layout_surface_configure in
+  ivi-shell.so at 0x81a0 only fans out to listeners and performs no classification.
+  The two size fields are written only by surface_set_size in usr/bin/weston at
+  0x40d4a0, whose three call sites all lie inside weston_surface_commit_state.
+- The first inference, that a null buffer leaves the size positive and therefore
+  cannot produce BG, was contradicted by two additional checks and is recorded as
+  reversed. surface_attach at 0x40df20 treats a NULL resource by setting buffer to
+  NULL and still setting the pending buffer-attached flag at pending+0x00, and
+  commit_state at 0x40f32c enters the size block whenever that flag is set. A
+  null-buffer commit therefore does reach surface_set_size.
+- Whether that call writes 0x0 depends on fields 0x104 and 0x108 of the surface
+  struct, whose meaning after a null attach is not yet established. A hidden surface
+  yielding 0x0 and hence BG is consequently plausible rather than excluded, which
+  raises the value of pursuing AppNavi's authentic hide path instead of assuming a
+  resize adapter is required.
+- A delegated worker was interrupted mid-analysis by the pi-gui restart after
+  writing six disassembly excerpts and no report. The excerpts were retained and the
+  analysis was completed by the coordinator from them plus direct llvm-objdump
+  checks. No rootfs file was modified and no VM was booted.

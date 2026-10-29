@@ -11,6 +11,29 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.71.0 - null-buffer BG question narrowed, with a reversed inference
+
+- Returned to the main navigation workstream (independent of the EC-02 gate) to
+  answer whether a Qt hide can ever produce the BG notification the manager needs.
+- Proven by disassembly: the FG/BG predicate is in `ivi-window-manager.so` at
+  `0xf981` and tests the surface size fields `0x68`/`0x6c`, reproducing the known
+  rule (any positive dimension selects FG). Those fields are written only by
+  `surface_set_size` (`usr/bin/weston` `0x40d4a0`), whose three call sites are all
+  inside `weston_surface_commit_state`.
+- First inference — that a null buffer leaves the size positive and therefore
+  cannot produce BG — was **contradicted by two further checks** and is recorded as
+  reversed rather than quietly dropped. `surface_attach` gives a NULL buffer the
+  same `pending+0x00` "buffer attached" flag as a real one, and the commit path
+  enters the size block whenever that flag is set. So a null-buffer commit *does*
+  reach `surface_set_size`.
+- Whether that call writes `0x0` depends on `[rbx+0x104]`/`[rbx+0x108]`, whose
+  meaning for a null attach is not yet established. A hidden surface producing
+  `0x0` and hence BG is therefore **plausible, not excluded**, which raises rather
+  than lowers the value of pursuing AppNavi's authentic hide path.
+- One delegated worker was interrupted mid-analysis by the pi-gui restart; its six
+  listings were retained and the analysis completed by the coordinator. No rootfs
+  file was modified and no VM was booted.
+
 ## 0.70.0 - capability matrix complete: per-thread scoping verified
 
 - Closed the last open capability item. Debug registers are **per thread**: after

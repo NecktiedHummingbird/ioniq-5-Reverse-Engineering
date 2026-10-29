@@ -1,5 +1,13 @@
 # Community field evidence: downgrade, CRC patching, and API availability
 
+> **Current-reading warning:** this is a historical, bounded source review.
+> Later native decryption recovered userspace; lack of plaintext is no longer a
+> VM blocker. API probes below describe those endpoints/times only, not every
+> downloader, region or model. The owner's newer supplied chat summary is retained
+> in `community-chat-leads.md`; it reports divergent historical-download access
+> and no demonstrated downgrade in its inspected messages, not a universal proof.
+> Use `corrections-log.md` and current `HANDOVER.md` before quoting conclusions.
+
 Status: review of the public issue trackers of the Gen5 Wide-Open projects
 (`gitlab.com/g4933/gen5w/*`) plus direct availability probes. This is anecdotal
 evidence from third parties, not controlled testing. It is recorded because it
