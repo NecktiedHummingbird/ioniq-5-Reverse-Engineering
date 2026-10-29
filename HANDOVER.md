@@ -6,6 +6,29 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Breakpoint capability matrix complete — 2026-10-29
+
+Eleven checks, 3.94 s, exit 0. Every capability question EC-02 had deferred is now
+measured rather than argued:
+
+| Capability | Result |
+| --- | --- |
+| execute breakpoint fires at armed address | yes, `DR6.B0` set |
+| four slots at once | fire in program order |
+| slot replacement | yes |
+| `DR4`/`DR5` | rejected, `EIO` |
+| `DR6` per-slot bits + clearable | yes (`B0` then `B1`, clear reads back 0) |
+| detach with slot armed | tracee **killed by `SIGTRAP`** — disarm is mandatory |
+| disarm, verify, detach | safe |
+| single step | works |
+| **per-thread scoping** | **debug registers are per thread; a sibling re-running the same function is unaffected** |
+
+The last item matters most for the design: observing one main thread is sound and
+needs neither thread-group control nor `PTRACE_O_TRACECLONE`.
+
+Not tested: data read/write watchpoints, many-thread behaviour, and the vendor
+libEGL observation points themselves.
+
 ## Breakpoint behaviour and detach discipline measured — 2026-10-29
 
 Round 2 of the capability probe (`dr_breakpoint_probe.c`, 9 checks, 3.85 s,

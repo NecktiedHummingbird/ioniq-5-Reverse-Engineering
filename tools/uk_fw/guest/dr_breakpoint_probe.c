@@ -31,6 +31,8 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#include <pthread.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -121,6 +123,45 @@ TARGET(target_c)
 TARGET(target_d)
 TARGET(target_e)
 TARGET(target_f)
+TARGET(target_shared)
+
+/*
+ * T11 state. The sibling thread waits for `t11_go` so the ordering is
+ * deterministic: the traced thread traps first, then the untraced sibling runs
+ * the same function while the slot is still armed.
+ */
+static volatile int t11_go;
+
+static void *t11_sibling(void *unused)
+{
+    (void)unused;
+    while (!t11_go) {
+        sched_yield();
+    }
+    target_shared();
+    return NULL;
+}
+
+static void t11_child_body(void)
+{
+    pthread_t tid;
+
+    if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
+        _exit(10);
+    }
+    if (raise(SIGSTOP) != 0) {
+        _exit(11);
+    }
+    if (pthread_create(&tid, NULL, t11_sibling, NULL) != 0) {
+        _exit(12);
+    }
+    /* Traced thread reaches the armed address first. */
+    target_shared();
+    /* Only reached once the tracer has stepped past that instruction. */
+    t11_go = 1;
+    pthread_join(tid, NULL);
+    _exit(0);
+}
 
 static void child_body(void)
 {
@@ -657,6 +698,104 @@ static void test_dr6_status_bits(void)
     waitpid(pid, &status, 0);
 }
 
+/*
+ * T11: per-thread scoping. Attach to the main thread only, arm an execute
+ * breakpoint, let the traced thread trap, step it past, then leave the slot
+ * ARMED while an untraced sibling thread executes the same function.
+ *
+ * If debug registers are per-thread, the sibling is unaffected and the process
+ * exits 0. If the slot applies process-wide, the untraced sibling takes SIGTRAP
+ * and the process dies on the default action.
+ */
+static void test_per_thread_scope(void)
+{
+    int status = 0;
+    int exited = 0;
+    unsigned long long dr7 = 0, rip = 0;
+    unsigned long addr = addr_of(target_shared);
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        t11_child_body();
+    }
+    if (pid < 0) {
+        verdict("T11", 0, "fork failed");
+        return;
+    }
+    if (waitpid(pid, &status, 0) != pid || !WIFSTOPPED(status)) {
+        verdict("T11", 0, "cannot reach initial stop");
+        return;
+    }
+    if (dr_read(pid, DR_CONTROL, &dr7) != 0) {
+        verdict("T11", 0, "cannot read DR7");
+        return;
+    }
+    if (dr_write(pid, 0, (unsigned long long)addr) != 0 ||
+        dr_write(pid, DR_CONTROL,
+                 (dr7 & ~0xFFFFUL) | DR7_RESERVED | DR7_L(0)) != 0) {
+        verdict("T11", 0, "cannot arm slot 0");
+        return;
+    }
+
+    /* Traced thread must trap at the armed address. */
+    if (ptrace(PTRACE_CONT, pid, NULL, NULL) == -1 ||
+        wait_trap(pid, &rip, &exited) != 1 ||
+        rip != (unsigned long long)addr) {
+        verdict("T11", 0, "traced thread did not trap at the armed address");
+        return;
+    }
+    say("T11 traced thread trapped at 0x%llx", rip);
+
+    /* Step past the instruction with the slot temporarily disabled. */
+    if (dr_write(pid, DR_CONTROL, (dr7 & ~0xFFFFUL) | DR7_RESERVED) != 0) {
+        verdict("T11", 0, "cannot temporarily disarm");
+        return;
+    }
+    if (ptrace(PTRACE_SINGLESTEP, pid, NULL, NULL) == -1) {
+        verdict("T11", 0, "single step rejected");
+        return;
+    }
+    if (waitpid(pid, &status, 0) != pid || !WIFSTOPPED(status) ||
+        WSTOPSIG(status) != SIGTRAP) {
+        verdict("T11", 0, "no trap after stepping past the breakpoint");
+        return;
+    }
+    /* Re-arm, then let the traced thread continue and release the sibling. */
+    if (dr_write(pid, DR_CONTROL,
+                 (dr7 & ~0xFFFFUL) | DR7_RESERVED | DR7_L(0)) != 0) {
+        verdict("T11", 0, "cannot re-arm the slot");
+        return;
+    }
+    if (ptrace(PTRACE_CONT, pid, NULL, NULL) == -1) {
+        verdict("T11", 0, "cannot resume after arming");
+        return;
+    }
+
+    /* The traced thread should not trap again; the sibling holds the decision. */
+    for (;;) {
+        if (waitpid(pid, &status, 0) != pid) {
+            verdict("T11", 0, "waitpid failed");
+            return;
+        }
+        if (WIFEXITED(status)) {
+            break;
+        }
+        if (WIFSIGNALED(status)) {
+            say("T11 process killed by signal %d while the sibling ran the "
+                "same function with the slot armed", WTERMSIG(status));
+            verdict("T11", 0,
+                    "breakpoints apply process-wide, not per thread");
+            return;
+        }
+        /* Traced thread re-trapped; disarm and let it finish. */
+        say("T11 traced thread re-trapped; disarming and continuing");
+        dr_write(pid, DR_CONTROL, (dr7 & ~0xFFFFUL) | DR7_RESERVED);
+        ptrace(PTRACE_CONT, pid, NULL, NULL);
+    }
+    verdict("T11", WEXITSTATUS(status) == 0,
+            "sibling thread unaffected: debug registers are per thread");
+}
+
 int main(void)
 {
     say("begin capability probe");
@@ -670,6 +809,7 @@ int main(void)
     test_detach_with_armed_slot();
     test_disarm_then_detach();
     test_dr6_status_bits();
+    test_per_thread_scope();
 
     if (failures == 0) {
         say("RESULT hardware-execute-breakpoint=SUPPORTED slots=4 "

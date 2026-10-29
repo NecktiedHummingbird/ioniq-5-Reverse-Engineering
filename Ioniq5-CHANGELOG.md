@@ -11,6 +11,26 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.70.0 - capability matrix complete: per-thread scoping verified
+
+- Closed the last open capability item. Debug registers are **per thread**: after
+  the traced main thread trapped and was stepped past, the slot was deliberately
+  re-armed, and an untraced sibling thread then executed the same function with no
+  effect — the process exited 0. Eleven checks pass in 3.94 s, exit 0.
+- The test is sequenced rather than raced (the sibling waits on a flag), so it
+  distinguishes the two outcomes deterministically: an unaffected sibling gives a
+  clean exit, while a process-wide slot would make the untraced sibling die on
+  `SIGTRAP`, the same failure signature measured in T8.
+- Consequence for EC-02: single-thread observation is sound and does not require
+  thread-group control or `PTRACE_O_TRACECLONE`, which removes an open design
+  question rather than adding one.
+- Authoring correction recorded: an edit that added the threading headers replaced
+  `stdarg.h` instead of adding to the include list, caught by `-Werror` at build
+  time before any VM run.
+- Newly stated bounds: only execute breakpoints were tested; data read/write
+  watchpoints were not, and behaviour with many threads or `PTRACE_O_TRACECLONE`
+  was not examined.
+
 ## 0.69.0 - DR6 attribution verified; transcript IV claim corroborated
 
 - Completed the capability matrix: `DR6` carries per-slot trap bits and is

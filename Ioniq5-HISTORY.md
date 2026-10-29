@@ -827,3 +827,29 @@ and are superseded by corrections rather than silently rewritten.
   and produces working decryptions. The claim is consequently recorded as
   corroborated, with the precise semantics, rather than as an open lead.
 - No disclosure decision was taken and no VM image was modified.
+
+
+## 2026-10-29 — capability matrix complete: per-thread scoping verified
+
+- Closed the last unexercised item in the hardware-breakpoint capability matrix.
+  Debug registers were shown to be per thread: the traced main thread trapped at an
+  armed execute address, was single-stepped past with the slot temporarily
+  disabled, the slot was then deliberately re-armed, and an untraced sibling thread
+  executed the same function with no effect. The process exited 0. Eleven checks
+  pass in 3.94 s with exit 0.
+- The test was sequenced rather than raced, with the sibling spinning on a flag set
+  only after the traced thread had been stepped past, so the two possible outcomes
+  are distinguishable: an unaffected sibling yields a clean exit, whereas a
+  process-wide slot would kill the untraced sibling on SIGTRAP, the same signature
+  T8 established for untraced breakpoint hits.
+- Consequence for EC-02: observing a single main thread is sound and needs neither
+  thread-group control nor PTRACE_O_TRACECLONE. That removes an open design
+  question rather than adding one.
+- One authoring correction: the edit that introduced the threading headers replaced
+  stdarg.h rather than extending the include list, which -Werror caught at build
+  time before any VM run.
+- Bounds stated explicitly: only execute breakpoints were exercised, data
+  read/write watchpoints were not, and behaviour with many threads or
+  PTRACE_O_TRACECLONE was not examined.
+- No disclosure decision taken; no VM image modified; no vendor binary executed by
+  the probe.
