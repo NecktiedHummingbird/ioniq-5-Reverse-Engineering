@@ -1028,3 +1028,26 @@ and are superseded by corrections rather than silently rewritten.
 - No Intel machine is needed for the remaining authorised work: the navigation 0x0
   adapter, service reconstruction, audio, CAN/MICOM and persistence all execute in the
   VM.
+
+## 2026-10-29 — navigation 0x0 adapter built; timing still wrong
+
+- Began the integration piece the BG analysis called for: a scoped adapter that drives
+  AppNavi's parent surface to a genuine 0x0 configure so the compositor classifies it
+  BG. The mechanism follows from the earlier ordering finding: one null attach is
+  insufficient because the size block stores the previous width_from_buffer before the
+  null branch zeroes it, so two consecutive null attaches are required.
+- Implemented as an LD_PRELOAD interposer on wl_surface_attach that forces a NULL
+  buffer on two consecutive attaches. It drives only the vendor compositor and never
+  calls the manager, writes the window byte, or synthesises a notification.
+- Two runs completed with exit 0 in about 412 seconds each, and both still reported
+  manager 11/11. Two defects were found and fixed: the preload is inherited by every
+  launcher child, so the first attempt collapsed the wrong application, now gated to
+  AppNavi through /proc/self/cmdline; and the trigger fired before the client had
+  painted, so AppNavi never foregrounded, now gated behind a minimum attach count.
+- Status recorded honestly: the plumbing is proven end to end, since the interposer
+  loads under the vendor glibc 2.25, is correctly scoped, the chain still completes and
+  manager state is queryable at the chosen moment. BG was not reached and the
+  Home-to-Navigation transition is unchanged. The paint-first variant is built but not
+  yet exercised.
+- Built against x86_64-linux-gnu.2.25 rather than musl, since a musl-linked shared
+  object will not load into the vendor glibc process.

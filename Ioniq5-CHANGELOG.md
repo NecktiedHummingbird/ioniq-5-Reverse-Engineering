@@ -11,6 +11,31 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.78.0 - navigation 0x0 adapter built; timing still wrong
+
+- Started the integration piece the BG analysis called for: a scoped adapter that
+  drives AppNavi's parent surface to a genuine `0x0` configure so the compositor
+  classifies it BG and the manager latches its window byte.
+- Mechanism, from the earlier ordering finding: a single null attach is not enough,
+  because the size block at `0x40f470` stores the previous `width_from_buffer` before
+  `0x40f813` zeroes it. **Two** consecutive null attaches reach `0x0`. Implemented as
+  an `LD_PRELOAD` interposer on `wl_surface_attach` that forces a NULL buffer on two
+  consecutive attaches. It only drives the vendor compositor; it never calls the
+  manager, writes the window byte, or synthesises a notification.
+- Two runs, both completed (exit 0, ~412 s) and both still reported manager `11/11`.
+  Two real defects were found and fixed along the way: the preload also applies to
+  every launcher child, so the first attempt collapsed the wrong app (now gated to
+  AppNavi via `/proc/self/cmdline`); and the trigger fired before the client had
+  painted, so AppNavi never foregrounded (now gated behind
+  `MIN_ATTACHES_BEFORE_FORCE = 40`).
+- Honest status: the plumbing is proven end-to-end — the interposer loads under the
+  vendor glibc 2.25, is correctly scoped, the chain still completes, and manager state
+  is queryable at the chosen point — but **BG was not reached** and the
+  Home↔Navigation transition is unchanged. The paint-first variant is built and
+  untested.
+- Built against `x86_64-linux-gnu.2.25` rather than musl: a musl-linked `.so` will not
+  load into the vendor's glibc process.
+
 ## 0.77.0 - I-001 scoped to the swrast path; Intel hardware not needed to proceed
 
 - Answered the question of whether an Intel machine is required. It is not, and the
