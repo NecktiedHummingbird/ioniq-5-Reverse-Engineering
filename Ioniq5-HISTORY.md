@@ -1257,3 +1257,19 @@ and are superseded by corrections rather than silently rewritten.
 - The cheapest next test was written down: one boot with QT_WAYLAND_SET_SURFACE_ID=3000 and
   no ApplicationManager, checking which id the surface actually receives and re-driving the
   helper with that id.
+
+## 2026-10-29 — first hardware-dependency adaptor found and stubbed
+
+- With Wayland client debugging enabled, AppNavi's own log shows it connects, enumerates the
+  registry including the ivi application global, and then never creates a surface. The tail
+  of the log is a repeated failure to read /sys/class/gpio/gpio440/value.
+- Confirmed in the VM that the node cannot exist: the gpio class holds only export and
+  unexport, and exporting 440 returns EINVAL because no gpiochip registers that pin, which
+  matches the kernel log where the GPS driver defers with -517 and never acquires it. The
+  emulated board lacks hardware the firmware expects rather than being misconfigured.
+- Built an adaptor in the form of a tmpfs over the gpio class with an inert gpio440 node.
+  The gpio440 errors then vanish from AppNavi's log, which is the first demonstrated case in
+  this project of a simulated hardware dependency unblocking a firmware startup path.
+- Recorded honestly that it is not yet sufficient: surface creation appeared in one run and
+  not the next, so either another dependency also gates the render path or the timing is
+  racy. The stub is necessary and reproducible; further work is needed.

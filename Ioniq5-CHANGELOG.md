@@ -11,6 +11,28 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.89.0 - first hardware-dependency adaptor: AppNavi polls a GPIO the board lacks
+
+- Traced why AppNavi is alive but paints nothing: with `WAYLAND_DEBUG` on, its own log
+  shows it connects, enumerates the registry (including `ivi_application` as global 111),
+  and then **never calls `surface_create`**. The tail of that log is a repeated loop on
+  `/sys/class/gpio/gpio440/value: No such file or directory`.
+- Checked the node in the VM: `/sys/class/gpio` contains only `export` and `unexport`, and
+  writing `440` to `export` returns **EINVAL** — the pin is not registered by any gpiochip,
+  consistent with the kernel log where `lge_gps_driver` defers with `-517` and never gets
+  its GPIO. So this is not a configuration mistake; the emulated board genuinely lacks a
+  GPIO the firmware expects.
+- Built the adaptor: a tmpfs mounted over `/sys/class/gpio` with a `gpio440` node and an
+  inert `value`. With it, the `gpio440` errors disappear from AppNavi's log entirely, which
+  is the first time a simulated hardware dependency has been shown to unblock a firmware
+  startup path in this project.
+- Honest limitation: surface creation is **not yet consistent**. One run showed
+  `surface_create` in the log, the next showed none, so something beyond the GPIO is also
+  gating the render path or the timing is racy. The GPIO stub is necessary and
+  reproducible; it is not yet sufficient on its own.
+- Retained as `tools/uk_fw/guest/appnavi_gpio_probe.sh` so the stub and the probe can be
+  reproduced.
+
 ## 0.88.0 - why AppNavi idles: the ivi surface id and visibility are injected from outside
 
 - Ran a targeted analysis of the "alive but paints nothing" blocker and added it as
