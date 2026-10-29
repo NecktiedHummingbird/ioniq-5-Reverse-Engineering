@@ -1233,3 +1233,27 @@ and are superseded by corrections rather than silently rewritten.
   public clone discarded an uncommitted edit to the navigation status document, so the
   public copy still described the question as open while this copy already carried the
   baseline result. Both now agree.
+
+## 2026-10-29 — why AppNavi idles: surface id and visibility are injected from outside
+
+- Analysed the "alive but paints nothing" blocker and retained the report as
+  evidence/appnavi-startup-analysis.md with the working excerpts alongside it.
+- The leading cause is that AppNavi links libivi-platform-interface.so.1 directly, and
+  that library resolves the ivi surface id only from the environment, via
+  QT_WAYLAND_SET_SURFACE_ID and its FORCED and USE_PID variants. On the vehicle the value
+  is injected by AppLauncher, which also sets APPID. Both the NEEDED entry and the three
+  variable names were verified independently.
+- With the variable unset the library enters an uncapped blockingReadEvents loop waiting
+  for an id reply, which matches the observed symptom of a process that is alive, silent
+  and produces no surface, rather than one that crashes.
+- Several candidates were ruled out: ApplicationManager's absence, because the project's
+  no-AppManager run still committed a 1920x720 buffer; all command-line flags in the
+  current invocation; and APPID, which AppLauncher reads rather than AppNavi. AppNavi
+  itself reads only MD_CONA40_ON.
+- A significant open point was flagged: the VM logs show the ivi surface created under id
+  30000 while the ivi-fg helper programmes 3000, so visibility may be requested for an id
+  that does not exist. The offset's origin lives in .bss and was not established
+  statically.
+- The cheapest next test was written down: one boot with QT_WAYLAND_SET_SURFACE_ID=3000 and
+  no ApplicationManager, checking which id the surface actually receives and re-driving the
+  helper with that id.

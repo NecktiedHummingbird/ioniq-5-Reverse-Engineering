@@ -11,6 +11,35 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.88.0 - why AppNavi idles: the ivi surface id and visibility are injected from outside
+
+- Ran a targeted analysis of the "alive but paints nothing" blocker and added it as
+  `evidence/appnavi-startup-analysis.md` (full report retained under
+  `work/vm/vendor-userspace-260128/appnavi-startup-analysis/`).
+- **Root cause candidate, verified at string and dependency level:** AppNavi directly
+  links `libivi-platform-interface.so.1`, which resolves its ivi surface id *only* from
+  the environment (`QT_WAYLAND_SET_SURFACE_ID`, with `_FORCED` and
+  `USE_PID_FOR_SURFACE_ID` variants). On the vehicle that value is injected by
+  `AppLauncher`, which also sets `APPID`. Verified here: the library is a direct `NEEDED`
+  of AppNavi and contains all three variable names.
+- **Unset behaviour:** an uncapped `blockingReadEvents` loop waiting for an id reply. That
+  is precisely the observed symptom — alive, silent, no surface — rather than a crash.
+- **Ruled out:** ApplicationManager's absence (the project's no-AppManager run still
+  committed a 1920x720 buffer), every command-line flag in the current invocation, and
+  `APPID` (read by AppLauncher, not by AppNavi or libivi). AppNavi reads exactly one
+  environment variable itself: `MD_CONA40_ON`.
+- **Open point flagged, and it is a big one:** the VM logs show the ivi surface created
+  under id **30000** while the project's `/ivi-fg-navi` helper programmes **3000**. If
+  real, visibility is being requested for an id that does not exist, which would explain
+  the byte-identical screenshots even in the configuration believed to work. The origin of
+  the added offset lives in `.bss` and was not established statically.
+- **Cheapest next test, one boot:** run with `QT_WAYLAND_SET_SURFACE_ID=3000` and no
+  ApplicationManager, then check which id the surface actually receives and re-drive
+  `/ivi-fg-navi` with *that* id.
+- Supporting runtime observation from this session: a run of the baseline probe produced
+  **no surface_create at all**, and AppNavi had exited by the end, so the id hypothesis and
+  the lifetime question both need the instrumented run above.
+
 ## 0.87.0 - A/B shows AppNavi paints nothing at all
 
 - Ran the A/B the previous entry left open. Three runs of the same probe with the captured
