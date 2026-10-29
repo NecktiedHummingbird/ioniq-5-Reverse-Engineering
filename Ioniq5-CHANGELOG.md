@@ -15,7 +15,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 - The harness failed on the retained AppNavi analysis with five "private email address"
   findings. They were false positives: the checker's email pattern matched Wayland debug
-  syntax, where a protocol object is written `object@id.method(...)`, so `wl_surface@3.attach`
+  syntax, where a protocol object is written `object@<id>.method(...)`, so `wl_surface@3.attach`
   and `ivi_controller@13.surface(30000)` looked like addresses.
 - Tightened `EMAIL_PATTERN` so the domain must begin with a letter. Real addresses still
   match (`someone@example.com`, `a.b@corp.example.org`); Wayland forms no longer do.

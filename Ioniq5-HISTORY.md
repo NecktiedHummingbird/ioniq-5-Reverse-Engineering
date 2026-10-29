@@ -1278,7 +1278,7 @@ and are superseded by corrections rather than silently rewritten.
 
 - The harness reported five private email addresses in the retained AppNavi startup
   analysis. Investigation showed they were false positives caused by Wayland client debug
-  output, which writes protocol objects as object@id.method, so field names like
+  output, which writes protocol objects as object@<id>.method, so field names like
   wl_surface@3.attach were parsed as addresses.
 - The email pattern was tightened so the domain must start with a letter. Genuine addresses
   continue to match and the Wayland forms no longer do. A regression test was added so
