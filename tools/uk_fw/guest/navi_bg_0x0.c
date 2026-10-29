@@ -1,49 +1,45 @@
 /*
  * navi_bg_0x0.c — drive AppNavi's surface to a real 0x0 configure.
  *
- * Why this exists: ApplicationManager only latches its navigation window byte on
- * a background (BG) window notification, and the IVI compositor classifies a
- * surface as BG only when both its width and height are non-positive. AppNavi
- * never hides its surface, so the latch never sets.
+ * Why this exists: ApplicationManager latches its navigation window byte only on a
+ * background (BG) window notification, and the IVI compositor classifies a surface
+ * as BG only when both width and height are non-positive. AppNavi never hides its
+ * surface, so the latch never sets.
  *
  * A single null-buffer attach is not enough. In weston_surface_commit_state the
  * size block at 0x40f470 stores the previous `width_from_buffer` before the
- * null-buffer branch at 0x40f813 zeroes that field, so the first null attach
- * keeps the old positive size. A *second* null attach enters the same block with
- * `width_from_buffer` already zero and therefore stores 0x0.
+ * null-buffer branch at 0x40f813 zeroes that field, so the first null attach keeps
+ * the old positive size. A second null attach enters the same block with the field
+ * already zero and therefore stores 0x0.
  *
- * So this interposer passes a NULL buffer on the first two commits of the first
- * surface the client touches, once the trigger file exists. It relies only on
- * the vendor compositor's own behaviour: it does not call ApplicationManager,
- * write the window byte, or synthesise any notification.
+ * This version deliberately uses no filesystem at all. The previous probe keyed off
+ * a trigger file in /tmp and logged there too; a run produced no log and no effect,
+ * which could not distinguish "never loaded" from "SMACK denied the path". So:
  *
- * Trigger: the file named by NAVI_BG_TRIGGER (default /tmp/navi-bg-trigger).
+ *   - load and timeline go to stderr (captured in the launcher log);
+ *   - the hold window is derived from a monotonic clock and environment variables
+ *     set at launch, which no label policy can refuse.
+ *
+ * Environment:
+ *   NAVI_BG_HOLD_AT_MS   ms after process start at which holding begins
+ *   NAVI_BG_HOLD_FOR_MS  how long holding lasts (default 4000)
+ * If NAVI_BG_HOLD_AT_MS is unset the interposer only observes and never alters.
  *
  * Build:
- *   zig cc -target x86_64-linux-musl -shared -fPIC -O2 -Wall -Wextra -Werror \
+ *   zig cc -target x86_64-linux-gnu.2.25 -shared -fPIC -O2 -Wall -Wextra -Werror \
  *       -o navi-bg-0x0.so navi_bg_0x0.c
  */
 
 #define _GNU_SOURCE
 
 #include <dlfcn.h>
+#include <stdarg.h>
 #include <fcntl.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
-
-#define DEFAULT_TRIGGER "/tmp/navi-bg-trigger"
-/*
- * Behaviour when the trigger file exists: every attach on the target surface is
- * replaced with a NULL-buffer attach, i.e. the surface is held at 0x0 for as long
- * as the trigger exists. A short burst of two attaches was tried first and the
- * manager still reported no change; a single frame is likely too brief for the
- * compositor to act on, so the surface is held instead. Removing the trigger file
- * restores normal attaching.
- */
-/* Probe the trigger file at most once per this many attach calls. */
-#define PROBE_INTERVAL 64u
 
 typedef struct wl_surface wl_surface;
 typedef struct wl_buffer wl_buffer;
@@ -52,88 +48,116 @@ typedef void (*attach_fn)(wl_surface *, wl_buffer *, int, int);
 
 static attach_fn real_attach;
 static wl_surface *target_surface;
-static int hits;
-static unsigned int calls;
-static int held;
-static int logged_first;
-static unsigned int hold_count;
+static int is_navi = -1;
+static long hold_at_ms = -1;
+static long hold_for_ms = 4000;
+static struct timespec started;
+static int have_start;
+static int announced_load;
+static int announced_hold;
+static int announced_release;
+static unsigned int suppressed;
+static unsigned int attaches;
+static long first_attach_ms = -1;
 
-/* Append a line to the audit log so a run can prove the interposer executed and
- * how often it suppressed an attach. Without this, "no manager change" is
- * indistinguishable from "adapter never fired". */
-static void audit(const char *what, unsigned int n)
+/*
+ * Report to the kernel log as well as stderr. The serial console captures dmesg,
+ * so this channel survives any decision about where a child's stderr is routed,
+ * and it does not depend on a writable directory.
+ */
+static void kmsg(const char *fmt, ...)
 {
-    FILE *f = fopen("/tmp/navi-bg.log", "a");
+    char buf[256];
+    va_list ap;
+    int fd;
+    int n;
 
-    if (f == NULL) {
-        return;
+    va_start(ap, fmt);
+    n = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    if (n > 0) {
+        fd = open("/dev/kmsg", O_WRONLY);
+        if (fd >= 0) {
+            ssize_t ignored = write(fd, buf, (size_t)n);
+            (void)ignored;
+            close(fd);
+        }
+        fprintf(stderr, "%s\n", buf);
+        fflush(stderr);
     }
-    fprintf(f, "%s n=%u\n", what, n);
-    fflush(f);
-    fclose(f);
 }
 
-/* True only inside the authentic AppNavi process. LD_PRELOAD is inherited by
- * every launcher child, so acting on the first attaching app would hide Home
- * instead of Navigation. The answer is cached: it cannot change per process. */
-static int is_appnavi(void)
+static long now_ms(void)
 {
-    static int cached = -1;
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long)ts.tv_sec * 1000L + ts.tv_nsec / 1000000L;
+}
+
+/* True only inside the authentic AppNavi process. */
+static int navi_process(void)
+{
     char buf[300];
     int fd;
     ssize_t n;
 
-    if (cached >= 0) {
-        return cached;
+    if (is_navi >= 0) {
+        return is_navi;
     }
-    cached = 0;
+    is_navi = 0;
     fd = open("/proc/self/cmdline", O_RDONLY);
     if (fd < 0) {
-        return cached;
+        return is_navi;
     }
     n = read(fd, buf, sizeof(buf) - 1);
     close(fd);
     if (n > 0) {
         buf[n] = '\0';
         if (strstr(buf, "AppNavi") != NULL) {
-            cached = 1;
+            is_navi = 1;
         }
     }
-    return cached;
+    return is_navi;
 }
 
-static void ensure_real(void)
+__attribute__((constructor)) static void on_load(void)
 {
-    if (real_attach == NULL) {
-        real_attach = (attach_fn)dlsym(RTLD_NEXT, "wl_surface_attach");
-    }
-}
+    const char *env;
 
-static int trigger_present(void)
-{
-    const char *path = getenv("NAVI_BG_TRIGGER");
-
-    if (path == NULL || path[0] == '\0') {
-        path = DEFAULT_TRIGGER;
+    if (!navi_process()) {
+        return;
     }
-    return access(path, F_OK) == 0;
+    clock_gettime(CLOCK_MONOTONIC, &started);
+    have_start = 1;
+    env = getenv("NAVI_BG_HOLD_AT_MS");
+    if (env != NULL && env[0] != '\0') {
+        hold_at_ms = strtol(env, NULL, 10);
+    }
+    env = getenv("NAVI_BG_HOLD_FOR_MS");
+    if (env != NULL && env[0] != '\0') {
+        hold_for_ms = strtol(env, NULL, 10);
+    }
+    kmsg("navi-bg: loaded pid=%d hold_at_ms=%ld hold_for_ms=%ld",
+         (int)getpid(), hold_at_ms, hold_for_ms);
+    announced_load = 1;
 }
 
 void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
 {
-    ensure_real();
+    long elapsed;
+    int holding;
+
     if (real_attach == NULL) {
-        return;
+        real_attach = (attach_fn)dlsym(RTLD_NEXT, "wl_surface_attach");
+        if (real_attach == NULL) {
+            return;
+        }
     }
-    if (!is_appnavi()) {
+    if (!navi_process()) {
         real_attach(surface, buffer, x, y);
         return;
     }
-
-    /*
-     * Elect the first surface the client attaches to as the target. AppNavi has
-     * a parent surface and a map-widget child; only the parent should collapse.
-     */
     if (target_surface == NULL) {
         target_surface = surface;
     }
@@ -142,31 +166,29 @@ void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
         return;
     }
 
-    /*
-     * Probe the trigger on a sample of calls, then act on the cached answer so a
-     * stat() does not run on every frame.
-     */
-    calls++;
-    if ((calls % PROBE_INTERVAL) == 0u) {
-        held = trigger_present();
+    attaches++;
+    elapsed = have_start ? now_ms() - (started.tv_sec * 1000L + started.tv_nsec / 1000000L) : 0;
+    if (first_attach_ms < 0) {
+        first_attach_ms = elapsed;
+        kmsg("navi-bg: first-attach at_ms=%ld", elapsed);
     }
 
-    if (held) {
-        hits++;
-        hold_count++;
-        if (!logged_first) {
-            logged_first = 1;
-            audit("first-hold", hold_count);
-        } else if ((hold_count % 64u) == 0u) {
-            audit("hold", hold_count);
-        }
+    holding = hold_at_ms >= 0 && elapsed >= hold_at_ms &&
+              elapsed < (hold_at_ms + hold_for_ms);
+
+    if (holding && !announced_hold) {
+        announced_hold = 1;
+        kmsg("navi-bg: hold-begin at_ms=%ld attaches=%u", elapsed, attaches);
+    }
+    if (!holding && announced_hold && !announced_release) {
+        announced_release = 1;
+        kmsg("navi-bg: hold-end at_ms=%ld suppressed=%u", elapsed, suppressed);
+    }
+
+    if (holding) {
+        suppressed++;
         real_attach(surface, NULL, 0, 0);
         return;
     }
-    if (logged_first && !held) {
-        audit("released", hold_count);
-        logged_first = 0;
-    }
-
     real_attach(surface, buffer, x, y);
 }

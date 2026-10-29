@@ -11,6 +11,29 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.81.0 - navi 0x0 injection unblocked: interposer now loads into AppNavi
+
+- Found the root cause of every earlier "adapter never ran" result:
+  `launcher_appnavi_liveness_preload.c` deliberately calls
+  `unsetenv("LD_PRELOAD")` when running as AppLauncher, so vendor children inherit a
+  clean environment. **No `LD_PRELOAD` set on the launcher command line can reach
+  AppNavi**, which is why four attempts produced nothing.
+- Fix: piggyback on that interposer's own `execve` hook, which rewrites `envp` for
+  AppNavi alone. `tools/uk_fw/guest/launcher_appnavi_navibg_preload.c` is a variant that
+  injects `LD_PRELOAD=/navi-bg-0x0.so:/appnavi-egl-no-msaa-preload.so` for AppNavi only.
+- **Verified:** the kernel log now shows `navi-bg: loaded pid=857
+  hold_at_ms=20000 hold_for_ms=6000`. The adapter demonstrably executes inside AppNavi.
+- Also made the probe filesystem-free: the hold window comes from a monotonic clock
+  plus launch-time environment variables, and the timeline goes to `/dev/kmsg`, so
+  SMACK and exec-environment handling can no longer block it silently.
+- Remaining gap: no `first-attach` line followed, so AppNavi never attached a buffer on
+  the elected surface inside that window, and the manager still reported `11/11`. Next
+  step recorded: log every attach plus a destructor summary so a zero-attach run is
+  unambiguous, then align the hold window with real rendering.
+- Method note: an earlier "decisive" conclusion that the library never loaded was
+  **wrong** — it rested on AppNavi's stderr being captured in `launcher.log`, which it
+  is not. `/dev/kmsg` is the reliable channel and corrected the diagnosis.
+
 ## 0.80.0 - navi 0x0 adapter not reaching BG; diagnosis narrowed to "never fired"
 
 - Replaced the attach-count trigger with a **sustained hold**: while the trigger file

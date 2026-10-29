@@ -1110,3 +1110,27 @@ and are superseded by corrections rather than silently rewritten.
   can block it without leaving a trace.
 - Build and injection remain clean, the chain completes with exit 0 in about 418
   seconds, and screenshots were captured both during the hold and after release.
+
+## 2026-10-29 — navi 0x0 injection unblocked
+
+- Found the root cause behind every earlier "adapter never ran" result. The launcher
+  liveness interposer deliberately calls unsetenv on LD_PRELOAD when it runs as
+  AppLauncher, so vendor children inherit a clean environment. Any LD_PRELOAD placed on
+  the launcher command line therefore never reaches AppNavi, which explains four
+  consecutive attempts that produced no effect and no trace.
+- The fix uses that same interposer's execve hook, which rewrites envp for AppNavi only.
+  A variant now injects the navi-bg library ahead of the existing EGL compatibility
+  entry for AppNavi alone, and the source was added to tools/uk_fw/guest.
+- Injection is verified: the kernel log records navi-bg loading inside AppNavi at
+  pid 857 with the configured hold window. The adapter demonstrably executes.
+- The probe was also made filesystem-free, with the hold window derived from a
+  monotonic clock and launch-time environment variables and the timeline written to
+  /dev/kmsg, so neither SMACK policy nor exec environment handling can block it
+  silently.
+- Remaining gap: no first-attach record followed, so AppNavi did not attach a buffer on
+  the elected surface within the window, and the manager still reported 11/11. The next
+  step is to log every attach plus a destructor summary so a zero-attach run cannot be
+  confused with a timing miss, then to align the window with real rendering.
+- A method correction is recorded: an earlier conclusion that the library never loaded
+  was wrong, because it depended on AppNavi's stderr appearing in launcher.log, where it
+  does not. The kernel log is the reliable channel and overturned that diagnosis.
