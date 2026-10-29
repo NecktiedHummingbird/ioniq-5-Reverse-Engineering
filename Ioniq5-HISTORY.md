@@ -985,3 +985,27 @@ and are superseded by corrections rather than silently rewritten.
   libEGL before the client had mapped it. The second is a real race, since AppCamera
   becomes visible before its graphics libraries load, and is now handled by a bounded
   wait for the module with the tracee left running.
+
+## 2026-10-29 — null-buffer question resolved; hide does not produce BG
+
+- Settled the remaining navigation question using DWARF instead of inference. The
+  weston binary retains debug information for weston_surface (weston 1.10.0-r21,
+  compositor.h:1066), which fixes the layout as width at 0x68, height at 0x6c,
+  width_from_buffer at 0x104 and height_from_buffer at 0x108. This confirms that the
+  FG/BG predicate tests the surface's own size fields and that the commit path feeds
+  them from the _from_buffer pair.
+- A null-buffer attach does zero both _from_buffer fields at 0x40f813, reached when
+  the buffer pointer is null. An earlier correction stopped at that point and
+  concluded that BG was reachable, which was incorrect: the size block at 0x40f470
+  executes before that zeroing, so it stores the previous positive size and the
+  surface remains positive.
+- The conclusion is therefore that a bare hide does not produce BG, and a genuine
+  transition to non-positive dimensions is required, which matches the earlier
+  Camera/Standby control that drove 1926x753 to 0x0 and then BG. The integration
+  route consequently needs a scoped resize adapter rather than the authentic hide
+  path.
+- The reversal is recorded rather than tidied away: the withdrawn reasoning remains in
+  the analysis report with an explicit note that it is superseded.
+- Method notes: the DWARF inspection required llvm-dwarfdump with a byte-window scan,
+  and several earlier greps silently matched nothing because objdump separates its
+  columns with tabs rather than spaces.

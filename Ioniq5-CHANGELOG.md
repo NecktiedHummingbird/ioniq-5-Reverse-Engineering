@@ -11,6 +11,26 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.76.0 - null-buffer question resolved: hide does not produce BG
+
+- Settled the outstanding navigation question with DWARF rather than inference.
+  `usr/bin/weston` retains debug info for `weston_surface` (weston 1.10.0-r21), which
+  fixes the layout: `width` at `0x68`, `height` at `0x6c`, `width_from_buffer` at
+  `0x104`, `height_from_buffer` at `0x108`. That confirms the FG/BG predicate tests
+  the surface's own size, fed from the `_from_buffer` pair at commit.
+- A null attach **does** zero both `_from_buffer` fields (`0x40f813`, reached when the
+  buffer pointer is null). My previous entry stopped there and concluded BG was
+  reachable. That was wrong: the size block at `0x40f470` runs **before** that
+  zeroing, so it stores the *previous* positive size and the surface stays positive.
+- Therefore **a bare `hide()` does not produce BG**; a genuine `0x0` size transition is
+  required, matching the earlier Camera/Standby control. The integration route needs a
+  scoped resize adapter rather than the authentic hide path.
+- Recorded transparently: this reverses the correction I made two turns ago, and the
+  withdrawn reasoning is preserved in the analysis report rather than deleted.
+- Two method notes: the DWARF dump needed `/opt/homebrew/opt/llvm/bin/llvm-dwarfdump`
+  with a byte-window scan, and several of my earlier greps silently matched nothing
+  because `objdump` separates columns with tabs, not spaces.
+
 ## 0.75.0 - authentic measurement: dimensions are -1 then 1920x720
 
 - Ran the observer against the **authentic AppCamera** inside the real launcher chain
