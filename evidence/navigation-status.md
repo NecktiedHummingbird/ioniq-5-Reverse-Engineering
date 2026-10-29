@@ -100,20 +100,32 @@ settles it:
 AppNavi is equally silent with the interposer removed, so the adapter is not what stops
 it. Its startup is failing for reasons of its own in this probe.
 
-One caveat must be stated with that: **an empty log is not proof that nothing rendered.**
-AppNavi may log elsewhere (DLT, or a file), or not at all. The screenshot captured by the
-probe has not yet been inspected, so "renders but silently" and "never renders" are still
-both open.
+The caveat that followed — an empty log is not proof that nothing rendered — has now been
+tested with an A/B instead of left standing. The probe was run three ways and the captured
+frame compared:
+
+| Run | AppNavi process | AppNavi log | screenshot SHA-256 |
+| --- | --- | --- | --- |
+| with the adapter | alive | 1 line (adapter load) | (not captured) |
+| baseline, no adapter | **alive** | 0 lines | `b316a82a…0b9a83` |
+| **control, AppNavi not launched at all** | absent | n/a | `b316a82a…0b9a83` |
+
+The frame is **byte-identical with AppNavi absent**. So AppNavi renders nothing at all in
+this probe: it is alive, silent, and contributes no pixels. It is not rendering
+anonymously — it is not rendering.
+
+That moves the blocker one level earlier. The compositor contract, the `0x0` hold and the
+BG notification cannot be exercised until AppNavi actually paints, and the adapter is
+irrelevant to that.
 
 ## Next steps, in cost order
 
-1. Baseline the render probe without the preload and compare AppNavi's log and
-   behaviour. One run.
-2. If the adapter is at fault, narrow it to attaching only, with no hold, to separate
-   interception cost from behaviour change.
-3. If AppNavi is silent either way, treat startup as the blocker and investigate why
-   the client exits before its first frame.
-4. Only then revisit the `0x0` hold and the BG notification.
+1. Establish why AppNavi is alive but paints nothing. It is not exiting, so this is
+   either a wait on something the launcher normally provides, a missing configure, or a
+   render path that never runs. Comparing the environment and arguments the launcher
+   gives AppNavi against this probe's direct launch is the cheapest first check.
+2. Once AppNavi paints, re-run the `0x0` hold and look for the BG notification.
+3. Only then decide whether a compatibility adapter is needed at all.
 
 ## Reproducing
 

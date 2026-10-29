@@ -1217,3 +1217,19 @@ and are superseded by corrections rather than silently rewritten.
   logs to DLT before drawing conclusions about its startup.
 - docs/navigation-status.md was updated in both repositories so the published open
   question is replaced by this baseline result.
+
+## 2026-10-29 — A/B shows AppNavi paints nothing at all
+
+- Tested the previous entry's caveat with an A/B across three runs of the same probe: with
+  the adapter, without it, and with AppNavi not launched at all. The captured frame is
+  byte-identical between the baseline and the no-AppNavi control.
+- The conclusion is that AppNavi renders nothing. It is alive, silent and contributes no
+  pixels, so the adapter is not implicated and the compositor contract, the zero-size hold
+  and the background notification cannot be exercised until AppNavi paints.
+- The next step was narrowed to finding why AppNavi is alive but idle, by comparing the
+  environment and arguments the launcher normally supplies against this probe's direct
+  launch.
+- An inconsistency between the two repositories was corrected: an earlier hard reset in the
+  public clone discarded an uncommitted edit to the navigation status document, so the
+  public copy still described the question as open while this copy already carried the
+  baseline result. Both now agree.

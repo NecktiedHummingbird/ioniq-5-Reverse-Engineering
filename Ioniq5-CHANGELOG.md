@@ -11,6 +11,23 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.87.0 - A/B shows AppNavi paints nothing at all
+
+- Ran the A/B the previous entry left open. Three runs of the same probe with the captured
+  frame compared: with the adapter (AppNavi alive, 1 log line), baseline without it
+  (AppNavi alive, 0 lines), and a control with **AppNavi not launched at all**.
+- The screenshot is byte-identical (`b316a82a…0b9a83`) between baseline and the no-AppNavi
+  control. AppNavi renders nothing: alive, silent, contributing no pixels.
+- Consequence: the adapter is not implicated, and the compositor contract, the `0x0` hold
+  and the BG notification cannot be exercised until AppNavi paints. The blocker moves one
+  level earlier.
+- Next step recorded: find why AppNavi is alive but idle — compare the environment and
+  arguments the launcher normally supplies against this probe's direct launch.
+- Documentation inconsistency fixed: an earlier `git reset --hard` in the public clone
+  discarded an uncommitted doc edit, so the public copy still presented the question as
+  open while this copy carried the baseline result. Both copies now agree, and the public
+  repo is at `462c9fa`.
+
 ## 0.86.0 - baseline clears the interposer; AppNavi is silent on its own
 
 - Ran the decisive control: the identical render probe **without** the preload.
