@@ -11,6 +11,20 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.90.0 - privacy checker no longer mistakes Wayland notation for email addresses
+
+- The harness failed on the retained AppNavi analysis with five "private email address"
+  findings. They were false positives: the checker's email pattern matched Wayland debug
+  syntax, where a protocol object is written `object@id.method(...)`, so `wl_surface@3.attach`
+  and `ivi_controller@13.surface(30000)` looked like addresses.
+- Tightened `EMAIL_PATTERN` so the domain must begin with a letter. Real addresses still
+  match (`someone@example.com`, `a.b@corp.example.org`); Wayland forms no longer do.
+- Added a regression test, `test_wayland_object_notation_is_not_an_email`, so future
+  protocol captures can be retained as evidence without tripping the privacy gate.
+- Deliberately fixed the checker rather than rewriting the quoted log lines: every Wayland
+  capture from here on would hit the same false positive, and mangling evidence to satisfy
+  a scanner is the wrong trade.
+
 ## 0.89.0 - first hardware-dependency adaptor: AppNavi polls a GPIO the board lacks
 
 - Traced why AppNavi is alive but paints nothing: with `WAYLAND_DEBUG` on, its own log

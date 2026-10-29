@@ -58,7 +58,12 @@ PUBLIC_CODE_CREDENTIAL = re.compile(
     r"\b(?:password|passwd|passphrase|secret)\b\s*[:=]\s*['\"][^'\"\s]{6,}['\"]",
     re.I,
 )
-EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+# The domain must begin with a letter. Wayland debug output is full of
+# "object@12.method(...)" forms whose domain label starts with a digit; without
+# this constraint every captured protocol log is reported as a leaked address.
+EMAIL_PATTERN = re.compile(
+    r"\b[A-Za-z0-9._%+-]+@[A-Za-z][A-Za-z0-9-]*(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b")
+
 VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")
 MAX_FINDINGS = 200
 

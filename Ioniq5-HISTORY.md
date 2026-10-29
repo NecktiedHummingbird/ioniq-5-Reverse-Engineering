@@ -1273,3 +1273,16 @@ and are superseded by corrections rather than silently rewritten.
 - Recorded honestly that it is not yet sufficient: surface creation appeared in one run and
   not the next, so either another dependency also gates the render path or the timing is
   racy. The stub is necessary and reproducible; further work is needed.
+
+## 2026-10-29 — privacy checker corrected for Wayland object notation
+
+- The harness reported five private email addresses in the retained AppNavi startup
+  analysis. Investigation showed they were false positives caused by Wayland client debug
+  output, which writes protocol objects as object@id.method, so field names like
+  wl_surface@3.attach were parsed as addresses.
+- The email pattern was tightened so the domain must start with a letter. Genuine addresses
+  continue to match and the Wayland forms no longer do. A regression test was added so
+  future protocol captures can be retained without tripping the privacy gate.
+- The checker was corrected rather than the evidence rewritten: every Wayland capture would
+  otherwise produce the same false positive, and editing quoted log text to satisfy a
+  scanner would corrupt the evidence.
