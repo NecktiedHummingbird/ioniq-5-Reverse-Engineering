@@ -11,6 +11,27 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.66.0 - guest hardware breakpoints proven under TCG
+
+- Resolved the single load-bearing unknown behind EC-02 by measurement rather than
+  further specification: the guest **does** honour `DR0`/`DR7` execute breakpoints
+  set through ptrace under QEMU TCG with the measured `4.1.27-abl` kernel.
+- Wrote `tools/uk_fw/guest/dr_breakpoint_probe.c` (VM-only capability probe, no
+  vendor code) and ran it in 3.64 s through the project's own harness with the
+  documented `--sdhci-compat` adaptation. Four checks all pass: no-trap control;
+  armed execute breakpoint firing at exactly the armed address with `DR6.B0` set;
+  clean disarm and completion with no re-trap; and single step advancing RIP.
+- One self-correction during authoring: the first draft needed a missing
+  `stdarg.h` and left its tracee parked after the trap; it was rewritten as a
+  single arm/trap/restore/clean-exit sequence before any run.
+- Consequence: EC-02 was never blocked on capability, only on specification. The
+  fixture it deferred this question to turns out to be cheap and runnable without
+  vendor userspace. Remaining EC-02 blockers are spec defects alone.
+- Bounded honestly: proven on a synthetic tracee at user addresses, not on vendor
+  libEGL observation points; four-slot capacity, slot replacement, `DR6` semantics
+  beyond `B0`, and detach-time teardown remain unexercised. No vendor binary was
+  executed and no navigation state was claimed.
+
 ## 0.65.0 - EC-02 blocked by over-specification; rescope recommended
 
 - Ran four lead reviews of the EC-02 hardware-breakpoint mechanism. Round 3

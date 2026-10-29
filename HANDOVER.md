@@ -6,6 +6,36 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Guest hardware breakpoints proven — 2026-10-29
+
+The load-bearing unknown behind EC-02 is resolved by measurement, not by more
+specification: the guest **honours `DR0`/`DR7` execute breakpoints** via ptrace
+under QEMU TCG with the measured `4.1.27-abl` kernel.
+
+| Check | Result |
+| --- | --- |
+| T1 nothing armed | tracee exits 0, no trap |
+| T2 `DR0`=target, `DR7.L0` | `DR7` 0x0 -> 0x401; `SIGTRAP` at RIP == armed address `0x1002eb0`; `DR6`=0x1 (B0) |
+| T3 restore then continue | tracee exits 0, no re-trap |
+| T4 `PTRACE_SINGLESTEP` | RIP advanced `0x10040be` -> `0x10040c1` |
+
+Run cost: **3.64 s**, exit 0, no timeout, synthetic busybox workspace with the
+measured kernel and the documented `--sdhci-compat` adaptation.
+
+- Source: `tools/uk_fw/guest/dr_breakpoint_probe.c`
+  (`f3244f77cca66c9bac87f207885ac76c9e82af893c949e31216ec4c14e7c29bf`)
+- Evidence: `navigation-contract-audit/dr-capability-261029/summary.json`
+- Workspace builder: `work/vm/dr-probe-build/build_workspace.py`
+
+**Consequence:** EC-02 was never blocked on capability, only on specification.
+The EC-04 fixture that the question was deferred to is cheap and needs no vendor
+userspace. Remaining EC-02 blockers are spec defects alone.
+
+**Bounds:** proven on a synthetic tracee at user addresses, not on vendor libEGL
+observation points. Four-slot capacity, slot replacement, `DR6` semantics beyond
+`B0`, and detach-time teardown of `ptrace_bps` remain unexercised. No vendor
+binary was executed and no navigation state is claimed.
+
 ## EC-02 blocked by over-specification — 2026-10-29
 
 The EGL copy-measurement work has not advanced to implementation. EC-02, the

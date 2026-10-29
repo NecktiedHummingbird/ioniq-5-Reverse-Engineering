@@ -720,3 +720,32 @@ and are superseded by corrections rather than silently rewritten.
   empirically. EC-03 stays gated pending the owner's decision.
 - No VM was booted, no target executed, no fixture run and no EGL behaviour
   measured. Ledger validates; EC-02 artifacts re-hashed in the ledger.
+
+
+## 2026-10-29 — guest hardware breakpoints proven under TCG
+
+- Stopped specifying and measured instead. Wrote a VM-only capability probe,
+  tools/uk_fw/guest/dr_breakpoint_probe.c, that forks a tracee, stops it before
+  user code, arms DR0 to an execute address and sets DR7.L0, continues, and checks
+  the resulting trap, RIP and DR6 before restoring and requiring a clean exit.
+- Built static x86-64 with the project Zig toolchain under -Wall -Wextra -Werror,
+  and ran it through tools/uk_fw/vm_boot.py in a synthetic busybox workspace using
+  the measured EU 260128 kernel with the documented --sdhci-compat adaptation.
+  The first attempt without that adaptation stalled waiting for /dev/mmcblk0.
+- Result: SUPPORTED. DR7 baseline 0x0 became 0x401; the trap arrived as SIGTRAP
+  with RIP equal to the armed address 0x1002eb0 and DR6=0x1 reporting B0; after
+  restoring DR7 and clearing DR0 the tracee exited 0 with no further trap; and
+  PTRACE_SINGLESTEP advanced RIP from 0x10040be to 0x10040c1. Command elapsed
+  3.64 s with exit code 0 and no timeout.
+- This resolves EC-02 finding C-07, the single load-bearing unknown for the
+  hardware-breakpoint mechanism. EC-02 was never blocked on capability; the
+  remaining blockers are specification defects. The EC-04 fixture that the
+  question had been deferred to is cheap and needs no vendor userspace.
+- Bounds recorded rather than glossed: the probe ran against a synthetic tracee at
+  user addresses, not against vendor libEGL observation points. Per-thread four
+  slot capacity and slot-replacement semantics were not independently exercised,
+  DR6 semantics beyond B0 and detach-time teardown of ptrace_bps remain unverified.
+  No vendor binary executed, no navigation state claimed, no hardware touched.
+- One authoring self-correction is recorded: the first draft of the probe omitted
+  stdarg.h and left its tracee parked after the trap, so it was rewritten as a
+  single arm/trap/restore/clean-exit sequence before any VM run.
