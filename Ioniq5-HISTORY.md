@@ -880,3 +880,61 @@ and are superseded by corrections rather than silently rewritten.
   writing six disassembly excerpts and no report. The excerpts were retained and the
   analysis was completed by the coordinator from them plus direct llvm-objdump
   checks. No rootfs file was modified and no VM was booted.
+
+## 2026-10-29 — skills updated, public disclosure reduced, EC-03 minimal core built
+
+- Installed the Sol 6.1 skill bundle supplied by the owner. It moves default
+  reviewers to gpt-6.1-sol and replaces Astra throughout examples and fixtures. The
+  bundle did not include the operator's requirement that DeepSeek workers use the
+  direct API provider and still referenced the superseded router route
+  deepseek/deepseek-v4.1-flash, so that policy was re-applied across SKILL.md,
+  references/protocol.md, README.md, docs/INSTALLATION.md, agents/openai.yaml and
+  The Council, using the verified direct route deepseek/deepseek-flash.
+- Both skills re-validated after the edit: 148 and 93 unit tests pass, and the
+  packaging validator reports each skill valid. The earlier validator failure was
+  traced to a Python interpreter without PyYAML rather than to the skills.
+- The owner authorised the two pending decisions. For disclosure, the public mirror
+  now carries status-only entries for V-006, V-007 and V-008 with no component
+  names, property names, code locations or payload detail; the public tree was
+  checked to contain no occurrence of the affected service or property names. The
+  full dossiers remain private. Pre-existing publication of the engineering-mode
+  entry sequence and PIN in that tree was noted rather than silently removed,
+  because deleting it would not undo the exposure.
+- For the rescope, EC-02 was stopped rather than reviewed a fifth time, and the
+  EC-03 minimal core was implemented instead: tools/uk_fw/guest/ec03_observer.c
+  performs SEIZE on a single thread, arms up to four execute breakpoints addressed
+  as module substring plus offset, captures registers at each hit, disarms a slot
+  after it fires, tears down with the mandated disarm/verify/detach sequence, and
+  enforces both a deadline and a stop bound.
+- The observer was validated end to end in the VM against a synthetic target. Without
+  --once the tracee outlives the observer and teardown is reported unverifiable
+  because the tracee is gone; with --once the observer detaches while the tracee is
+  stopped and reports teardown verified with detach ok. Both runs exit 0.
+- Three defects were found and fixed during that validation: a missing stddef.h
+  include for offsetof; module-base resolution that had wrongly required an
+  offset-zero mapping, which static non-PIE text does not have; and teardown being
+  attempted against an already-exited tracee. The guest image also lacks busybox
+  applet symlinks, so the driver now invokes applets through /bin/busybox.
+- EC-02 is recorded as blocked and superseded rather than accepted, and the ledger
+  validator's refusal to accept an important task without independent verification
+  was respected rather than worked around.
+
+## 2026-10-29 — second skill bundle pulled; policy patcher added
+
+- Pulled and installed the second Sol 6.1 skill bundle supplied by the owner. The
+  substantive difference from the first is Council behaviour: three Sol 6.1
+  reviewers at xhigh reasoning by default, Astra-medium supported as an explicit
+  seat, and sol aliasing Sol 6.1.
+- The bundle shipped once more without the operator's direct-DeepSeek-provider
+  requirement and still referenced the superseded deepseek/deepseek-v4.1-flash
+  route. Because this had now happened twice, the correction was automated as an
+  idempotent patcher rather than repeated by hand: it enforces the policy across
+  SKILL.md, both protocol references, README, the installation guide and the
+  invocation metadata, tries several candidate anchors because the Council protocol
+  wording changes between bundles, and exits non-zero if it cannot find an anchor
+  rather than silently skipping.
+- Re-validated afterwards: 148 and 93 unit tests pass and both skills report as
+  valid.
+- Nine occurrences of the stale route id were left in place because they are test
+  fixtures and a ledger example rather than policy text, and changing them could
+  break assertions bound to the literal.

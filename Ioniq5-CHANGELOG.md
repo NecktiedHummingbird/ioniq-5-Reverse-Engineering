@@ -11,6 +11,63 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.73.0 - second skill bundle pulled, policy re-applied mechanically
+
+- Pulled `AiSkills-Council-Astra-Medium-or-Sol-XHigh.zip` and installed it over both
+  skills. The substantive change is Council defaulting to **three Sol 6.1 reviewers
+  at `xhigh`**, with Astra-medium supported and `sol` aliasing Sol 6.1.
+- The bundle again shipped without the direct-DeepSeek-provider rule and still named
+  the superseded `deepseek/deepseek-v4.1-flash` route. Rather than editing by hand a
+  second time, added `work/skills-update-261029/apply_direct_deepseek_policy.py`: an
+  idempotent patcher that enforces the policy across `SKILL.md`, both protocol
+  references, README, installation guide and invocation metadata, tries several
+  anchors because the Council protocol wording has changed between bundles, and
+  fails loudly if it cannot find a place to apply the rule.
+- Re-validated after patching: 148 + 93 unit tests pass and both skills report
+  "Skill is valid!".
+- Left deliberately unchanged: nine occurrences of the stale route id in
+  `tests/support.py`, `tests/test_workflow.py` and `templates/ledger.example.json`.
+  Those are test fixtures and an example, not policy statements, and editing them
+  risks breaking assertions that bind to the literal.
+
+## 0.72.0 - skills updated, disclosure reduced, EC-03 minimal core working
+
+- Installed the Sol 6.1 skill bundle into the Parallelism and Council skills. The
+  bundle switches default reviewers to `gpt-6.1-sol` and replaces Astra in examples
+  and fixtures. It did **not** carry the operator's direct-DeepSeek-provider rule and
+  still named the superseded `deepseek/deepseek-v4.1-flash` route, so that policy was
+  re-applied across `SKILL.md`, `references/protocol.md`, `README.md`,
+  `docs/INSTALLATION.md`, `agents/openai.yaml` and The Council, using the verified
+  direct route `deepseek/deepseek-flash`.
+- Both skills re-validated: 148 + 93 unit tests pass and the packaging validator
+  reports "Skill is valid!" for each. The earlier validator failure was a
+  missing-PyYAML interpreter, not a skill defect; using a yaml-enabled interpreter
+  resolves it.
+- **Public disclosure reduced.** The mirror's V-006/V-007/V-008 entries are now
+  status-only, with no component names, property names, code locations or payload
+  detail. Verified the public tree contains no occurrence of the affected service
+  name or property name. Full dossiers remain in the private register.
+- Noted rather than altered: the engineering-mode entry sequence and PIN were
+  already published in the public tree by earlier work, so removing them now would
+  not undo that exposure. Flagged for the owner.
+- **EC-02 rescoped and EC-03 minimal core implemented.** Rather than a fifth
+  specification round, built `tools/uk_fw/guest/ec03_observer.c`: SEIZE on one
+  thread, up to four execute breakpoints addressed as module-substring + offset,
+  bounded register capture, disarm-after-hit, mandated disarm/verify/detach
+  teardown, a 60 s deadline and a bounded stop count.
+- Validated end-to-end in the VM against a synthetic target in two cases: without
+  `--once` the tracee runs to completion and teardown is honestly reported
+  `unverifiable reason=tracee-gone`; with `--once` the observer detaches while the
+  tracee is stopped and reports `teardown=verified detach=ok`. Both exit 0.
+- Three defects found and fixed during validation: a missing `stddef.h` for
+  `offsetof`, module-base resolution that wrongly required an offset-zero mapping
+  (static non-PIE text has none), and teardown being attempted on an already-exited
+  tracee. The guest image also has no busybox applet symlinks, so the driver invokes
+  applets through `/bin/busybox` explicitly.
+- EC-02 is recorded as **blocked/superseded, not accepted**. Remaining bounds: the
+  vendor libEGL observation points, surface field capture and the resolved-copy-entry
+  stage were not exercised.
+
 ## 0.71.0 - null-buffer BG question narrowed, with a reversed inference
 
 - Returned to the main navigation workstream (independent of the EC-02 gate) to
