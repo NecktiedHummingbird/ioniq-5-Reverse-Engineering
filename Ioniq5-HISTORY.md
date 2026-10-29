@@ -958,3 +958,30 @@ and are superseded by corrections rather than silently rewritten.
   stage, where r15 holds the surface pointer.
 - One defect was found and fixed: an unused field_regs global that -Werror rejected,
   removed rather than suppressed.
+
+## 2026-10-29 — authentic measurement of the EGL dimension ordering
+
+- Ran the EC-03 observer against the authentic AppCamera inside the real launcher
+  chain and captured both EC-01 stages on the same surface pointer. At
+  libEGL+0x16f16, before the width cache, the surface fields at +0x2c and +0x30 read
+  -1 and -1. At libEGL+0x16f1e, immediately after swrast_update_buffers returns, the
+  same struct read 1920 and 720. Teardown reported verified with detach ok.
+- This measures the ordering defect behind I-001 rather than inferring it. The copy
+  path derived its stride from Width=-1, giving -4 bytes, while the update populated
+  the real geometry during the same invocation. It supersedes the earlier position,
+  including my own correction two turns ago, that a width change had not been
+  observed on this path.
+- I-001 in the defensive register was rewritten to match: mechanism measured, still
+  not a demonstrated exploitable vulnerability, with stock-driver reachability,
+  attacker influence over the values, and any link to navigation failure explicitly
+  left unestablished.
+- Method notes retained because they cost real time: the canonical vendor image must
+  not be modified and a plain copy costs 23 GB, so the run used an APFS copy-on-write
+  clone, made in 0.031 s, with two files injected through debugfs. An earlier attempt
+  to stream the binary over the serial console failed because the whole command
+  became a single 80 KB line that the line discipline truncated.
+- Two genuine defects were found and fixed. The driver inherited an argument-guard
+  block that still invoked the previous crash observer, and the observer resolved
+  libEGL before the client had mapped it. The second is a real race, since AppCamera
+  becomes visible before its graphics libraries load, and is now handled by a bounded
+  wait for the module with the tracee left running.

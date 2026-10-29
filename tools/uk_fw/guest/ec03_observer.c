@@ -61,6 +61,9 @@ struct slot {
 static struct slot slots[MAX_SLOTS];
 static int slot_count;
 static int stop_after_first_hit;
+static int stop_after_hits; /* 0 = run to completion or limits */
+static int hits_seen;
+static int wait_module_ms; /* 0 = do not wait */
 
 /*
  * Field capture. At each hit the observer optionally reads two int32 fields from
@@ -123,7 +126,8 @@ static int dr_write(pid_t pid, int index, unsigned long long value)
  * is also the ELF load bias, which is the case for the vendor libEGL.
  * Returns 0 on success.
  */
-static int resolve_base(pid_t pid, const char *needle, unsigned long *base)
+static int resolve_base(pid_t pid, const char *needle, unsigned long *base,
+                        int verbose)
 {
     char path[64];
     char line[512];
@@ -133,7 +137,9 @@ static int resolve_base(pid_t pid, const char *needle, unsigned long *base)
     snprintf(path, sizeof(path), "/proc/%d/maps", (int)pid);
     fp = fopen(path, "r");
     if (fp == NULL) {
-        say("ERROR maps-open errno=%d", errno);
+        if (verbose) {
+            say("ERROR maps-open errno=%d", errno);
+        }
         return -1;
     }
     while (fgets(line, sizeof(line), fp) != NULL) {
@@ -155,7 +161,9 @@ static int resolve_base(pid_t pid, const char *needle, unsigned long *base)
     }
     fclose(fp);
     if (!found) {
-        say("ERROR module-not-mapped needle=%s", needle);
+        if (verbose) {
+            say("ERROR module-not-mapped needle=%s", needle);
+        }
         return -1;
     }
     return 0;
@@ -290,6 +298,14 @@ int main(int argc, char **argv)
             stop_after_first_hit = 1;
             continue;
         }
+        if (strcmp(argv[i], "--wait-module-ms") == 0 && i + 1 < argc) {
+            wait_module_ms = (int)strtol(argv[++i], NULL, 10);
+            continue;
+        }
+        if (strcmp(argv[i], "--after") == 0 && i + 1 < argc) {
+            stop_after_hits = (int)strtol(argv[++i], NULL, 10);
+            continue;
+        }
         if (strcmp(argv[i], "--struct-reg") == 0 && i + 1 < argc) {
             field_enabled = 1;
             field_use_reg = 1;
@@ -326,8 +342,28 @@ int main(int argc, char **argv)
     alarm(DEADLINE_SECONDS);
     deadline = time(NULL) + DEADLINE_SECONDS;
 
-    if (resolve_base(pid, module, &base) != 0) {
-        return 2;
+    /*
+     * The client is often visible before its graphics libraries are mapped, so
+     * an immediate resolve can legitimately fail. Wait, bounded, for the module
+     * to appear while the tracee still runs; attaching first would stop it and
+     * prevent the very mapping we are waiting for.
+     */
+    {
+        int waited = 0;
+        while (resolve_base(pid, module, &base, 0) != 0) {
+            struct timespec ts = {0, 2000000L}; /* 2 ms */
+
+            if (waited >= wait_module_ms) {
+                say("ERROR module-not-mapped-after-wait needle=%s waited_ms=%d",
+                    module, waited);
+                return 2;
+            }
+            nanosleep(&ts, NULL);
+            waited += 2;
+        }
+        if (waited > 0) {
+            say("WAIT module appeared after_ms=%d", waited);
+        }
     }
     say("BASE module=%s base=0x%lx", module, base);
 
@@ -456,8 +492,9 @@ int main(int argc, char **argv)
                 break;
             }
             say("DISARM slot=%d dr7=0x%llx", hit, image);
-            if (stop_after_first_hit) {
-                say("EVENT once-complete");
+            hits_seen++;
+            if (stop_after_first_hit || (stop_after_hits > 0 && hits_seen >= stop_after_hits)) {
+                say("EVENT stop-condition hits=%d", hits_seen);
                 break;
             }
         }

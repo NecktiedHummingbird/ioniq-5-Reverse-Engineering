@@ -11,6 +11,32 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.75.0 - authentic measurement: dimensions are -1 then 1920x720
+
+- Ran the observer against the **authentic AppCamera** inside the real launcher chain
+  and captured both EC-01 stages on the same surface pointer:
+  `libEGL+0x16f16` (before the width cache) read width **-1**, height **-1**;
+  `libEGL+0x16f1e` (immediately after `swrast_update_buffers` returned) read width
+  **1920**, height **720**. Teardown reported `verified detach=ok`.
+- This **measures** the ordering defect behind I-001 instead of inferring it: the
+  stride used by the copy path was derived from `Width = -1` (giving `-4` bytes)
+  while the update populated the real geometry during the same invocation. It
+  supersedes earlier statements that a width change had not been observed, including
+  my own correction of two turns ago.
+- `Ioniq5-VULNERABILITIES.md` I-001 rewritten accordingly: mechanism measured, still
+  not a demonstrated exploitable vulnerability, stock-driver reachability and
+  attacker influence explicitly unestablished.
+- Setup notes worth keeping: the canonical vendor image must not be modified, and a
+  plain copy costs 23 GB, so the run used an **APFS copy-on-write clone** (0.031 s)
+  with two files injected by `debugfs`. A first attempt to stream the binary over the
+  serial console failed because the whole command became one 80 KB line and the line
+  discipline truncated it.
+- Two real defects surfaced and were fixed: the driver inherited an argument-guard
+  block that still tested the old crash observer, and the observer resolved `libEGL`
+  before the client had mapped it. The latter is a genuine race — `AppCamera` is
+  visible before its graphics libraries load — and is now handled by a bounded
+  `--wait-module-ms` poll.
+
 ## 0.74.0 - observer gains field capture; three validation cases pass
 
 - Added the increment the ledger recorded next for EC-03: **int32 field capture at
