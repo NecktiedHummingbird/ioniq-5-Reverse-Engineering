@@ -1155,3 +1155,21 @@ and are superseded by corrections rather than silently rewritten.
   because the kernel ring buffer can wrap during a run of several hundred seconds, so an
   absent line near the end is weak evidence. Process state or a log file should be
   preferred for near-real-time checks.
+
+## 2026-10-29 — adapter moved to the render probe; AppNavi still never attaches
+
+- Built a variant of the standalone AppNavi render probe, which runs a session bus,
+  weston-headless with the IVI shell and a real ApplicationManager before execing AppNavi
+  directly, so the adapter no longer depends on the launcher hook.
+- The first attempt launched AppNavi through the busybox timeout applet and lost the
+  preload across that extra exec hop. Launching AppNavi directly corrected it, and
+  AppNavi's own log now records the adapter loading with the configured hold parameters.
+- No surface attach followed. That single line is the whole AppNavi log, and the manager
+  reported drawing application 0 both before and after, which is not the behaviour of a
+  rendering Qt client.
+- An important open question was recorded: whether the interposer itself now prevents
+  AppNavi from rendering. The cheapest discriminator is a baseline run of the same probe
+  without the preload, comparing AppNavi's log and behaviour, and that is the next step.
+- A method note was added: in this probe stderr reaches appnavi.log reliably while
+  /dev/kmsg produced nothing, so an absent dmesg entry here reflects the channel rather
+  than proving absence.

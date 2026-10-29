@@ -11,6 +11,24 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.83.0 - adapter moved to the render probe; AppNavi still never attaches
+
+- Built `appnavi-bg-probe.sh` from the standalone render probe, which runs a real
+  session bus, `weston-headless` with the IVI shell, a real ApplicationManager, and then
+  **execs AppNavi directly** — so the adapter needs no launcher hook at all.
+- First attempt launched AppNavi through the busybox `timeout` applet and the preload was
+  lost across that extra exec hop. Launching AppNavi directly fixed it: AppNavi's own log
+  now contains `navi-bg: loaded pid=772 hold_after=200 hold_count=900`.
+- **Still no surface attach.** That single line is the entire AppNavi log, and the manager
+  reported drawing application `0` before and after, which is not what a rendering Qt
+  client looks like.
+- Important open question recorded: whether the **interposer itself** is now what stops
+  AppNavi rendering. The cheapest discriminator is a baseline run of the same probe
+  without the preload, to compare AppNavi's log and behaviour. That is the next step.
+- Method note: in this probe stderr is the reliable channel (it reaches `appnavi.log`),
+  while `/dev/kmsg` produced nothing — so an absent `dmesg` line here is a channel
+  artifact, not evidence of absence.
+
 ## 0.82.0 - BG experiment repositioned; AppNavi does not render in the full chain
 
 - Moved the navi-bg experiment to after the chain's own navigation transition request,
