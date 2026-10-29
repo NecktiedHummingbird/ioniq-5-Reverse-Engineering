@@ -11,6 +11,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.85.0 - working tree committed; probes published
+
+- Committed the working tree that had been preserved uncommitted throughout the VM work:
+  the harness additions in `tools/uk_fw/vm_boot.py`, the native TE2 decryptor work in
+  `tools/uk_fw/gen5w_decrypt.py`, their tests, the eleven VM research helpers under
+  `tools/uk_fw/guest/`, and `PROJECT-OPERATIONS.md`.
+- Sanitisation: one personal path in `PROJECT-OPERATIONS.md` was replaced with a
+  placeholder. The rest of the set contains no personal paths, VIN-shaped tokens or
+  credentials. Harness and the full 171-test suite pass.
+- Published three further research instruments to the public repository
+  (`dr_breakpoint_probe.c`, `ec03_observer.c`, `ec03_target.c`), closing the gap between
+  the private and public tool sets. Public repo at `3089bf4`.
+- Deliberately still private: the vulnerability register, the raw evidence tree, the
+  task ledger and all firmware. Public tree carries no firmware and no credentials.
+
 ## 0.84.0 - navigation status published to both repositories
 
 - Published `docs/navigation-status.md` to the public repository together with the

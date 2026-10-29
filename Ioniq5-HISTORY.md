@@ -1186,3 +1186,17 @@ and are superseded by corrections rather than silently rewritten.
 - The new files were checked before publication for personal paths, VIN-shaped tokens and
   credentials, and the public harness passed on the clone before the push. No
   vulnerability register, raw evidence, ledger or firmware was published.
+
+## 2026-10-29 — working tree committed and probes published
+
+- Committed the working tree that had been preserved uncommitted through the VM work:
+  the harness additions in vm_boot.py, the TE2 decryptor work in gen5w_decrypt.py, their
+  tests, the eleven guest research helpers and the operations contract.
+- One personal path in the operations contract was replaced with a placeholder before the
+  commit. Everything else in the set was checked for personal paths, VIN-shaped tokens
+  and credentials and came back clean. Harness and the full 171-test suite pass.
+- Three further research instruments were published to the public repository, closing the
+  gap between the private and public tool sets, namely the breakpoint capability probe,
+  the minimal observer and its synthetic target.
+- The vulnerability register, raw evidence tree, task ledger and all firmware remain
+  private; the public tree carries neither firmware nor credentials.
