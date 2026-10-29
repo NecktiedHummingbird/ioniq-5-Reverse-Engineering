@@ -1173,3 +1173,16 @@ and are superseded by corrections rather than silently rewritten.
 - A method note was added: in this probe stderr reaches appnavi.log reliably while
   /dev/kmsg produced nothing, so an absent dmesg entry here reflects the channel rather
   than proving absence.
+
+## 2026-10-29 — navigation status published to both repositories
+
+- Published docs/navigation-status.md in the public repository along with the research
+  helpers behind it, and kept the same document here as evidence/navigation-status.md so
+  the private record matches what was released.
+- The document states the three measured results of this session and, plainly, the one
+  remaining blocker: AppNavi never attaches a surface, so nothing reaches the compositor
+  to be classified, and the open question is whether the interposer itself prevents
+  rendering.
+- The new files were checked before publication for personal paths, VIN-shaped tokens and
+  credentials, and the public harness passed on the clone before the push. No
+  vulnerability register, raw evidence, ledger or firmware was published.

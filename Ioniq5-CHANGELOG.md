@@ -11,6 +11,22 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.84.0 - navigation status published to both repositories
+
+- Published `docs/navigation-status.md` to the public repository together with the
+  research helpers behind it (`navi_bg_0x0.c`,
+  `launcher_appnavi_navibg_preload.c`, `appnavi_bg_probe.sh`), and kept the same
+  document here as `evidence/navigation-status.md`. Public repo at `2b179d5`.
+- The document consolidates the three things measured this session — the EGL dimension
+  ordering on the authentic client, that a Qt hide cannot produce a background
+  notification, and that guest hardware breakpoints work under TCG with per-thread
+  scoping and the disarm-before-detach requirement — and states the remaining blocker
+  plainly: AppNavi never attaches a surface, so nothing reaches the compositor.
+- Sanitisation before publishing: the new files contain no personal paths, no VIN-shaped
+  tokens and no credentials; the public harness passed on the clone before the push.
+- The public repository does not carry the vulnerability register, the raw evidence tree,
+  the ledger or any firmware; those remain private.
+
 ## 0.83.0 - adapter moved to the render probe; AppNavi still never attaches
 
 - Built `appnavi-bg-probe.sh` from the standalone render probe, which runs a real
