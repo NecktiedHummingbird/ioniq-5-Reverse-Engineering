@@ -1305,3 +1305,17 @@ and are superseded by corrections rather than silently rewritten.
   changes nothing; ApplicationManager presence; and the current command-line flags. The next
   hypotheses are libivi's id acquisition, a missing buffer integration under pixman
   headless, or a later unmet startup requirement upstream of surface creation.
+
+## 2026-10-29 — wl_drm ruled out; a working harness identified
+
+- Ruled out the absent wl_drm as the reason AppNavi stops before creating its ivi surface. A
+  prior successful run used the same weston-headless pixman stack with no ApplicationManager
+  and reached surface_create for ids 3000, 30000 and 4903 with 26 attach calls, which proves a
+  client can create ivi surfaces and attach buffers on this compositor without any DRM
+  interface.
+- The same evidence settles the earlier 3000-versus-30000 puzzle: AppNavi creates both ids,
+  plus 4903 and 4900 for the map widget, so there was never a single expected id to match.
+- A working harness was identified and is still present in the image, namely the valet-stub
+  probe paired with the valet-stub runner. The next step is to diff that harness against the
+  current probe rather than continue debugging, since the delta between them is what is
+  missing.
