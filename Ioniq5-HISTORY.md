@@ -1051,3 +1051,39 @@ and are superseded by corrections rather than silently rewritten.
   yet exercised.
 - Built against x86_64-linux-gnu.2.25 rather than musl, since a musl-linked shared
   object will not load into the vendor glibc process.
+
+## 2026-10-29 — engineering mode research published; navi 0x0 still not reaching BG
+
+- Recorded the engineering-mode entry and PIN research in
+  evidence/engineering-mode-research.md and published the same document to the public
+  repository after the owner authorised releasing the PINs and entry methods.
+- The entry gesture is Settings, General settings, System info, Manual, then taps on the
+  left panel carrying the QR code and text in the order 3-2-8-9-6-5, which opens an
+  eight-digit keypad. The engineering-mode PIN recorded is 19480717, reported accepted
+  on a UK-origin 2021 IONIQ 5 whose installed build was later identified as 250604, so
+  acceptance there does not establish the 260128 package.
+- Dealer mode and full engineering mode are distinct with different codes, and two
+  public references disagree about rotating codes. The SOP-gate claim, previously
+  single-source, is now corroborated at code level: the binary really does contain
+  bool AppEngineerModeEngine::checkSOPVersion().
+- The PIN check was located: AppEngineerMode_PinCodeKeypad.qml calls
+  AppEngineerModeEngine.checkPassWord at line 391 and branches on the return value, where
+  21 and 11 are menu selectors rather than entered PINs. Lockout machinery is present,
+  so failures are rate-limited by design. The binary is stripped but retains 111 C++
+  signature strings, which is how those methods were identified.
+- A full scan of 408,412 files across all five extracted components, including 444
+  expanded archives, found the PIN in none of five encodings. The most probable
+  explanation is that the reported PIN belongs to the owner's 250604 build rather than
+  the 260128 package being analysed.
+- The entry gesture is not implemented in QML, since Screen_Manual.qml has no MouseArea
+  or onClicked handler, and no binary contains the literal AppEngineerMode, so the
+  gesture is handled natively and the application is launched through the launcher
+  registry.
+- AppNavi update feasibility remains undetermined. The older capability is recorded as
+  Engineering Mode, Config, Update AppNavi from USB, and four decision gates were
+  written down, with the launcher executable inspection identified as the cheapest
+  decisive test.
+- The paint-first navi 0x0 run was also recorded: it completed with exit 0 but the
+  manager still reported 11/11, so BG was not reached and the Home-to-Navigation
+  transition is unchanged. Triggering on an attach count rather than on an observed
+  event is the likely remaining flaw.

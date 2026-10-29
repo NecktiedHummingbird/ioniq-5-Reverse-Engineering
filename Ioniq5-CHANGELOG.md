@@ -11,6 +11,41 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.79.0 - engineering mode research published; navi 0x0 still not reaching BG
+
+- Wrote `evidence/engineering-mode-research.md` and published the same document to the
+  public repository (owner approved releasing the PINs and entry methods).
+- Entry recorded: Settings -> General settings -> System info -> Manual, tap the **left**
+  panel (QR code and text, not the vehicle image) as `3 2 8 9 6 5`, then an eight-digit
+  keypad. Engineering-mode PIN `19480717`, reported accepted on a UK-origin 2021 IONIQ 5
+  whose build was later identified as `250604`, so acceptance does not prove it on
+  `260128`.
+- Dealer mode and full engineering mode are distinct with different codes. The
+  previously single-source SOP-gate claim is now **corroborated in code**: the binary
+  contains `bool AppEngineerModeEngine::checkSOPVersion()`.
+- PIN check located: `AppEngineerMode_PinCodeKeypad.qml` (1,087 lines) calls
+  `AppEngineerModeEngine.checkPassWord(...)` at line 391 and branches on the return
+  value, where `21`/`11` are menu selectors. Lockout machinery exists
+  (`startBadPassword`, `setBadPasswordInfo`, `getBadPasswordDiff`, `getEnterPasswordCnt`).
+  The binary is stripped but keeps 111 C++ signature strings, which is how these were
+  identified.
+- **The PIN is not a literal.** 408,412 files across all five extracted components plus
+  444 expanded archives gave zero hits in ASCII, UTF-16LE, uint32 LE, uint64 LE and hex.
+  Most probable explanation recorded: the reported PIN belongs to the owner's `250604`
+  build rather than this `260128` package.
+- Entry gesture is not in QML (`Screen_Manual.qml` has no `MouseArea`/`onClicked`), and
+  no binary contains the literal `AppEngineerMode`, so the gesture is native and the app
+  launches through the launcher registry.
+- AppNavi update: the older capability is recorded as Engineering Mode -> Config ->
+  "Update AppNavi from USB"; state on `260128` remains **not established**, with four
+  decision gates listed and the launcher's executable inspection flagged as the
+  cheapest decisive check.
+- Also recorded, from the paint-first navi run: the gated interposer
+  (`MIN_ATTACHES_BEFORE_FORCE = 40`) completed with exit 0 but the manager **still
+  reported 11/11**. BG was not reached, and the Home-to-Navigation transition is
+  unchanged. Triggering on a count rather than on an observed event is the likely
+  remaining flaw.
+
 ## 0.78.0 - navigation 0x0 adapter built; timing still wrong
 
 - Started the integration piece the BG analysis called for: a scoped adapter that
