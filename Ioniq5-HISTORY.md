@@ -1009,3 +1009,22 @@ and are superseded by corrections rather than silently rewritten.
 - Method notes: the DWARF inspection required llvm-dwarfdump with a byte-window scan,
   and several earlier greps silently matched nothing because objdump separates its
   columns with tabs rather than spaces.
+
+## 2026-10-29 — I-001 scoped to the swrast path
+
+- Established that no Intel hardware is required to continue. The same check narrowed
+  I-001: vendor libEGL defines four surface constructors, and the -1 sentinel belongs
+  to the swrast-specific one, while put_image2, get_image and swap_buffers all belong
+  to the dri2_wl_swrast family. The hardware constructors are separate and do not
+  share that vtable.
+- The honest consequence was recorded: the evidence does not implicate the i965/i915
+  path, so I-001 is a defect of the vendor's Wayland software-rendering path, which is
+  the path this VM necessarily uses. That reduces rather than increases its real-world
+  severity, and the register was updated to say so rather than leaving an implied
+  hardware claim.
+- The vendor image ships its own DRI drivers for i965, i915 and iu3d9, so the earlier
+  mixed-stack caveat concerns which module loads in emulation, not an absence of
+  vendor graphics code.
+- No Intel machine is needed for the remaining authorised work: the navigation 0x0
+  adapter, service reconstruction, audio, CAN/MICOM and persistence all execute in the
+  VM.

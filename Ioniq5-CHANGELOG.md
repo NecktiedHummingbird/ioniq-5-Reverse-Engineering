@@ -11,6 +11,25 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.77.0 - I-001 scoped to the swrast path; Intel hardware not needed to proceed
+
+- Answered the question of whether an Intel machine is required. It is not, and the
+  check that settles it also narrows I-001. Vendor `libEGL` contains four distinct
+  surface constructors — `dri2_create_window_surface`, `dri2_drm_create_window_surface`,
+  `dri2_wl_create_window_surface` and `dri2_wl_swrast_create_window_surface` — and the
+  `-1` sentinel is written by the **swrast-specific** one, while `put_image2`,
+  `get_image` and `swap_buffers` all belong to the `dri2_wl_swrast_*` family.
+- Consequence recorded honestly: the hardware paths use different constructors and do
+  not share that vtable, so the evidence **does not implicate the i965/i915 path**.
+  I-001 is therefore a defect of the vendor's Wayland **software-rendering** path,
+  which is exactly the path this VM must use. That lowers rather than raises its
+  real-world severity, and the register now says so.
+- Also noted: the vendor image ships its own DRI drivers (`usr/lib/dri/i965_dri.so`,
+  `usr/lib/dri/iu3d9_dri.so`, `usr/lib/mesadri/i915_dri.so`), so the "mixed stack"
+  caveat is about which module loads, not about missing vendor code.
+- No Intel hardware is needed for the remaining authorised work: the navigation
+  `0x0` adapter, services, audio, CAN/MICOM and persistence all run in the VM.
+
 ## 0.76.0 - null-buffer question resolved: hide does not produce BG
 
 - Settled the outstanding navigation question with DWARF rather than inference.
