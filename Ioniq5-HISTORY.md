@@ -1134,3 +1134,24 @@ and are superseded by corrections rather than silently rewritten.
 - A method correction is recorded: an earlier conclusion that the library never loaded
   was wrong, because it depended on AppNavi's stderr appearing in launcher.log, where it
   does not. The kernel log is the reliable channel and overturned that diagnosis.
+
+## 2026-10-29 — BG experiment repositioned; AppNavi does not render in the full chain
+
+- Moved the navi-bg experiment to after the chain's own navigation transition request,
+  because its previous placement ran before AppNavi had been asked to come forward. The
+  hold also changed from a wall-clock window, which is measured from process start and
+  was long past at that point, to an attach-count window anchored there.
+- The wait then ran its full 180 seconds without observing a first surface attach. No
+  interposer timeline was produced and the navi-live screenshots hashed identically to
+  the earlier Home frames.
+- The conclusion recorded is that AppNavi never becomes a rendering Wayland client in
+  this full-chain configuration, so no surface exists for the adapter to hold. That is
+  the Home-to-Navigation blocker itself rather than a defect in the adapter.
+- A strategic correction was written down: the full chain is the wrong vehicle for this
+  experiment. The standalone AppNavi render probe already present in the image is
+  documented to produce genuine map pixels and should host the adapter, reusing the
+  execve-hook injection that is now proven to work.
+- A measurement caveat was also recorded: dmesg is unreliable as a late-run probe
+  because the kernel ring buffer can wrap during a run of several hundred seconds, so an
+  absent line near the end is weak evidence. Process state or a log file should be
+  preferred for near-real-time checks.

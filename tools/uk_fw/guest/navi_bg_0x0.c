@@ -49,14 +49,21 @@ typedef void (*attach_fn)(wl_surface *, wl_buffer *, int, int);
 static attach_fn real_attach;
 static wl_surface *target_surface;
 static int is_navi = -1;
-static long hold_at_ms = -1;
-static long hold_for_ms = 4000;
+static long hold_after_attaches = -1;
+static long hold_count = 600;
 static struct timespec started;
 static int have_start;
 static int announced_load;
 static int announced_hold;
 static int announced_release;
 static unsigned int suppressed;
+/* Per-surface attach accounting, so a run that never touches a surface is
+ * distinguishable from one that simply missed the hold window. */
+#define MAX_SURFACES 6
+static struct { wl_surface *s; unsigned int n; } seen[MAX_SURFACES];
+static int nseen;
+static unsigned int total_attaches;
+static int announced_exit;
 static unsigned int attaches;
 static long first_attach_ms = -1;
 
@@ -130,17 +137,32 @@ __attribute__((constructor)) static void on_load(void)
     }
     clock_gettime(CLOCK_MONOTONIC, &started);
     have_start = 1;
-    env = getenv("NAVI_BG_HOLD_AT_MS");
+    env = getenv("NAVI_BG_HOLD_AFTER");
     if (env != NULL && env[0] != '\0') {
-        hold_at_ms = strtol(env, NULL, 10);
+        hold_after_attaches = strtol(env, NULL, 10);
     }
-    env = getenv("NAVI_BG_HOLD_FOR_MS");
+    env = getenv("NAVI_BG_HOLD_COUNT");
     if (env != NULL && env[0] != '\0') {
-        hold_for_ms = strtol(env, NULL, 10);
+        hold_count = strtol(env, NULL, 10);
     }
-    kmsg("navi-bg: loaded pid=%d hold_at_ms=%ld hold_for_ms=%ld",
-         (int)getpid(), hold_at_ms, hold_for_ms);
+    kmsg("navi-bg: loaded pid=%d hold_after=%ld hold_count=%ld",
+         (int)getpid(), hold_after_attaches, hold_count);
     announced_load = 1;
+}
+
+__attribute__((destructor)) static void on_unload(void)
+{
+    int k;
+
+    if (!navi_process() || announced_exit) {
+        return;
+    }
+    announced_exit = 1;
+    kmsg("navi-bg: summary pid=%d attaches=%u surfaces=%d suppressed=%u",
+         (int)getpid(), total_attaches, nseen, suppressed);
+    for (k = 0; k < nseen; k++) {
+        kmsg("navi-bg: surface#%d attaches=%u", k, seen[k].n);
+    }
 }
 
 void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
@@ -161,6 +183,31 @@ void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
     if (target_surface == NULL) {
         target_surface = surface;
     }
+
+    /* Account for every surface before the target filter, so the summary shows
+     * whether the client attached anything at all. */
+    {
+        int k, found = -1;
+        for (k = 0; k < nseen; k++) {
+            if (seen[k].s == surface) {
+                found = k;
+                break;
+            }
+        }
+        if (found < 0 && nseen < MAX_SURFACES) {
+            seen[nseen].s = surface;
+            seen[nseen].n = 0;
+            found = nseen++;
+            kmsg("navi-bg: surface#%d first attach at_ms=%ld",
+                 found, have_start ? now_ms() - (started.tv_sec * 1000L +
+                 started.tv_nsec / 1000000L) : 0L);
+        }
+        if (found >= 0) {
+            seen[found].n++;
+        }
+        total_attaches++;
+    }
+
     if (surface != target_surface) {
         real_attach(surface, buffer, x, y);
         return;
@@ -173,8 +220,9 @@ void wl_surface_attach(wl_surface *surface, wl_buffer *buffer, int x, int y)
         kmsg("navi-bg: first-attach at_ms=%ld", elapsed);
     }
 
-    holding = hold_at_ms >= 0 && elapsed >= hold_at_ms &&
-              elapsed < (hold_at_ms + hold_for_ms);
+    holding = hold_after_attaches >= 0 &&
+              attaches > (unsigned long)hold_after_attaches &&
+              suppressed < (unsigned long)hold_count;
 
     if (holding && !announced_hold) {
         announced_hold = 1;

@@ -11,6 +11,27 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.82.0 - BG experiment repositioned; AppNavi does not render in the full chain
+
+- Moved the navi-bg experiment to after the chain's own navigation transition request,
+  since the previous placement ran before AppNavi was ever asked to come forward. The
+  hold also switched from a wall-clock window (measured from process start, long past by
+  then) to an attach-count window anchored at that point.
+- Result: the wait ran its full 180 seconds **without ever seeing a surface attach**
+  (`NAVI_BG_PAINT_SEEN_AFTER_S=180`), no interposer timeline was produced, and the
+  navi-live screenshots hash identically to the earlier Home frames.
+- Conclusion recorded: in this full-chain configuration **AppNavi never becomes a
+  rendering Wayland client**, so there is no surface for the adapter to hold. That is
+  the Home↔Navigation blocker itself, not a fault in the adapter.
+- Strategic correction recorded: the full chain is the wrong vehicle for the BG
+  experiment. The standalone AppNavi render probe already in the image
+  (`appnavi-render-probe.sh`, `launcher-appnavi-probe.sh`) is documented to produce
+  genuine map pixels and should host the adapter, reusing the now-proven execve-hook
+  injection.
+- Method caveat recorded: `dmesg` is a weak late-run probe because the ring buffer can
+  wrap during a ~570 s run. An absent line late in a run is not proof of absence;
+  process state or a log file is better near real time.
+
 ## 0.81.0 - navi 0x0 injection unblocked: interposer now loads into AppNavi
 
 - Found the root cause of every earlier "adapter never ran" result:
