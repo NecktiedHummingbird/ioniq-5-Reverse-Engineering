@@ -11,6 +11,27 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.91.0 - AppNavi stops between create_surface and ivi surface_create
+
+- With the gpio440 adaptor in place, counted protocol markers in AppNavi's own
+  `WAYLAND_DEBUG` log instead of transporting text over the console. That is both cheaper
+  and decisive.
+- **Measured stop point:** AppNavi binds `wl_display`, enumerates 71 registry lines, binds
+  `wl_compositor`, `wl_shm` and `ivi_application`, creates a `wl_surface` — and then
+  **never calls `ivi_application.surface_create`** and never attaches or commits.
+- **`wl_drm` is absent entirely** (0 references). The compositor runs headless with pixman,
+  so no GPU buffer interface is offered. Whether that causes the stop or merely accompanies
+  it is not established.
+- Tried `QT_WAYLAND_SET_SURFACE_ID_FORCED=1` in addition to the id already being set: a
+  second `wl_surface` appears but `surface_create` is still 0, so the forced path alone does
+  not get past the stop.
+- Ruled out by construction: gpio440 polling (now stubbed, errors zero), the preload adapter
+  (baseline without it is identical), ApplicationManager presence, and the current
+  command-line flags.
+- Next hypotheses recorded: libivi's id acquisition still declining, QtWayland refusing to
+  complete ivi surface creation without a buffer integration under pixman headless, or a
+  later startup requirement that surface creation sits downstream of.
+
 ## 0.90.0 - privacy checker no longer mistakes Wayland notation for email addresses
 
 - The harness failed on the retained AppNavi analysis with five "private email address"

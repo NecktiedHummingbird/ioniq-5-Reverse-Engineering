@@ -1286,3 +1286,22 @@ and are superseded by corrections rather than silently rewritten.
 - The checker was corrected rather than the evidence rewritten: every Wayland capture would
   otherwise produce the same false positive, and editing quoted log text to satisfy a
   scanner would corrupt the evidence.
+
+## 2026-10-29 — AppNavi's stop point isolated to the ivi surface creation
+
+- With the gpio440 adaptor in place, protocol markers were counted in AppNavi's own Wayland
+  debug log rather than shipping log text over the console, which is both cheaper and
+  sufficient to locate the stop.
+- The measured sequence is that AppNavi binds the display, enumerates 71 registry lines,
+  binds wl_compositor, wl_shm and ivi_application, creates a wl_surface, and then never
+  calls ivi_application.surface_create and never attaches or commits.
+- wl_drm is absent entirely, because the compositor runs headless with pixman and offers no
+  GPU buffer interface. Whether that causes the stop or merely accompanies it remains
+  unestablished.
+- Setting QT_WAYLAND_SET_SURFACE_ID_FORCED in addition to the surface id produced a second
+  wl_surface but still no surface_create, so the forced environment path alone does not
+  clear the stop.
+- Ruled out along the way: gpio440 polling, now stubbed; the preload adapter, whose removal
+  changes nothing; ApplicationManager presence; and the current command-line flags. The next
+  hypotheses are libivi's id acquisition, a missing buffer integration under pixman
+  headless, or a later unmet startup requirement upstream of surface creation.
