@@ -11,6 +11,30 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.68.0 - community chat transcribed into evidence
+
+- Transcribed eight owner-supplied Discord screenshots into
+  `evidence/community-chat-transcript-261029.md` as a single de-duplicated,
+  timestamp-preserving log with attribution. Recorded as unverified participant
+  reports, not findings, consistent with the existing community-leads policy.
+- The transcript confirms the provenance of the three exploit bullets that became
+  V-006/V-007/V-008, and cross-references each against our own offline results:
+  V-006 confirmed but with a different mechanism than the claim, V-007 configuration
+  only, V-008 normal password-gated behaviour.
+- Extracted the actionable leads and ran cheap offline checks. `AppEngineerMode`
+  is present with QML at `/app/share/AppEngineerMode/qml/main.qml`, but neither the
+  reported PIN `19480717` nor the tap sequence `3 2 8 9 6 5` appears as text there,
+  so the entry handler is almost certainly the Settings app behind
+  *System info -> Manual* rather than the engineering binary.
+- `/tool/velix_aes.key` and `/tool/public.crt` do not exist in the rootfs; those
+  paths belong to the AppUpgrade payload and must be looked for in its decrypted
+  tree. The claimed IV derivation from the SHA-256 of encrypted name and size
+  remains the most testable claim and is flagged for checking against
+  `tools/uk_fw/gen5w_decrypt.py`.
+- Publication caution recorded: the transcript contains an engineering-mode PIN, a
+  claimed VM digest and a partial key-like string, so `PUBLIC-RELEASE.md` applies
+  before any mirroring to the public repository.
+
 ## 0.67.0 - detach discipline measured; four-slot behaviour verified
 
 - Extended the capability probe to the four behaviours round 1 left unexercised.

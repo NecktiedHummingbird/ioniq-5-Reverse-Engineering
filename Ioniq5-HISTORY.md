@@ -776,3 +776,33 @@ and are superseded by corrections rather than silently rewritten.
 - Bounds recorded: synthetic tracee at user addresses with no vendor observation
   point; per-TID scoping and DR6 semantics beyond B0 remain unexercised; no vendor
   binary executed and no hardware touched.
+
+
+## 2026-10-29 — community chat transcribed and leads triaged
+
+- Transcribed eight owner-supplied Discord screenshots into a single de-duplicated
+  transcript at evidence/community-chat-transcript-261029.md. The images were
+  overlapping scrolls of one channel rather than eight conversations, so they were
+  merged by timestamp with attribution preserved and relative labels left as shown.
+- Recorded the transcript as unverified participant reports. It is useful for
+  provenance, not as evidence that any method works, and several of its claims are
+  contradicted by our own measurements.
+- The transcript is the origin of the three exploit bullets captured as V-006, V-007
+  and V-008. Cross-referenced each: V-006 confirmed but through system() in
+  usb-automount on the PTP branch rather than a mount script, with the literal
+  payload in the chat failing because spaces become underscores; V-007 confirmed only
+  as configuration; V-008 confirmed as shipped password-gated configuration with no
+  bypass.
+- Ran cheap offline checks on the remaining leads. AppEngineerMode exists at
+  /app/bin/AppEngineerMode with QML under /app/share/AppEngineerMode/qml, but the
+  reported PIN 19480717 and the tap sequence 3 2 8 9 6 5 are absent as text from that
+  binary and from QML/JS/conf under app and usr/share, so the entry handler is most
+  plausibly the Settings application behind System info -> Manual.
+- /tool/velix_aes.key and /tool/public.crt do not exist in the rootfs; those paths sit
+  inside the AppUpgrade payload and belong to its decrypted tree. The claim that the
+  IV is derived from the SHA-256 of the encrypted file name and size remains
+  untested and is the most directly checkable item, to be compared against
+  tools/uk_fw/gen5w_decrypt.py.
+- Publication caution recorded: the transcript contains an engineering-mode PIN, a
+  claimed VM image digest and a partial key-like hex string, so PUBLIC-RELEASE.md
+  applies before mirroring. No disclosure decision was taken.
