@@ -62,6 +62,20 @@ static struct slot slots[MAX_SLOTS];
 static int slot_count;
 static int stop_after_first_hit;
 
+/*
+ * Field capture. At each hit the observer optionally reads two int32 fields from
+ * a struct pointer supplied either as an absolute address or as a register name.
+ * The offsets default to the EC-01 contract for the vendor dri2_surf (width at
+ * +0x2c, height at +0x30) and can be overridden for other layouts.
+ */
+static int field_enabled;
+static int field_use_reg;
+static unsigned long field_reg_value;
+static unsigned long field_addr;
+static unsigned long field_off_a = 0x2c;
+static unsigned long field_off_b = 0x30;
+static const char *field_reg_name;
+
 static void say(const char *fmt, ...)
 {
     va_list ap;
@@ -147,6 +161,76 @@ static int resolve_base(pid_t pid, const char *needle, unsigned long *base)
     return 0;
 }
 
+/* Resolve a named general-purpose register from the current stop. */
+static int reg_by_name(const struct user_regs_struct *r, const char *name,
+                       unsigned long *out)
+{
+    struct { const char *n; unsigned long long v; } map[] = {
+        {"rax", r->rax}, {"rbx", r->rbx}, {"rcx", r->rcx}, {"rdx", r->rdx},
+        {"rsi", r->rsi}, {"rdi", r->rdi}, {"rbp", r->rbp}, {"rsp", r->rsp},
+        {"r8", r->r8},   {"r9", r->r9},   {"r10", r->r10}, {"r11", r->r11},
+        {"r12", r->r12}, {"r13", r->r13}, {"r14", r->r14}, {"r15", r->r15},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+        if (strcmp(map[i].n, name) == 0) {
+            *out = (unsigned long)map[i].v;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+/* Read one naturally aligned 32-bit field from the tracee. Returns 0 on success. */
+static int read_field32(pid_t pid, unsigned long addr, long *out)
+{
+    long word;
+
+    errno = 0;
+    word = ptrace(PTRACE_PEEKDATA, pid, (void *)addr, NULL);
+    if (word == -1 && errno != 0) {
+        return -1;
+    }
+    *out = (long)(int)(unsigned int)((unsigned long)word & 0xFFFFFFFFUL);
+    return 0;
+}
+
+/* Emit the configured fields for this stop, or a reason they were not read. */
+static void emit_fields(pid_t pid, const struct user_regs_struct *regs)
+{
+    unsigned long base;
+    long a = 0, b = 0;
+    int ra, rb;
+
+    if (!field_enabled) {
+        return;
+    }
+    if (field_use_reg) {
+        if (reg_by_name(regs, field_reg_name, &base) != 0) {
+            say("FIELDS status=unknown-register name=%s", field_reg_name);
+            return;
+        }
+        field_reg_value = base;
+    } else {
+        base = field_addr;
+    }
+    if (base == 0) {
+        say("FIELDS status=null-pointer reg=%s",
+            field_use_reg ? field_reg_name : "absolute");
+        return;
+    }
+    ra = read_field32(pid, base + field_off_a, &a);
+    rb = read_field32(pid, base + field_off_b, &b);
+    if (ra != 0 || rb != 0) {
+        say("FIELDS status=unreadable base=0x%lx off_a=0x%lx off_b=0x%lx", base,
+            field_off_a, field_off_b);
+        return;
+    }
+    say("FIELDS status=ok base=0x%lx a=%ld b=%ld off_a=0x%lx off_b=0x%lx", base,
+        a, b, field_off_a, field_off_b);
+}
+
 /*
  * Disarm every slot, clear the address registers, then verify the readback is
  * clean before detaching. The capability probe established that detaching with a
@@ -204,6 +288,26 @@ int main(int argc, char **argv)
     for (i = 3; i < argc; i++) {
         if (strcmp(argv[i], "--once") == 0) {
             stop_after_first_hit = 1;
+            continue;
+        }
+        if (strcmp(argv[i], "--struct-reg") == 0 && i + 1 < argc) {
+            field_enabled = 1;
+            field_use_reg = 1;
+            field_reg_name = argv[++i];
+            continue;
+        }
+        if (strcmp(argv[i], "--struct-addr") == 0 && i + 1 < argc) {
+            field_enabled = 1;
+            field_use_reg = 0;
+            field_addr = strtoul(argv[++i], NULL, 0);
+            continue;
+        }
+        if (strcmp(argv[i], "--off-a") == 0 && i + 1 < argc) {
+            field_off_a = strtoul(argv[++i], NULL, 0);
+            continue;
+        }
+        if (strcmp(argv[i], "--off-b") == 0 && i + 1 < argc) {
+            field_off_b = strtoul(argv[++i], NULL, 0);
             continue;
         }
         if (slot_count >= MAX_SLOTS) {
@@ -334,6 +438,7 @@ int main(int argc, char **argv)
             stops, hit, (unsigned long long)regs.rip,
             (unsigned long long)regs.rdi, (unsigned long long)regs.rsi,
             (unsigned long long)regs.rdx, dr6);
+        emit_fields(pid, &regs);
 
         /* A hit slot must be disarmed before resuming or it retriggers. */
         if (hit >= 0) {

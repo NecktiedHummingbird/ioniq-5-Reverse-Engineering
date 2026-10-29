@@ -938,3 +938,23 @@ and are superseded by corrections rather than silently rewritten.
 - Nine occurrences of the stale route id were left in place because they are test
   fixtures and a ledger example rather than policy text, and changing them could
   break assertions bound to the literal.
+
+## 2026-10-29 — observer gains field capture
+
+- Implemented the increment the ledger recorded next for EC-03: int32 field capture
+  at an observation hit. Two fields are read from a struct pointer supplied either as
+  an absolute address or as a register name, defaulting to the EC-01 contract offsets
+  0x2c for width and 0x30 for height, with overrides. This is the shape required to
+  capture the vendor dri2_surf dimensions before and after the buffer update.
+- Validated in the VM across three cases, all exiting 0 in 12.87 s: without --once the
+  tracee outlives the observer so teardown is reported unverifiable because the
+  tracee is gone; with --once teardown is verified with detach ok; and an unknown
+  register name is reported as status unknown-register instead of being guessed.
+- The measurement itself confirmed the instrument reads the intended fields: FIELDS
+  status ok with a=1926 and b=753 at offsets 0x2c and 0x30.
+- Bounded honestly: the register-held pointer mode was validated only on its error
+  path, because a synthetic target cannot reliably place a chosen value in a
+  callee-saved register at a breakpoint. Its real exercise is the authentic AppCamera
+  stage, where r15 holds the surface pointer.
+- One defect was found and fixed: an unused field_regs global that -Werror rejected,
+  removed rather than suppressed.

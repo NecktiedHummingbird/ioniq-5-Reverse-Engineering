@@ -11,6 +11,27 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.74.0 - observer gains field capture; three validation cases pass
+
+- Added the increment the ledger recorded next for EC-03: **int32 field capture at
+  an observation hit**. The observer now reads two fields from a struct pointer
+  supplied either absolutely (`--struct-addr`) or from a register (`--struct-reg`),
+  defaulting to the EC-01 contract offsets `+0x2c` (width) and `+0x30` (height),
+  with `--off-a`/`--off-b` overrides. That is the shape needed to capture the vendor
+  `dri2_surf` dimensions before and after the buffer update.
+- Validated in the VM in three cases, all exit 0, 12.87 s total: without `--once` the
+  tracee outlives the observer and teardown reports `unverifiable reason=tracee-gone`;
+  with `--once` it reports `teardown=verified detach=ok`; and an unknown register
+  name is reported as `FIELDS status=unknown-register` rather than guessed.
+- Measured `FIELDS status=ok a=1926 b=753` at `+0x2c`/`+0x30`, i.e. the instrument
+  reads the intended fields from a struct pointer.
+- Honest bound: the register-held pointer mode is only validated on its error path,
+  because a synthetic target cannot reliably place a chosen value in a callee-saved
+  register at a breakpoint. That mode gets its real exercise at the authentic
+  AppCamera stage with `--struct-reg r15`.
+- Defect found and fixed during the increment: an unused `field_regs` global that
+  `-Werror` rejected, removed rather than silenced.
+
 ## 0.73.0 - second skill bundle pulled, policy re-applied mechanically
 
 - Pulled `AiSkills-Council-Astra-Medium-or-Sol-XHigh.zip` and installed it over both
