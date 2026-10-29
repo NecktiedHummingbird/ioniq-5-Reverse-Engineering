@@ -806,3 +806,24 @@ and are superseded by corrections rather than silently rewritten.
 - Publication caution recorded: the transcript contains an engineering-mode PIN, a
   claimed VM image digest and a partial key-like hex string, so PUBLIC-RELEASE.md
   applies before mirroring. No disclosure decision was taken.
+
+
+## 2026-10-29 — DR6 attribution verified; transcript IV claim corroborated
+
+- Completed the hardware-breakpoint capability matrix with a DR6 test. With slots
+  0 and 1 armed at different addresses, the first trap reported DR6=0x1 identifying
+  B0, a POKEUSER write of 0 to DR6 read back as 0x0, and the second trap reported
+  DR6=0x2 identifying B1. Ten checks pass in 3.83 s with exit 0.
+- This settles a point the EC-02 specification had disputed: the observer can
+  attribute a trap to a specific slot from DR6 and can clear stale status between
+  stages, instead of inferring the slot from RIP alone.
+- Per-TID scoping remains the only unexercised capability item: one traced thread
+  while a sibling executes the same code.
+- Checked the community transcript's most concrete claim against our own tooling.
+  The chat states the update IV is derived from the SHA-256 of the encrypted file
+  name and size. tools/uk_fw/gen5w_decrypt.py, derived independently from the
+  envelope evidence, computes the IV as the first 16 bytes of
+  SHA256((basename + signed_int32(body_size))) with body size file_size - 0x4024,
+  and produces working decryptions. The claim is consequently recorded as
+  corroborated, with the precise semantics, rather than as an open lead.
+- No disclosure decision was taken and no VM image was modified.

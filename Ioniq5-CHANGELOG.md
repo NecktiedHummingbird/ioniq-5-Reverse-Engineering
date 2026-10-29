@@ -11,6 +11,27 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.69.0 - DR6 attribution verified; transcript IV claim corroborated
+
+- Completed the capability matrix: `DR6` carries per-slot trap bits and is
+  clearable through ptrace. With slots 0 and 1 armed, the first trap reported
+  `DR6`=0x1 (B0), `POKEUSER DR6 = 0` read back 0x0, and the second trap reported
+  `DR6`=0x2 (B1). Ten checks now pass in 3.83 s, exit 0.
+- This removes another assumption the EC-02 specification had argued about: the
+  observer can attribute a trap to a specific slot and drop stale status between
+  stages, rather than inferring the slot from RIP alone.
+- Remaining unexercised: per-TID scoping, i.e. one traced thread while a sibling
+  executes the same code.
+- Checked the community transcript's most testable claim against our own tooling.
+  The chat states the encryption IV is "derived from the SHA256 of the encrypted
+  file name and size"; `tools/uk_fw/gen5w_decrypt.py` independently implements
+  exactly that, as the first 16 bytes of
+  `SHA256((basename + signed_int32(body_size)))` with body size `file_size - 0x4024`,
+  and produces working decryptions. The claim is therefore corroborated, and the
+  transcript now records the precise semantics rather than leaving it as a lead.
+- No VM image was modified and no vendor binary was executed beyond the earlier
+  observation runs; the probe continues to use a synthetic tracee.
+
 ## 0.68.0 - community chat transcribed into evidence
 
 - Transcribed eight owner-supplied Discord screenshots into

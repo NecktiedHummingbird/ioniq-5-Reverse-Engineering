@@ -356,7 +356,7 @@ decrypted output files, not packet captures.)
 | Media parsing runs as root | **Confirmed as configuration** (uid 0, no seccomp/caps, zero setuid binaries), not a demonstrated vulnerability | V-007 |
 | Serial console with hashed password runs as root | **Confirmed as shipped config**: `agetty` on `ttyS2 115200`, autologin commented out, `$6$` SHA-512 verifier. Not a bypass. | V-008 |
 | Mouse pointer appears, keyboard ignored | **Consistent with our VM observations**: the cursor is visible in several captured frames | `HANDOVER.md`, screenshot set |
-| IV derived from SHA-256 of encrypted file name and size | **Untested here** — check against `tools/uk_fw/gen5w_decrypt.py` | lead |
+| IV derived from SHA-256 of encrypted file name and size | **Consistent with our own implementation.** `tools/uk_fw/gen5w_decrypt.py` derives the IV as the first 16 bytes of `SHA256((basename + signed_int32(body_size)))`, where body size is `file_size - 0x4024`. That derivation was reached independently from the envelope evidence and produces working decryptions, so the chat claim is corroborated rather than merely plausible. | `tools/uk_fw/gen5w_decrypt.py:235` |
 | "We already have the keys" + `60a9d7f073302a63a5ed0d0a38bac22` | **Untested** — compare against recovered key material | lead |
 | VM image sha256 `adb0bed2…42ab214` | **Untested** — compare against our base rootfs `4953a005…6d036f`; different value is expected if it is a different build | lead |
 | `/tool/velix_aes.key`, `/tool/public.crt` | **Untested** — check the extracted rootfs for `/tool/` | lead |
@@ -376,7 +376,7 @@ Cheap offline checks run immediately after transcribing, against the recovered
 | Engineering PIN `19480717` | **Not present as a literal string** in `AppEngineerMode` or in any QML/JS/conf under `app/` or `usr/share/`. Either it is computed, split, or lives in the Settings application that accepts the tap sequence rather than in the engineering app itself. |
 | Tap sequence `3 2 8 9 6 5` | **Not found as text** in the same search. Same conclusion: the entry handler is elsewhere, most plausibly the Settings app behind *System info → Manual*. |
 | VM image digest `adb0bed2…42ab214` | Not compared. Our base rootfs is `4953a005…6d036f`; a different value would be expected for a different build and proves nothing on its own. |
-| IV derived from SHA-256 of encrypted name+size | Not yet checked against `tools/uk_fw/gen5w_decrypt.py`. This is a concrete, testable claim and the most useful item in the transcript. |
+| IV derived from SHA-256 of encrypted name+size | **Checked and consistent** — see the §7 row and `tools/uk_fw/gen5w_decrypt.py:235`. |
 | "We already have the keys" `60a9d7f0…` | Not matched. The displayed string is short enough to be truncated. |
 
 Follow-up worth doing: locate the *System info → Manual* handler (likely

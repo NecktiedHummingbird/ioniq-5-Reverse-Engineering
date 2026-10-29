@@ -579,6 +579,84 @@ static void test_disarm_then_detach(void)
             "disarm then detach leaves the tracee healthy");
 }
 
+/*
+ * T10: DR6 semantics beyond B0, and whether DR6 can be cleared through ptrace.
+ * The observer needs to attribute a trap to a specific slot and to clear stale
+ * status bits between stages. Arm two slots, read DR6 on each trap, and clear
+ * DR6 in between.
+ */
+static void test_dr6_status_bits(void)
+{
+    int status = 0;
+    int exited = 0;
+    int ok = 1;
+    unsigned long long dr7 = 0, dr6 = 0, dr6_now = 0, rip = 0;
+    pid_t pid = spawn_tracee(&status);
+
+    if (pid < 0) {
+        verdict("T10", 0, "cannot reach initial stop");
+        return;
+    }
+    if (dr_read(pid, DR_CONTROL, &dr7) != 0) {
+        verdict("T10", 0, "cannot read DR7");
+        return;
+    }
+    if (dr_write(pid, 0, (unsigned long long)addr_of(target_a)) != 0 ||
+        dr_write(pid, 1, (unsigned long long)addr_of(target_b)) != 0 ||
+        dr_write(pid, DR_CONTROL,
+                 (dr7 & ~0xFFFFUL) | DR7_RESERVED | DR7_L(0) | DR7_L(1)) != 0) {
+        verdict("T10", 0, "cannot arm slots 0 and 1");
+        return;
+    }
+
+    /* First trap: slot 0 at target_a. */
+    if (ptrace(PTRACE_CONT, pid, NULL, NULL) == -1 ||
+        wait_trap(pid, &rip, &exited) != 1) {
+        verdict("T10", 0, "slot 0 did not fire");
+        return;
+    }
+    if (dr_read(pid, DR_STATUS, &dr6) != 0) {
+        verdict("T10", 0, "cannot read DR6");
+        return;
+    }
+    say("T10 slot0 trap rip=0x%llx DR6=0x%llx", rip, dr6);
+    ok = ok && (dr6 & DR6_B(0)) != 0;
+
+    /* Clear DR6 and confirm the write took effect. */
+    if (dr_write(pid, DR_STATUS, 0) != 0) {
+        say("T10 DR6 clear rejected");
+    } else if (dr_read(pid, DR_STATUS, &dr6_now) != 0) {
+        say("T10 cannot read DR6 after clear");
+    } else {
+        say("T10 DR6 after clear=0x%llx", dr6_now);
+        ok = ok && dr6_now == 0;
+    }
+
+    /* Disarm slot 0 so it does not retrigger, then expect slot 1. */
+    if (dr_write(pid, DR_CONTROL,
+                 (dr7 & ~0xFFFFUL) | DR7_RESERVED | DR7_L(1)) != 0) {
+        verdict("T10", 0, "cannot disarm slot 0");
+        return;
+    }
+    if (ptrace(PTRACE_CONT, pid, NULL, NULL) == -1 ||
+        wait_trap(pid, &rip, &exited) != 1) {
+        verdict("T10", 0, "slot 1 did not fire");
+        return;
+    }
+    if (dr_read(pid, DR_STATUS, &dr6) != 0) {
+        verdict("T10", 0, "cannot read DR6 after second trap");
+        return;
+    }
+    say("T10 slot1 trap rip=0x%llx DR6=0x%llx", rip, dr6);
+    ok = ok && (dr6 & DR6_B(1)) != 0;
+    verdict("T10", ok,
+            "DR6 reports per-slot bits and is clearable through ptrace");
+
+    dr_write(pid, DR_CONTROL, (dr7 & ~0xFFFFUL) | DR7_RESERVED);
+    ptrace(PTRACE_CONT, pid, NULL, NULL);
+    waitpid(pid, &status, 0);
+}
+
 int main(void)
 {
     say("begin capability probe");
@@ -591,6 +669,7 @@ int main(void)
     test_invalid_registers();
     test_detach_with_armed_slot();
     test_disarm_then_detach();
+    test_dr6_status_bits();
 
     if (failures == 0) {
         say("RESULT hardware-execute-breakpoint=SUPPORTED slots=4 "
