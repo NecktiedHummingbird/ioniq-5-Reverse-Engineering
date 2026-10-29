@@ -11,6 +11,28 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.67.0 - detach discipline measured; four-slot behaviour verified
+
+- Extended the capability probe to the four behaviours round 1 left unexercised.
+  Nine checks now pass in **3.85 s**, exit 0.
+- **Four slots armed simultaneously** (`DR7` image `0x455`) fire in program order
+  at the correct RIPs, provided the fired slot is disarmed before resuming —
+  an execute breakpoint retriggers if left enabled, so this discipline is
+  mandatory rather than stylistic.
+- **Slot replacement** works: slot 0 fired at one function, then at a different
+  address after reprogramming.
+- **`DR4`/`DR5` are rejected** by the kernel with `EIO`, confirming the valid
+  index set is `0-3,6,7`. EC-02's fixture V-03 had assumed a fifth slot could be
+  tested through `DR4`; that assumption is wrong and is now measured.
+- **Detach alone is unsafe.** With a slot still armed, `PTRACE_DETACH` leaves the
+  breakpoint live and the untraced process is **killed by `SIGTRAP`**. This
+  confirms EC-02's C-09 concern was real rather than defensive.
+- **The safe exit is proven**: clear the `DR7` enables, clear the address
+  register, verify the readback is zero, then detach. The tracee then completes
+  with exit 0.
+- Bounds held: synthetic tracee at user addresses, no vendor observation point;
+  per-TID scoping and `DR6` semantics beyond `B0` remain unexercised.
+
 ## 0.66.0 - guest hardware breakpoints proven under TCG
 
 - Resolved the single load-bearing unknown behind EC-02 by measurement rather than

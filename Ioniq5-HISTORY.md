@@ -749,3 +749,30 @@ and are superseded by corrections rather than silently rewritten.
 - One authoring self-correction is recorded: the first draft of the probe omitted
   stdarg.h and left its tracee parked after the trap, so it was rewritten as a
   single arm/trap/restore/clean-exit sequence before any VM run.
+
+
+## 2026-10-29 — detach discipline measured; four-slot behaviour verified
+
+- Extended the hardware-breakpoint capability probe to the behaviours round 1 had
+  explicitly left unexercised, since the EC-02 observer depends on each: four-slot
+  capacity, slot replacement, invalid debug-register rejection, detach behaviour,
+  and the safe detach sequence. Nine checks now pass in 3.85 s with exit 0.
+- Four slots armed together (DR7 0x455) fired in program order at the correct
+  RIPs, but only because the fired slot was disarmed before each resume. An
+  execute breakpoint retriggers while enabled, so disarm-before-resume is a
+  measured requirement, not a preference.
+- Slot replacement was demonstrated: slot 0 fired at one function, then at a
+  different address after reprogramming.
+- DR4 and DR5 were rejected with errno 5 EIO, so the valid ptrace index set is
+  0-3,6,7. This invalidates EC-02 fixture V-03's assumption that a fifth slot
+  could be exercised through DR4.
+- Detach behaviour was the significant result. With a slot still armed,
+  PTRACE_DETACH left the breakpoint live and the untraced process was killed by
+  SIGTRAP. EC-02's C-09 concern about kernel teardown of ptrace_bps is therefore
+  confirmed rather than merely defensive.
+- The safe exit was then proven: clear the DR7 enables, clear the address
+  register, verify the readback reads zero, then detach. The tracee completed with
+  exit 0. Both the failure mode and the remedy are now measured.
+- Bounds recorded: synthetic tracee at user addresses with no vendor observation
+  point; per-TID scoping and DR6 semantics beyond B0 remain unexercised; no vendor
+  binary executed and no hardware touched.

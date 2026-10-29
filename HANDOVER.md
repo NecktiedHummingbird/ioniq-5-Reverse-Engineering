@@ -6,6 +6,29 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Breakpoint behaviour and detach discipline measured — 2026-10-29
+
+Round 2 of the capability probe (`dr_breakpoint_probe.c`, 9 checks, 3.85 s,
+exit 0) closed the behaviours round 1 left open.
+
+| Check | Result |
+| --- | --- |
+| four slots armed (`DR7`=0x455) | fire in program order, correct RIPs, **only if each fired slot is disarmed before resume** |
+| slot replacement | slot 0 fired at a second address after reprogramming |
+| `DR4`/`DR5` | rejected, `errno` 5 (`EIO`) |
+| detach with a slot armed | **tracee killed by `SIGTRAP`** — kernel does not clear `ptrace_bps` |
+| disarm, verify readback, detach | tracee completes, exit 0 |
+
+Two consequences worth carrying forward:
+
+- EC-02's **C-09** concern is confirmed, not defensive. Detach alone is unsafe.
+- EC-02 fixture **V-03** was wrong: there is no fifth slot reachable through
+  `DR4`, so a capacity test cannot use it.
+
+Remaining unexercised: per-TID scoping (one traced thread while a sibling runs the
+same code) and `DR6` semantics beyond `B0`. EC-02's specification blockers are
+unchanged and remain the gate to EC-03.
+
 ## Guest hardware breakpoints proven — 2026-10-29
 
 The load-bearing unknown behind EC-02 is resolved by measurement, not by more
