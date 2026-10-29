@@ -86,14 +86,24 @@ manager reports drawing application `0` throughout. This is the blocker: there i
 surface for the compositor to classify, so neither the adapter nor the BG path can be
 exercised yet.
 
-## Open question, stated plainly
+## The interposer is cleared
 
-Whether the interposer itself is what prevents AppNavi from rendering. A
-`wl_surface_attach` wrap is exactly the kind of interception that can break a client
-that is not expecting it, and AppNavi's log being otherwise empty is suspicious. The
-cheapest discriminator is a baseline run of the same probe **without** the preload: if
-AppNavi renders normally there, the adapter is at fault; if it is equally silent,
-AppNavi's startup is failing for unrelated reasons.
+The obvious suspicion was that an `LD_PRELOAD` wrapping `wl_surface_attach` was itself
+breaking the client. A baseline run of the identical probe **without** the preload
+settles it:
+
+| Run | AppNavi log | manager drawing app |
+| --- | --- | --- |
+| with preload | 1 line (the adapter's own load record) | 0 |
+| **baseline, no preload** | **0 lines** | 0 |
+
+AppNavi is equally silent with the interposer removed, so the adapter is not what stops
+it. Its startup is failing for reasons of its own in this probe.
+
+One caveat must be stated with that: **an empty log is not proof that nothing rendered.**
+AppNavi may log elsewhere (DLT, or a file), or not at all. The screenshot captured by the
+probe has not yet been inspected, so "renders but silently" and "never renders" are still
+both open.
 
 ## Next steps, in cost order
 

@@ -11,6 +11,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added the authentic launcher profile/confirm screen and a navigation-window
   frame that still shows Home to the inspected screenshots there.
 
+## 0.86.0 - baseline clears the interposer; AppNavi is silent on its own
+
+- Ran the decisive control: the identical render probe **without** the preload.
+  AppNavi's log came back **0 lines** and the manager reported drawing application `0`
+  — the same result as with the adapter loaded, whose log holds only the adapter's own
+  one-line load record. So the interposer is **not** what stops AppNavi; its startup is
+  failing for reasons of its own in this probe.
+- Stated with it, because it matters: **an empty log is not proof that nothing rendered.**
+  AppNavi may log to DLT or a file, or not at all, and the probe's screenshot has not
+  been inspected yet. "Renders but silently" and "never renders" both remain open.
+- Next step recorded: inspect the captured frame, and check whether AppNavi logs to DLT,
+  before concluding anything about its startup.
+- `docs/navigation-status.md` updated in both repositories: the open question section is
+  replaced by this baseline result.
+
 ## 0.85.0 - working tree committed; probes published
 
 - Committed the working tree that had been preserved uncommitted throughout the VM work:

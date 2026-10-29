@@ -1200,3 +1200,20 @@ and are superseded by corrections rather than silently rewritten.
   the minimal observer and its synthetic target.
 - The vulnerability register, raw evidence tree, task ledger and all firmware remain
   private; the public tree carries neither firmware nor credentials.
+
+## 2026-10-29 — baseline clears the interposer
+
+- Ran the control that the open question called for: the identical render probe with no
+  preload at all. AppNavi's log came back empty, zero lines, and the manager reported
+  drawing application 0, which is the same outcome as the run with the adapter loaded
+  apart from the adapter's own single load record.
+- The interposer is therefore cleared of causing AppNavi's silence, and the fault lies in
+  AppNavi's own startup in this probe.
+- A caveat was recorded alongside it because it changes what can be claimed: an empty log
+  does not prove nothing rendered. AppNavi may log to DLT or to a file, or not at all, and
+  the probe's screenshot had not been inspected. Rendering silently and never rendering
+  both remain open possibilities.
+- The next steps were written down: inspect the captured frame and check whether AppNavi
+  logs to DLT before drawing conclusions about its startup.
+- docs/navigation-status.md was updated in both repositories so the published open
+  question is replaced by this baseline result.
