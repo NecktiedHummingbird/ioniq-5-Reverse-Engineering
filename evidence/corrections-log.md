@@ -367,14 +367,16 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 - **Version boundary:** PID 1's compiled banner/pkg-config report systemd `225`,
   while embedded OpenEmbedded build paths say `systemd/1_249.3-r0`. The finding
   relies on exact helper instructions and rules, not either version string.
-- **Dynamic refinement:** a fixed benign offline `udevadm test` control now
-  confirms the exact recovered rule engine retains an advisory-shaped
-  leading-space second `SYSTEMD_WANTS` line as a separate property. It did not
-  run shipped helpers, udevd, systemd, an existing unit, or a root shell.
-- **Evidence boundary:** no malicious-device event, authentic helper/daemon/
-  manager chain, or physical root transition has been observed. V-014 remains a
-  high-confidence static path in recovered `260128`, with only parser retention
-  dynamically confirmed; it is not proof about the owner's
+- **Dynamic refinement:** a fixed benign `udevadm test` control confirmed parser
+  retention. Matched synthetic-add controls then showed exact udevd persisting
+  the property and exact PID 1 systemd starting only the positive transient
+  BusyBox marker unit; the negative run did not. Vulnerable helper rules were
+  masked, and no pre-existing property-selected unit or shell was requested.
+- **Evidence boundary:** no malicious physical-device event, shipped vulnerable
+  helper execution, installed shell-unit request, or physical root transition
+  has been observed. V-014 remains a high-confidence static physical path in
+  recovered `260128`, with downstream synthetic semantics dynamically confirmed;
+  it is not proof about the owner's
   unknown installed build.
 - **Evidence:** `evidence/systemd-udev-cve-2026-40225.md`.
 

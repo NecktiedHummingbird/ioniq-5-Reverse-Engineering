@@ -25,12 +25,14 @@ unknown installed firmware.
   SCSI route can inject `SYSTEMD_WANTS`, so no new unit file is required.
 - This is independent of V-006's blocked shell interpolation: it uses different
   helpers and property boundaries, not sanitized `usb_id` `ID_SERIAL_SHORT`.
-- A fixed benign VM control confirmed the exact recovered `udevadm` parser
-  retains a leading-space second `SYSTEMD_WANTS` line as a separate property; it
-  did not execute shipped helpers or run udevd/systemd. Another control confirmed
-  `/dev/tty9` exists as character device `4:9`; it did not start the service.
-  Remaining gates are malicious supported hardware, authentic helper/udevd and
-  systemd activation, and a practical production VT9/display/input route.
+- A fixed benign parser control retained the leading-space second property. A
+  matched synthetic-event VM control then used exact `systemd-udevd` and PID 1
+  systemd: only the positive `SYSTEMD_WANTS` property started the transient
+  marker unit; the negative run did not. Shipped vulnerable helper rules were
+  masked and no pre-existing property-selected unit was requested. Another control confirmed
+  `/dev/tty9` exists as character device `4:9`; it did not start the shell unit.
+  Remaining gates are malicious supported hardware, hardware bytes reaching the
+  shipped helper, and a practical production VT9/display/input route.
   No head-unit event, root transition, or physical console access was observed.
 - Evidence: `evidence/systemd-udev-cve-2026-40225.md`.
 
@@ -125,10 +127,10 @@ the public KOFFEE report confirms it needs code execution first, then reaches
 
 ## Decisive next evidence, in order
 
-1. Validate V-014's authentic udevd-to-systemd unit-request behavior in a
-   disconnected disposable environment using a benign marker unit—not
-   `debug-shell.service`—while preserving exact binaries. The parser-only step is
-   complete; do not treat the next VM control as a physical-unit reproduction.
+1. Preserve V-014's remaining helper-input, physical-port, production-tty, and
+   display/input gates for a disconnected bench with a benign marker—not the
+   installed shell unit. Parser and synthetic udevd-to-systemd semantics are
+   complete; do not describe them as physical-device reproduction.
 2. Trace post-index V-012 reachability through media-manager/browser selection,
    thumbnail extraction, and playback handoff. LightMediaScanner startup indexing
    is now confirmed to use a separate non-GStreamer ASF plugin; manual authentic

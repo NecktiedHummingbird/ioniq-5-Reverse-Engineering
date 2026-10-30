@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.19.0 - Confirm synthetic udevd-to-systemd benign unit activation
+
+- Added `tools/uk_fw/udev_systemd_probe.py` and focused tests for matched
+  negative/positive controls using exact recovered `systemd`, `systemd-udevd`,
+  and `udevadm` binaries.
+- Both offline runs used `-nic none`, snapshot-backed storage, a read-only root,
+  transient `/run` files, and a minimal custom target layered on installed
+  sysinit. The vulnerable persistent-storage and V4L helper rules were masked
+  before coldplug; no shipped vulnerable helper or pre-existing property-selected
+  unit was selected.
+- The negative synthetic-add run persisted only fixed `ID_SCSI_SERIAL` and kept
+  the marker unit inactive. The positive run added fixed `SYSTEMD_WANTS`, exact
+  PID 1 logged the otherwise-unreferenced transient marker unit starting, and
+  fixed marker-file/active-state checks passed.
+- Extended `vm_boot.py` with an optional exact terminated serial-completion line
+  for safe PID-1 handoff diagnostics, preserving all default behavior.
+- Preserved the boundary: this confirms synthetic udev database/device-unit and
+  manager semantics, not hardware bytes reaching shipped helpers, a physical
+  device, the installed shell unit, root access, interactivity, or persistence.
+- Fable remained unavailable for native subagents. DeepSeek Flash passed static
+  route checks but native dispatch was rejected as an unknown model; no failed
+  worker output or silent substitute was used.
+
 ## 1.18.0 - Confirm benign second-property retention in the exact udev parser
 
 - Added `tools/uk_fw/udev_import_probe.py` and focused tests for a fixed,

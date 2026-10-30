@@ -114,13 +114,16 @@ ships `debug-shell.service`, configured to run `/bin/sh` as root on `/dev/tty9`
 if that device exists. The upstream SCSI route can inject `SYSTEMD_WANTS` and
 therefore request this existing unit.
 
-This remains the strongest static physical-device root path, with its downstream
-import-parser substep dynamically confirmed, but it is not a bench reproduction.
-A fixed benign VM control confirmed the exact `udevadm` rule engine retains a
-leading-space second `SYSTEMD_WANTS` line; it did not run the shipped helper,
-udevd, or systemd. Another control found `/dev/tty9` as character device `4:9`;
-it did not start the service or test interactivity. Do not test the path by
-starting the root-shell unit. If a future
+This remains the strongest static physical-device root path, with downstream
+parser and synthetic benign activation substeps dynamically confirmed, but it is
+not a bench reproduction.
+A fixed benign parser control retained the leading-space second
+`SYSTEMD_WANTS` line. A matched synthetic-add control then used exact udevd and
+PID 1 systemd: only the positive property started an otherwise-unreferenced
+transient marker unit; the negative run did not. Vulnerable helper rules were
+masked and no pre-existing property-selected unit was requested. Another control found `/dev/tty9` as
+character device `4:9`; it did not start the shell service or test interactivity.
+Do not test the path by starting the root-shell unit. If a future
 disconnected bench validation is authorized and recovery is proven, use a
 benign marker unit and inert property observation to test only whether the
 production helper output is split into an additional property. Stop before
@@ -269,10 +272,10 @@ the disconnected bench setup can interact with vehicle networks.
 ## Claims that are not permitted from current evidence
 
 - V-006 provides USB-to-root on `260128`.
-- V-014 has been dynamically reproduced on a head unit, that authentic
-  helper/udevd/systemd activation occurred, or that VT9 is physically
-  accessible. Current dynamic evidence covers only benign parser retention and
-  the VM tty node condition.
+- V-014 has been dynamically reproduced on a head unit, that hardware bytes
+  reached a shipped vulnerable helper, that the installed shell unit started, or
+  that VT9 is physically accessible. Current dynamic evidence covers parser
+  retention, synthetic benign udevd/systemd activation, and the VM tty condition.
 - `${IFS}` or shell separators survive `ID_SERIAL_SHORT`.
 - The V-012 ASF crash is arbitrary code execution.
 - VM behavior proves the owner's installed build or physical hardware behavior.

@@ -1785,6 +1785,24 @@ and are superseded by corrections rather than silently rewritten.
 - The marker unit was verified absent, no udev daemon or systemd manager ran, no
   kernel uevent was sent, and the temporary helper, rule, and log were removed before
   completion. Classification was `benign-second-property-retained`.
-- This closes downstream import-parser semantics only. Hardware delivery through
+- This closed downstream import-parser semantics only. Hardware delivery through
   SCSI, execution of shipped `scsi_id`, authentic udevd persistence, systemd
-  device activation, the root-shell unit, and interactive VT9 remain untested.
+  device activation, the root-shell unit, and interactive VT9 remained untested
+  at that checkpoint.
+
+## 2026-11-01 — matched controls confirm synthetic benign unit activation
+
+- A second fixed-input diagnostic handed PID 1 from the research shell to exact
+  recovered systemd, started exact systemd-udevd through installed sysinit, and
+  requested one synthetic add event for emulated `mmcblk0` after coldplug settled.
+- Before coldplug, transient `/run` masks shadowed the installed persistent-
+  storage and V4L helper rules. The root was remounted read-only, QEMU remained
+  NIC-free and snapshot-backed, and the only property-selected unit was a
+  transient BusyBox touch/echo marker with no shell command.
+- The negative run stored fixed `ID_SCSI_SERIAL` but no `SYSTEMD_WANTS`; the
+  marker remained absent/inactive. The positive run stored fixed
+  `SYSTEMD_WANTS=v014-benign-marker.service`; PID 1 logged the unit starting and
+  marker-file plus active-state checks passed. Root remained read-only in both.
+- This closes the synthetic udevd database/device-unit and manager-activation
+  boundary. Hardware bytes reaching shipped helpers, physical hotplug, the
+  installed shell-unit request, production VT9 access, and root remain untested.

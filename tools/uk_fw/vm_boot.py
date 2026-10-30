@@ -363,6 +363,21 @@ def shell_script(command: str, end_marker: str) -> str:
     return f"{{\n{command}\n}}; rc=$?; printf '\\n{end_marker}:%s\\n' \"$rc\"\n"
 
 
+def validate_serial_completion_marker(marker: str | None) -> None:
+    if marker is None:
+        return
+    if not re.fullmatch(r"[A-Za-z0-9_=-]{1,160}", marker):
+        raise ValueError("serial completion marker must be fixed printable ASCII")
+
+
+def exact_serial_line_seen(serial: str, marker: str | None) -> bool:
+    """Match one terminated serial line; prefixes and trailing fragments fail."""
+    if marker is None:
+        return False
+    pattern = rf"(?:\A|\n){re.escape(marker)}(?:\r?\n)"
+    return re.search(pattern, serial) is not None
+
+
 def drain_available(sock, output) -> int:
     """Drain a nonblocking serial socket without delaying the VM loop."""
     total = 0
@@ -385,7 +400,8 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
         cpu: str = VM_CPU_CHOICES[0], micom_serial: bool = False,
         memory_mib: int = 1024,
         extra_devices: list[str] | None = None,
-        init: str = "/init") -> int:
+        init: str = "/init",
+        serial_completion_marker: str | None = None) -> int:
     workspace = project_output(workspace)
     verify_workspace(workspace)
     qemu = shutil.which("qemu-system-x86_64")
@@ -393,6 +409,7 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
         raise ValueError("qemu-system-x86_64 is not installed")
     if timeout < 0 or (timeout == 0 and not interactive):
         raise ValueError("timeout must be positive (or zero for interactive mode)")
+    validate_serial_completion_marker(serial_completion_marker)
     if graphics_smoke:
         if interactive:
             raise ValueError("graphics smoke and interactive modes are separate")
@@ -409,6 +426,8 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
     end_marker = f"VM_COMMAND_END_{token}"
     result = {"init": init, "userspace": False, "root_mounted": False,
               "command_exit_code": None,
+              "serial_completion_marker": serial_completion_marker,
+              "serial_completion_seen": False,
               "compatibility_patch": compat, "micom_serial": micom_serial,
               "micom_serial_bytes": 0, "timeout": False, "error": None}
     start = time.monotonic()
@@ -467,8 +486,12 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
                     if micom_sock:
                         result["micom_serial_bytes"] += drain_available(micom_sock, micom_log)
                     text = captured.decode("utf-8", errors="replace").replace("\r", "")
+                    raw_text = captured.decode("utf-8", errors="replace")
                     result["userspace"] = "\nIONIQ_VM_USERSPACE_READY\n" in text
                     result["root_mounted"] = "VFS: Mounted root (ext4 filesystem)" in text
+                    result["serial_completion_seen"] = exact_serial_line_seen(
+                        raw_text, serial_completion_marker
+                    )
                     if smoke:
                         smoke.advance(text)
                     matched = re.search(r"^" + end_marker + r":(\d+)$", text, re.M)
@@ -476,6 +499,8 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
                         result["command_exit_code"] = int(matched[1])
                         if not interactive:
                             break
+                    if result["serial_completion_seen"] and not interactive:
+                        break
                     if proc.poll() is not None:
                         break
                     if timeout and time.monotonic() - start >= timeout:
@@ -515,8 +540,13 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
         result["elapsed_seconds"] = round(time.monotonic() - start, 2)
         (run_dir / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print("\n" + json.dumps(result, indent=2))
+    completed = (
+        result["serial_completion_seen"]
+        if serial_completion_marker is not None
+        else result["command_exit_code"] == 0
+    )
     return 0 if (result["userspace"] and result["root_mounted"]
-                 and result["command_exit_code"] == 0 and not result["error"]
+                 and completed and not result["error"]
                  and not result["timeout"] and result.get("graphics_passed", True)) else 1
 
 

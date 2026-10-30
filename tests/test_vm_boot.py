@@ -197,6 +197,17 @@ class CommandTests(unittest.TestCase):
             VM.qemu_command(VM.PROJECT / "work/vm/example", "qemu", False,
                             extra_devices=["usb-serial,serial=a\nb"])
 
+    def test_serial_completion_marker_is_exact_and_bounded(self):
+        marker = "V014_SYSTEMD_PROBE_COMPLETE=positive"
+        VM.validate_serial_completion_marker(marker)
+        self.assertTrue(VM.exact_serial_line_seen(f"noise\r\n{marker}\r\n", marker))
+        self.assertFalse(VM.exact_serial_line_seen(f"> echo {marker}\n", marker))
+        self.assertFalse(VM.exact_serial_line_seen(f" {marker}\n", marker))
+        self.assertFalse(VM.exact_serial_line_seen(f"noise\n{marker}", marker))
+        for invalid in ("", "contains space", "line\nbreak", "x" * 161):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                VM.validate_serial_completion_marker(invalid)
+
     def test_micom_capture_drains_until_nonblocking_boundary(self):
         class SerialSocket:
             def __init__(self):

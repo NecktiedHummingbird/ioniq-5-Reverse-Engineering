@@ -55,7 +55,7 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## Security checkpoint — 2026-11-01
 
-- **V-014 added — strongest static physical root path; parser substep confirmed:** exact shipped
+- **V-014 added — strongest static physical root path; benign synthetic activation confirmed:** exact shipped
   `v4l_id` and `scsi_id` instructions contain CVE-2026-40225's pre-fix direct
   property prints. Installed rules import both helpers, tag block devices for
   systemd, and retain generic `REMOVE_CMD` execution. The image also ships
@@ -63,11 +63,13 @@ followed by stateful service/CAN/persistence reconstruction.
   when `ConditionPathExists=/dev/tty9` passes; the upstream SCSI route can
   inject `SYSTEMD_WANTS` to request that existing unit. A fixed benign offline
   `udevadm test` control confirmed the exact rule engine retains a leading-space
-  second `SYSTEMD_WANTS` line as a separate property; it did not run the shipped
-  helper, udevd, or systemd. A separate bounded VM control confirmed `/dev/tty9`
-  exists as `root:root` mode `0600`, character
-  device `4:9`, under the vendor kernel/userspace and research init; it did not
-  start the service. No malicious-device event, physical root transition, VT9
+  second `SYSTEMD_WANTS` line as a separate property. A matched VM control then
+  used exact `systemd-udevd` and exact PID 1 systemd: only the positive synthetic
+  property started an otherwise-unreferenced transient BusyBox marker unit; the
+  negative run did not. The installed vulnerable helper rules were masked and no
+  pre-existing property-selected unit was requested. A separate control confirmed `/dev/tty9` exists
+  as `root:root` mode `0600`, character device `4:9`; it did not start the shell
+  service. No malicious-device event, physical root transition, VT9
   interaction, or applicability to the owner's unknown installed build is
   claimed. PID 1's
   banner reports `225`, while embedded build paths say `1_249.3-r0`; exact
@@ -116,9 +118,9 @@ followed by stateful service/CAN/persistence reconstruction.
   GStreamer dependency, and a full session-bus capture showed no PlayerEngine or
   thumbnail call. This is a route-specific negative result, not broad media
   safety evidence.
-- Next security work: validate V-014's authentic udevd-to-systemd unit-request
-  semantics in a disconnected disposable environment with a benign marker unit
-  rather than the root shell; trace post-index media-manager/browser selection,
+- Next security work: preserve V-014's remaining physical-helper/port/VT gates
+  for a disconnected bench rather than starting the root shell; trace post-index
+  media-manager/browser selection,
   thumbnail, and playback handoff into a consumer; analyze allocation/lifetime behavior
   without developing a payload. Keep physical bench tests non-destructive until
   recovery and service restart behavior are validated.
