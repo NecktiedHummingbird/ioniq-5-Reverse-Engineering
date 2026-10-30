@@ -251,6 +251,7 @@ bring-up defect. That question is open.
 - **`keystore_get_ksm_key` stack disclosure:** rejected by instruction-level review; private/public sub-buffers were misread (C9).
 - Android/Telechips `hmg_nemesis` and `micomd` findings are not findings against this Linux/x86-64 target.
 - Historical published CVEs require exact-component/version and code-path validation; do not relabel them as newly found or confirmed on `260128`.
+- ALSA PCM CVE-2017-0861 is rejected by the exact shipped open-mutex backport. ALSA sequencer CVE-2018-1000004 lacks the official per-client ioctl serialization, but its published sequence requires `write()` and recovered intended `/dev/snd/seq` mode `root:root 0644` grants ordinary users no write permission. See `evidence/vendor-kernel-alsa-follow-up-cves.md`.
 - VM rendering slowness, watchdog timeouts and missing simulated CAN data are currently compatibility/integration issues, not established exploitable security defects.
 
 ## Maintenance

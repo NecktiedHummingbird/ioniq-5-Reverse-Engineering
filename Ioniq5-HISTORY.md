@@ -1676,3 +1676,20 @@ and are superseded by corrections rather than silently rewritten.
   keeps QEMU offline and snapshot-backed, and records a machine-readable
   classification. The race source and all generated binaries/logs remain in
   ignored `work/`; no exploit payload was added to the repository.
+
+## 2026-11-01 — adjacent ALSA candidates separate code from usable access
+
+- The next PCM candidate dissolved under the same exact-code check. Shipped
+  `snd-pcm.ko` takes the per-device open mutex around `snd_pcm_info_user`, which
+  is the complete CVE-2017-0861 fix. Another version-derived root candidate is
+  therefore rejected.
+- CVE-2018-1000004 went the other way at the instruction layer: the shipped
+  native ioctl path lacks the later Linux 4.1 per-client serialization. But its
+  published sequence needs `write()` to the sequencer pool, and recovered
+  intended node mode gives ordinary users no write permission. V-013 ioctls
+  working through a manually modeled `O_RDONLY` descriptor do not silently imply
+  this sibling trigger is reachable.
+- This is a useful three-way outcome from one subsystem: one exact UAF candidate
+  with ioctls reachable through `O_RDONLY` (V-013), one exact fix (CVE-2017-0861), and
+  one path missing the official serialization whose required access is blocked
+  by DAC (CVE-2018-1000004). None is promoted to root.

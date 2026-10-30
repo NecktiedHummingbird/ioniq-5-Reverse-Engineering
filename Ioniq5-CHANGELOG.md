@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.14.0 - adjacent ALSA CVEs split by exact lock and permission evidence
+
+- Rejected ALSA PCM CVE-2017-0861 for recovered EU `260128`: exact shipped
+  `snd-pcm.ko` takes the per-PCM open mutex around `snd_pcm_info_user`, matching
+  the complete two-line upstream fix.
+- Confirmed that ALSA sequencer CVE-2018-1000004's native ioctl path lacks the
+  per-client serialization in the mainline and Linux 4.1 stable fixes.
+- Kept the reachability boundary explicit: the published sequencer-pool race
+  requires concurrent `write()` activity, while recovered `/dev/snd/seq` policy
+  is `root:root 0644`. The VM confirmed V-013 ioctls through an `O_RDONLY`
+  descriptor under that manually modeled mode, but an ordinary user cannot
+  obtain the write-capable descriptor required by this sibling sequence.
+- Added tracked upstream patches, exact relocation-aware function
+  disassemblies, provenance commands, and
+  `evidence/vendor-kernel-alsa-follow-up-cves.md`. No new root path is claimed.
+
 ## 1.13.0 - exact ALSA/UFO kernel candidates and a bounded sequencer diagnostic
 
 - Added V-013 for CVE-2017-15265 after exact `snd-seq.ko` review showed the

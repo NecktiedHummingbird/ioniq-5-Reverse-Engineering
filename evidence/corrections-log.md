@@ -309,6 +309,25 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C23 — Read-only ALSA sequencer ioctl access does not expose every sequencer race
+
+- **Was:** once V-013 proved uid/gid-65534 create/delete ioctl reachability on
+  `/dev/snd/seq`, nearby sequencer CVEs could appear equally reachable.
+- **Now:** exact `snd-seq.ko` lacks CVE-2018-1000004's official Linux 4.1 ioctl
+  serialization, but its published pool sequence requires `write()` while
+  recovered intended node policy is `root:root 0644`. The VM confirmed V-013
+  ioctls through an `O_RDONLY` descriptor under that manually modeled mode, but
+  an ordinary uid cannot obtain the write-capable descriptor needed by the
+  sibling sequence.
+- **Why:** device-node reachability is operation-specific; a readable ioctl
+  surface does not confer file write access.
+- **Boundary:** altered DAC, a passed write-capable fd, a privileged service, or
+  different installed firmware could restore the precondition. The code should
+  still be patched.
+- **Evidence:** `evidence/vendor-kernel-alsa-follow-up-cves.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

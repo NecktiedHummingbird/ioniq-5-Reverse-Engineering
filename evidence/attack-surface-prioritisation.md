@@ -72,10 +72,14 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 - Built-in reachable code: netfilter/xtables (1,610 symbols), TCP (588),
   IPv6 (525), CAN (306, including `micom_*`), UDP (161).
 - Exact checks reject CVE-2016-0728, Dirty COW, both ranked AF_PACKET races,
-  and the generic missing Stack Clash guard-gap premise despite the old banner.
+  ALSA PCM CVE-2017-0861, and the generic missing Stack Clash guard-gap premise
+  despite the old banner.
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.
+- ALSA sequencer CVE-2018-1000004 lacks the official ioctl serialization, but
+  the published pool sequence requires a write-capable sequencer fd and
+  recovered intended policy grants ordinary users no write permission.
 - CVE-2017-1000112's IPv4/IPv6 UFO guards are absent, but
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.

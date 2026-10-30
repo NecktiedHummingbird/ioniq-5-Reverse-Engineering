@@ -19,12 +19,13 @@ followed by stateful service/CAN/persistence reconstruction.
   Sixteen upstream malformed exfatprogs fixtures produced three clean rejects
   and thirteen clean bounded mounts; no kernel parser fault was observed. This
   is a small corpus negative result, not a broad safety claim.
-- Exact vendor-binary review rejects five version-derived local-root candidates
+- Exact vendor-binary review rejects six version-derived local-root candidates
   for recovered EU `260128`: CVE-2016-0728, Dirty COW/CVE-2016-5195, the
-  AF_PACKET races CVE-2016-8655 and CVE-2017-1000111, and the generic Stack
-  Clash missing-gap premise. The shipped code contains the relevant keyring
-  reference release, `FOLL_COW`, socket-locking, and 1 MiB inter-VMA guard-gap
-  backports despite its `4.1.27-abl` banner.
+  AF_PACKET races CVE-2016-8655 and CVE-2017-1000111, ALSA PCM
+  CVE-2017-0861, and the generic Stack Clash missing-gap premise. The shipped
+  code contains the relevant keyring reference release, `FOLL_COW`, socket
+  locking, PCM open mutex, and 1 MiB inter-VMA guard-gap backports despite its
+  `4.1.27-abl` banner.
 - **V-013 added:** exact `snd-seq.ko` lacks CVE-2017-15265's port use-lock fix.
   A tracked benign diagnostic confirmed numeric uid/gid 65534 can open
   `/dev/snd/seq` and complete one create/delete sequence under the recovered
@@ -33,6 +34,11 @@ followed by stateful service/CAN/persistence reconstruction.
   is claimed. See
   `evidence/alsa-sequencer-cve-2017-15265.md` and
   `tools/uk_fw/alsa_seq_probe.py`.
+- ALSA sequencer CVE-2018-1000004 lacks the official Linux 4.1 per-client ioctl
+  serialization, but its published sequence requires `write()` while recovered
+  intended `/dev/snd/seq` policy is `root:root 0644`. V-013 ioctls working
+  through an `O_RDONLY` descriptor therefore do not make that trigger available.
+  See `evidence/vendor-kernel-alsa-follow-up-cves.md`.
 - Exact IPv4 and IPv6 review confirms pre-fix CVE-2017-1000112 UFO control flow.
   It remains conditional: `CONFIG_USER_NS=n` blocks the published unprivileged
   root setup, production `NETIF_F_UFO` interface features are unknown, and the

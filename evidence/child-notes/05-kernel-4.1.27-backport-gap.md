@@ -129,10 +129,14 @@ CVE-2016-8632 (TIPC, 4.1.37 — TIPC probably not built), CVE-2016-9191 (cgroup,
 4.1.39), CVE-2017-2618 (SELinux proc attr, 4.1.39), CVE-2017-6951 (dead keyring,
 4.1.40), CVE-2017-7472 (keyring DoS, 4.1.40), CVE-2017-7482 (rxrpc kerberos,
 4.1.43 — rxrpc likely not built), CVE-2017-12193 (assoc_array, 4.1.46),
-CVE-2017-0861 (ALSA pcm UAF, 4.1.49), **CVE-2017-15265 (ALSA seq race,
-4.1.46; pre-fix module and unprivileged ioctl reachability confirmed as V-013,
-see `evidence/alsa-sequencer-cve-2017-15265.md`)**, CVE-2018-1000004 (ALSA seq
-pool, 4.1.51), CVE-2017-5753 (Spectre-class KVM
+**CVE-2017-0861 (ALSA PCM UAF, 4.1.49; exact open-mutex fix present, rejected)**,
+**CVE-2017-15265 (ALSA seq race, 4.1.46; pre-fix module and unprivileged ioctl
+reachability confirmed as V-013)**, **CVE-2018-1000004 (ALSA seq pool,
+4.1.51; official Linux 4.1 ioctl serialization absent from the native path, but
+required unprivileged `write()` blocked by recovered intended `root:root 0644`
+policy)**; see
+`evidence/alsa-sequencer-cve-2017-15265.md` and
+`evidence/vendor-kernel-alsa-follow-up-cves.md`, CVE-2017-5753 (Spectre-class KVM
 barrier, 4.1.50), CVE-2017-1000365/1000370/1000371 (stack/args exhaustion,
 4.1.43; 1000370/71 are i386-only), CVE-2017-1000407 (KVM port 0x80, 4.1.49),
 CVE-2017-12154 (KVM CR8, 4.1.46), CVE-2017-17741 (KVM write_mmio infoleak,
@@ -169,13 +173,17 @@ Ranked by (reachability × impact × whether 4.1.27 is actually exposed):
    established connection. Fixed in 4.1.37 → gap if not cherry-picked.
 
 Then, once *any* local code execution exists (app / compromised userland
-service), this table now supplies two exact-code memory-safety candidates but
+service), this table now supplies three exact-code memory-safety candidates but
 still no confirmed local-root path. **CVE-2017-15265/V-013** has pre-fix ALSA
 sequencer code plus VM-confirmed numeric-uid-65534 create/delete ioctl
-reachability; its bounded race did not fault. **CVE-2017-1000112** has pre-fix
-IPv4/IPv6 UFO logic, but `CONFIG_USER_NS=n` blocks the published unprivileged
+reachability; its bounded race did not fault. **CVE-2018-1000004** also lacks
+the official Linux 4.1 sequencer-ioctl serialization, but recovered intended
+mode grants ordinary users no write permission and the published sequence
+requires `write()`. **CVE-2017-1000112**
+has pre-fix IPv4/IPv6 UFO logic, but `CONFIG_USER_NS=n` blocks the published unprivileged
 root setup and production UFO interface features are unknown. Conversely,
-**CVE-2016-0728, CVE-2016-5195, CVE-2016-8655, CVE-2017-1000111, and the
+**CVE-2016-0728, CVE-2016-5195, CVE-2016-8655, CVE-2017-0861,
+CVE-2017-1000111, and the
 generic CVE-2017-1000364 missing-guard-gap premise are no longer candidates:**
 exact vendor-binary analysis confirms the keyring reference release, Dirty COW
 `FOLL_COW` backport, both AF_PACKET socket-locking fixes, and the 1 MiB
