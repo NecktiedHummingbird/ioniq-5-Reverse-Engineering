@@ -2257,3 +2257,14 @@ and are superseded by corrections rather than silently rewritten.
 - What remains is observation, not construction. That distinction is worth keeping straight, because
   "I cannot see it" and "it is not happening" have looked identical several times in this session, and each
   time the control experiment was what separated them.
+
+## 2026-10-31 — the screen is black because nothing was ever given to it
+
+- With placement fixed, the compositor finally rendered — and rendered nothing, correctly. The client
+  commits its surface five times and never attaches a buffer. There is no scene to draw, so black is the
+  right answer rather than a bug.
+- That resolves the last ambiguity. The earlier shared-memory messages were not noise: without boot
+  information the widgets never allocate their buffers, and without buffers there is nothing to see.
+- What this project can now say is well defined: everything from the kernel to the compositor to our own
+  adaptors works, and the remaining gap is one vendor component's shared state. That is a good place to
+  stop guessing and start looking for a segment key.

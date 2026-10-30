@@ -3,6 +3,24 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.28.0 - placed view, real repaint, black pixels: the client never attaches a buffer
+
+- Clean end-to-end measurement with the shim active: a surface is mapped, a repaint occurs, and the
+  downscaled framebuffer dump transfers intact (240x90, 64,800 pixel bytes). **All 21,600 pixels are
+  `#000000`.**
+- The reason is now measured rather than guessed. Under `WAYLAND_DEBUG=1` the client issues **5 `commit`s
+  and zero non-nil `attach` calls** — it never supplies a buffer for its surface. A committed surface with
+  no buffer has nothing to composite, so the renderer correctly produces black.
+- That closes the loop with the earlier `QSharedMemory` failures: the widgets cannot produce content until
+  the boot-info segment they read exists, so they never allocate and attach a buffer. The chain is
+  consistent end to end: missing boot-info shared memory -> no buffer attached -> nothing composited ->
+  black frame.
+- Every layer we own is now verified working: boot to multi-user, backend, CRTC and IAS interfaces, EGL via
+  the software rasteriser, capture, and surface placement. The remaining blocker is one vendor-side
+  shared-memory segment that another process is supposed to publish.
+- Next step is precise: identify the `QSharedMemory` key(s) that `AppHomeScreen` looks for, find which
+  component normally creates them, and publish a minimal segment with plausible boot-info values.
+
 ## 1.27.0 - the shim works: surfaces are mapped and the compositor repaints
 
 - Installed a research shim in the backend that creates a view for every new surface, via
