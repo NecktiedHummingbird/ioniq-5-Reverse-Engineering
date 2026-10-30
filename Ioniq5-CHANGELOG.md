@@ -3,6 +3,24 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.02.0 - disk investigation: the backups were clones and cost nothing
+
+- Pruned 15 of the 70 `rootfs-pre-*.img` backups, the earliest superseded control chains whose
+  results are already retained in `runs/` and `evidence/`. Seven milestone-bearing images were
+  kept: the working deadline-pie runner, the llvmpipe Home/Navi/Home run, both valet runners, the
+  hmc widget bind, the v2 widget link, and the home-navi deadline predecessor.
+- **The prune freed nothing.** 480 GiB was removed from the apparent size and available space did
+  not increase; these files are APFS clones sharing blocks with the canonical image, so unlinking
+  them releases no space. The 1.6 TB figure was never real usage.
+- `tmutil listlocalsnapshots` is empty, so pinned snapshots are not the cause either. The container
+  is genuinely full across the whole machine: `~/Library/Application Support` 402 GB, `~/.codex`
+  248 GB, `~/Documents/Codex` 201 GB, `~/Downloads` 111 GB, alongside the research tree.
+- Consequence recorded plainly: **deleting more project backups will not help**, and further VM
+  work is blocked until roughly 50 GB is freed elsewhere or the workspace is moved to another
+  volume.
+- Correction to the previous entry, which listed the backups as the cause: that inference came from
+  apparent size rather than allocation and was wrong.
+
 ## 1.01.0 - USB test plumbing added; disk-full blocker recorded
 
 - Added an opt-in `extra_devices` argument to `tools/uk_fw/vm_boot.py` so a research run can

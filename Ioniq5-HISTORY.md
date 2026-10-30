@@ -1465,3 +1465,17 @@ and are superseded by corrections rather than silently rewritten.
 - The backups were deliberately not deleted. They are pre-existing work from earlier sessions and
   pruning them is the owner's decision, with the recommendation being to retain the canonical image
   and a few checkpoints and archive the remainder externally.
+
+## 2026-10-29 — disk investigation: the backups were clones
+
+- Pruned the fifteen earliest superseded control-chain backups after ranking by usefulness, keeping
+  seven images tied to retained milestones. The removal changed the apparent size by 480 GiB and
+  freed no space at all, because those files are copy-on-write clones sharing their blocks with the
+  canonical image.
+- Local snapshots were checked and there are none, so nothing is pinning the blocks. The container
+  is full across the machine rather than because of the project: application support, the Codex and
+  codex directories, downloads and the research tree together account for the capacity.
+- The earlier statement that the backups were the cause of the disk exhaustion is corrected here. It
+  was inferred from apparent size rather than allocated blocks.
+- Further VM work remains blocked until about fifty gigabytes is freed elsewhere, since more backup
+  pruning cannot release anything.
