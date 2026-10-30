@@ -1953,3 +1953,18 @@ and are superseded by corrections rather than silently rewritten.
   down now, with the fallback stated.
 - Also a small housekeeping correction: the scaffold was first written under work/, which this repository
   ignores, so it would have been lost from history. It now lives under tools/.
+
+## 2026-10-29 — the tool was inside the image all along
+
+- The missing dependency was shipped with the product. The vendor rootfs carries wayland-scanner, so the
+  guest can generate its own protocol headers, and a host install that had been the obvious next step
+  turned out to be unnecessary.
+- Getting the output back out taught a harness lesson worth its own line: the guest writes to a
+  throwaway overlay, so a file produced inside disappears with the snapshot. Nothing about that is
+  visible from inside the guest, where the file plainly exists. The extraction that worked streams the
+  bytes over the console instead.
+- The integrity check mattered more than usual here, because console transfer is lossy in ways that are
+  easy to miss — wrapped lines, echoed commands, prompts in the middle of data. The decoded size matching
+  the in-guest size exactly, plus the expected count of interface definitions, is the difference between
+  a header and a plausible-looking corruption.
+- Two build items remain rather than four, and both are small.

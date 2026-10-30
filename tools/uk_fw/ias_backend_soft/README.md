@@ -31,3 +31,27 @@ pixman headers available on this host are **0.46.4** (Homebrew); the image ships
 The `libpixman-1.so.0` ABI is stable and the calls the headless renderer makes are long-standing, but a
 build against 0.46.4 headers running on 0.42.2 is a real risk to state, not to paper over. If it bites,
 pin the headers to 0.42.2.
+
+## Protocol header generation — solved, using the image's own scanner
+
+The image ships **`/usr/bin/wayland-scanner`**, so the guest can generate Weston's protocol headers
+itself and no host-side dependency is needed. `presentation_timing-server-protocol.h` in this directory
+was produced this way and is committed.
+
+Method, and the two harness facts that make it work:
+
+1. `debugfs -w -R "write presentation_timing.xml /etc/presentation_timing.xml"` on a **CoW clone**
+   (`cp -c`) of the image, never the canonical one.
+2. `prepare.json` records a sha256 per artefact, so the injected image fails workspace verification until
+   the hashes are recomputed. Refresh `sha256` for the changed file only; the `prepare` subcommand
+   rebuilds from the official package and is not the right tool here.
+3. Generate in-guest: `/usr/bin/wayland-scanner server-header /etc/presentation_timing.xml /tmp/pt.h`.
+4. **Guest writes never reach the image**: the drive is `snapshot=on`, so everything written in the guest
+   goes to a throwaway overlay and `debugfs dump` will not find it. My first extraction attempt failed
+   exactly this way. Extract over the console instead: `busybox gzip -c … | busybox base64 | tr -d '\n'`
+   between markers, then decode host-side, stripping non-base64 bytes.
+5. Integrity check: the decoded size matched the in-guest size exactly (7732 bytes) and the file contains
+   two `struct wl_interface` definitions, which is the expected surface for `presentation`.
+
+The same method will generate any other protocol header the backend needs, including the Weston XMLs in
+`work/weston-source-1.10/full/protocol/`.
