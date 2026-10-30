@@ -1770,3 +1770,21 @@ and are superseded by corrections rather than silently rewritten.
 - V-006 remains rejected as originally claimed. Its `usb_id`
   `ID_SERIAL_SHORT` allowlist does not protect the separate `v4l_id`/`scsi_id`
   line-oriented property boundary, so the two findings are not contradictory.
+
+## 2026-11-01 — the exact udev parser retains the benign second property
+
+- A new fixed-input diagnostic isolated the next V-014 boundary without running
+  either vulnerable helper or any service. It hash-verified the recovered
+  `udevadm` and `systemd-udevd`, installed one temporary rule and synthetic
+  helper in the snapshot-backed VM, and invoked only `udevadm test` against the
+  existing emulated root block device.
+- The helper emitted `ID_SCSI_SERIAL=V014_BENIGN_CONTROL` followed by
+  ` SYSTEMD_WANTS=v014-benign-nonexistent.service`, including the advisory-
+  relevant leading ASCII space. Authentic test output recorded that raw line and
+  retained a normalized separate `SYSTEMD_WANTS` property.
+- The marker unit was verified absent, no udev daemon or systemd manager ran, no
+  kernel uevent was sent, and the temporary helper, rule, and log were removed before
+  completion. Classification was `benign-second-property-retained`.
+- This closes downstream import-parser semantics only. Hardware delivery through
+  SCSI, execution of shipped `scsi_id`, authentic udevd persistence, systemd
+  device activation, the root-shell unit, and interactive VT9 remain untested.

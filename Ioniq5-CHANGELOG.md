@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.18.0 - Confirm benign second-property retention in the exact udev parser
+
+- Added `tools/uk_fw/udev_import_probe.py` and focused tests for a fixed,
+  parser-only offline diagnostic. The tool verifies exact recovered `udevadm`
+  and `systemd-udevd` hashes, uses only `udevadm test`, sends no uevent, starts
+  no daemon or service, and names only an intentionally nonexistent benign unit.
+- Matched the advisory's security-relevant two-line shape: fixed synthetic output
+  contained `ID_SCSI_SERIAL=V014_BENIGN_CONTROL` followed by a leading-space
+  ` SYSTEMD_WANTS=v014-benign-nonexistent.service` line.
+- The exact recovered rule engine executed the synthetic import helper, recorded
+  the raw leading-space line, and emitted the normalized separate property
+  `SYSTEMD_WANTS=v014-benign-nonexistent.service`. The helper, rule, and log were removed,
+  the command exited zero, and classification was
+  `benign-second-property-retained`.
+- Preserved the boundary: shipped vulnerable helpers were not executed; udevd,
+  a kernel uevent, systemd manager, existing unit, root shell, and privilege
+  transition were not involved. This closes the downstream import-parser step,
+  not physical hardware delivery or root activation.
+- DeepSeek Flash passed static route checks but native dispatch still rejected
+  its model as unknown; Fable remains unavailable for native subagents. No
+  failed worker output or silent substitute was used.
+
 ## 1.17.0 - Exact udev helper injection reaches a shipped root-shell unit
 
 - Added `tools/uk_fw/privilege_surface.py`, a deterministic standard-library

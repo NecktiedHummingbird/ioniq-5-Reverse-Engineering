@@ -19,8 +19,12 @@ Mode: **static analysis only.** No VM boot, no QEMU, no execution of target bina
 > pre-fix direct property prints. The former can introduce `REMOVE_CMD`; the
 > latter can introduce `SYSTEMD_WANTS`, and block devices are tagged for
 > systemd. The image ships `debug-shell.service`, conditional on `/dev/tty9`,
-> configured to run `/bin/sh` as root. This is separate from V-006's blocked
-> `usb_id` path. See `evidence/systemd-udev-cve-2026-40225.md` and C25.
+> configured to run `/bin/sh` as root. A later fixed benign `udevadm test`
+> control confirmed that this exact rule engine retains the advisory-shaped
+> leading-space second `SYSTEMD_WANTS` line as a separate property. It did not
+> run shipped helpers, udevd, systemd, or an existing unit. This is separate
+> from V-006's blocked `usb_id` path. See
+> `evidence/systemd-udev-cve-2026-40225.md` and C25.
 
 Tagging: **[V]** = verified by disassembly/byte inspection of the named file at the named offset.
 **[I]** = inferred from code structure, standard library/kernel semantics, or one verified fact extended by

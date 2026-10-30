@@ -114,10 +114,13 @@ ships `debug-shell.service`, configured to run `/bin/sh` as root on `/dev/tty9`
 if that device exists. The upstream SCSI route can inject `SYSTEMD_WANTS` and
 therefore request this existing unit.
 
-This is now the strongest **static** physical-device root path, but it is not a
-bench reproduction. An offline VM control found `/dev/tty9` as character device
-`4:9`; it did not start the service or test interactivity. Do not test the path
-by starting the root-shell unit. If a future
+This remains the strongest static physical-device root path, with its downstream
+import-parser substep dynamically confirmed, but it is not a bench reproduction.
+A fixed benign VM control confirmed the exact `udevadm` rule engine retains a
+leading-space second `SYSTEMD_WANTS` line; it did not run the shipped helper,
+udevd, or systemd. Another control found `/dev/tty9` as character device `4:9`;
+it did not start the service or test interactivity. Do not test the path by
+starting the root-shell unit. If a future
 disconnected bench validation is authorized and recovery is proven, use a
 benign marker unit and inert property observation to test only whether the
 production helper output is split into an additional property. Stop before
@@ -266,9 +269,10 @@ the disconnected bench setup can interact with vehicle networks.
 ## Claims that are not permitted from current evidence
 
 - V-006 provides USB-to-root on `260128`.
-- V-014 has been dynamically reproduced on a head unit, or that VT9 is
-  physically accessible; current evidence is exact static code/rule/service
-  chaining only.
+- V-014 has been dynamically reproduced on a head unit, that authentic
+  helper/udevd/systemd activation occurred, or that VT9 is physically
+  accessible. Current dynamic evidence covers only benign parser retention and
+  the VM tty node condition.
 - `${IFS}` or shell separators survive `ID_SERIAL_SHORT`.
 - The V-012 ASF crash is arbitrary code execution.
 - VM behavior proves the owner's installed build or physical hardware behavior.

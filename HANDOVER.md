@@ -55,14 +55,17 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## Security checkpoint — 2026-11-01
 
-- **V-014 added — strongest static physical root path:** exact shipped
+- **V-014 added — strongest static physical root path; parser substep confirmed:** exact shipped
   `v4l_id` and `scsi_id` instructions contain CVE-2026-40225's pre-fix direct
   property prints. Installed rules import both helpers, tag block devices for
   systemd, and retain generic `REMOVE_CMD` execution. The image also ships
   `debug-shell.service`, configured to start `/bin/sh` as root on `/dev/tty9`
   when `ConditionPathExists=/dev/tty9` passes; the upstream SCSI route can
-  inject `SYSTEMD_WANTS` to request that existing unit. A bounded offline VM
-  control confirmed `/dev/tty9` exists as `root:root` mode `0600`, character
+  inject `SYSTEMD_WANTS` to request that existing unit. A fixed benign offline
+  `udevadm test` control confirmed the exact rule engine retains a leading-space
+  second `SYSTEMD_WANTS` line as a separate property; it did not run the shipped
+  helper, udevd, or systemd. A separate bounded VM control confirmed `/dev/tty9`
+  exists as `root:root` mode `0600`, character
   device `4:9`, under the vendor kernel/userspace and research init; it did not
   start the service. No malicious-device event, physical root transition, VT9
   interaction, or applicability to the owner's unknown installed build is
@@ -113,10 +116,10 @@ followed by stateful service/CAN/persistence reconstruction.
   GStreamer dependency, and a full session-bus capture showed no PlayerEngine or
   thumbnail call. This is a route-specific negative result, not broad media
   safety evidence.
-- Next security work: validate V-014's property-import/unit-request semantics in
-  a disconnected disposable environment with a benign marker unit rather than
-  the root shell; trace post-index media-manager/browser selection, thumbnail,
-  and playback handoff into a consumer; analyze allocation/lifetime behavior
+- Next security work: validate V-014's authentic udevd-to-systemd unit-request
+  semantics in a disconnected disposable environment with a benign marker unit
+  rather than the root shell; trace post-index media-manager/browser selection,
+  thumbnail, and playback handoff into a consumer; analyze allocation/lifetime behavior
   without developing a payload. Keep physical bench tests non-destructive until
   recovery and service restart behavior are validated.
 
