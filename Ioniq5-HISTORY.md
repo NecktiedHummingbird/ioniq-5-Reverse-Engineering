@@ -1871,3 +1871,16 @@ and are superseded by corrections rather than silently rewritten.
   of the permission model is.
 - Escalation still requires physical access. Being accurate about that matters as much as being accurate
   about the defect.
+
+## 2026-10-29 — the interface is live, the pixels are not
+
+- The compositor answered for itself today: the IAS shell interface appears in the registry and an
+  output exists. That is the strongest statement available while running headless, and it means the
+  vendor control path is coherent — the thing this project actually wants to study.
+- The scanout question closed in the least dramatic way: the kernel simply has no driver that could
+  provide a framebuffer on this virtual hardware. i915 is built in and binds nothing, and every fbdev
+  and virtual GPU option is compiled out. No amount of configuration was going to produce an image.
+- Worth noting there were no failures to chase here. Reading the config answered in a minute what
+  experiments could have circled for hours, and it retired an option that looked cheap.
+- The boundary is now precise: the system runs, its interfaces are live, and the only thing missing is
+  a device that can present pixels. That is a well-posed problem rather than a vague one.

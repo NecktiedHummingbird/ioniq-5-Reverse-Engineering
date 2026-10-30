@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.14.0 - ias_shell is live on the compositor; scanout is closed off by the kernel config
+
+- The vendor compositor now exposes its own IAS interface and an output. `wrandr` enumerates the
+  registry and reports **`ias_shell`** among the globals, and `weston-info` reports `wl_output` version 2
+  alongside `wl_compositor`, `wl_scaler`, `presentation` and `wl_seat`. With `ias-shell.so` loaded and
+  its config accepted, the stack is coherent rather than merely running.
+- **Scanout is definitively unavailable**, and the kernel configuration settles it rather than an
+  experiment: `CONFIG_DRM_I915=y` is the only DRM driver present. `CONFIG_DRM_FBDEV_EMULATION` is not
+  set, and `CONFIG_DRM_BOCHS`, `CONFIG_DRM_VIRTIO_GPU`, `CONFIG_DRM_UDL`, `CONFIG_FB_VESA`,
+  `CONFIG_FB_SIMPLE` and `CONFIG_FB_EFI` are all absent. So no `/dev/fb*` can exist for
+  `fbdev-backend.so` to bind, and no `/dev/dri/card0` can appear unless i915 binds — which QEMU cannot
+  cause, since it emulates no Intel IGD.
+- This closes the "just use the fbdev backend" option permanently and confirms the display decision was
+  correct: a virtual KMS driver or a patched software IAS backend are the only routes to a visible
+  surface, and the image's own headless backend is the only one that works today.
+- `opt/ias/` is an empty OEM mount point in the rootfs — `bin` and `lib` exist and are empty — so the
+  `grid_layout.so` that `ias.conf` references as `defer="1"` is genuinely absent, not misplaced. That
+  matches the absence of any complaint about it: the shell treats the layout plugin as deferred.
+- Net position: the HMI stack runs, its control interface is live, an output exists on the protocol
+  level, and nothing is rendered to a framebuffer. That is the exact boundary the display decision
+  addresses.
+
 ## 1.13.0 - IAS shell initialised with the vendor config; `/media` resolves to world-writable
 
 - The compositor now loads `ias-shell.so` **with its configuration**, and the IAS error is gone. The
