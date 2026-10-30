@@ -1319,3 +1319,16 @@ and are superseded by corrections rather than silently rewritten.
   probe paired with the valet-stub runner. The next step is to diff that harness against the
   current probe rather than continue debugging, since the delta between them is what is
   missing.
+
+## 2026-10-29 — correction: AppNavi does create surfaces
+
+- Withdrew the earlier conclusion that AppNavi never creates its ivi surface. That conclusion
+  came from counting markers in the client's Wayland debug log, but the client does not emit
+  those requests in this build, so their absence there was never evidence.
+- Counting the compositor log for the same run shows two surface creations, seven ivi surface
+  references, and attach and commit calls. AppNavi does render.
+- The recipe that reproduces this is the one the retained milestone used: the gpio440
+  adaptor, the valet-status D-Bus boolean stub, and the widget-linking helper replacing the
+  plain foreground helper.
+- The open question therefore moves from surface creation to visibility: whether a foreground
+  request reaches the surface ids that exist and on which plane.
