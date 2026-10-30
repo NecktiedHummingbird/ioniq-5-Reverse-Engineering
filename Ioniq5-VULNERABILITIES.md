@@ -208,7 +208,17 @@ bring-up defect. That question is open.
 
 **Status: downgraded 2026-10-29.** Follow-up analysis resolved the open question in the negative: the faulting pointer is the global `0xffffffff81bd5460`, assigned only from `dev.platform_data` at `0x810594c2`, and no attacker-reachable path to it was found. The driver asserts hardware presence that emulation does not provide, so this is a bring-up defect and an illustration that the driver trusts platform data. Kept in the register for that lesson, not as a finding. Evidence: `evidence/vm-bringup/esinit-bringup-findings.md`.
 
-## V-011 — GStreamer ASF >32-stream object overwrite (VM-CONFIRMED CRASH; RCE POTENTIAL)
+## V-011 — Automounted USB filesystems omit `nodev` (HARDENING GAP; IMPACT UNVERIFIED)
+
+- **Status:** the missing flag is confirmed statically; acceptance of a usable special node and any privilege consequence are not demonstrated. This is a post-execution/DAC-bypass candidate, not a first-step root path.
+- **Where:** `/app/bin/usb-automount`, mass-storage mounts at `0x4d70`/`0x4df1`. Flag words `0xC0ED000A` and `0xC0ED000B` contain `MS_NOSUID | MS_NOEXEC` (plus read-only on retry) but omit `MS_NODEV` (`0x4`). There is no positive `MS_DEV` flag; device interpretation is enabled by omission of `nodev`.
+- **Important filesystem constraint:** this function constructs only vendor driver names `tntfs` and `texfat` for NTFS/exFAT. Other reported types become literal `mtp` and ordinarily fail. FAT/exFAT formats do not natively carry POSIX device inodes; whether a special-file encoding created by available NTFS tooling is recognized as a device by this exact Tuxera `tntfs.ko` is unverified. The earlier phrase “any normal image containing `mknod` nodes” was too broad.
+- **Potential impact:** if `tntfs` materializes an attacker-created block/character node and a less-privileged local process can open the mount, it may bypass ownership on the corresponding `/dev` node. A device node does not execute by itself, and the actor still needs a local process able to open/use it.
+- **Verified vs inferred:** the flags, root mount caller and accepted driver-name branches are verified. Special-node representation, mounted path permissions, SMACK mediation and a useful open/read/write are unverified.
+- **Acceptance test:** on a disposable VM/bench image, mount a non-sensitive NTFS probe carrying an inert special-file representation; confirm `/proc/mounts`, `stat(2)` type/major/minor and an access attempt against a harmless emulated device. Do not target eMMC. A normal FAT/exFAT file is not a valid positive control.
+- **Remediation:** add `MS_NODEV` while retaining `nosuid,noexec`; isolate removable mounts in a namespace and expose only ordinary files to unprivileged media workers.
+
+## V-012 — GStreamer ASF >32-stream object overwrite (VM-CONFIRMED CRASH; RCE POTENTIAL)
 
 - **Status:** CVE-2026-2920's affected path is dynamically reached in the recovered `260128` userspace and causes deterministic memory corruption followed by `SIGSEGV`. Arbitrary code execution is **not** demonstrated. Production scanner/thumbnail auto-reachability and installed-device applicability remain unverified.
 - **Component:** `/usr/lib/gstreamer-1.0/libgstasf.so`, SHA-256 `05e887731708f0b0a52ff9fc75767a00fda9984e422983e5ff1d672f4b1af45d`, GStreamer ABI `1.8.3`. The firmware was built before upstream's 11 February 2026 fix.
@@ -216,23 +226,12 @@ bring-up defect. That question is open.
 - **Dynamic proof:** a bounded probe duplicated one valid ffmpeg-produced WMA Stream Properties object to IDs 1–33. Authentic `gst-discoverer-1.0` logged `Found stream 33`, created its pad, continued into the data object, then the kernel recorded:
   `asfdemux0:sink[...] segfault at e00000000 ... in libglib-2.0.so.0.4400.1`.
   Exit status was `139`. Probe SHA-256: `9c5aaa1f7ad2a4e8526066f6f22e2b3737b912de93f94ab1aa858e3a9ec32518`; host-log SHA-256: `b98b05560207193831fe1d47ed8cc093d5ffcc46b48e2b1c0e23c4ee22da6225`.
-- **Reachability context:** `libthumbnailextractor.so` links GStreamer and contains a `uridecodebin ... ! appsink` video pipeline; its D-Bus activation script does not drop uid. Two bounded D-Bus `Start` attempts did not reproduce the ASF crash, so automatic extraction reachability is not claimed. User-selected playback or another GStreamer consumer remains plausible but untested.
+- **Reachability context:** `libthumbnailextractor.so` links GStreamer and contains a `uridecodebin ... ! appsink` video pipeline; its D-Bus activation script does not drop uid. Authentic PlayerEngine also runs as uid 0 and exposes `SetURI(s,s)`/`Play()` over D-Bus. Bounded calls to both services failed before ASF pad creation in the incomplete VM media environment, so automatic extraction and normal-playback reachability are not claimed.
 - **Impact boundary:** NVD/ZDI classify the generic defect as potential remote code execution in the current process. Here, only a root-context VM parser crash is proven. No shell, persistence, SMACK bypass, CAN access or control of execution was obtained.
 - **Tooling:** `tools/uk_fw/asf_stream_probe.py` safely duplicates one valid ASF stream object, updates header/file sizes, and audits the upstream rejection marker. It refuses malformed templates, in-place overwrite and stream counts outside `1..127`. The generated file carries no command payload or shellcode.
 - **Remediation:** backport the upstream bounds checks for both audio and video stream objects; reject `num_streams >= G_N_ELEMENTS(demux->stream)` before any pad or stream state is created. Run media parsing under a dedicated unprivileged, sandboxed worker. Disable ASF parsing if the format is not required.
 - **Acceptance:** 32-stream positive control parses as before; 33+ streams fail cleanly before pad creation; malformed/repeated headers do not crash; production thumbnail, scanner and playback paths are tested under non-root identities.
 - **Evidence:** `evidence/gstreamer-cve-2026-2920.md`.
-
-## V-011 — Automounted USB filesystem is mounted with `dev`, defeating device permissions
-
-- **Status:** defect confirmed statically; privilege consequence partly inferred, not demonstrated. CWE-269-class (improper privilege management) with a defence-in-depth failure of the `nodev` mitigation.
-- **Where:** `/app/bin/usb-automount`, the mass-storage branch. The mount flag word loaded at `0x4c00` is `0xC0ED000A`, which carries `MS_NOSUID | MS_NOEXEC | MS_DEV`.
-- **Why it matters:** `MS_DEV` is the *absence* of `nodev`. With it cleared, a filesystem supplied on removable media may contain device nodes, and those nodes work. The unit restrict access to internal storage with `0660 root:disk` on `/dev/mmcblk*`; a device node created inside an attacker's filesystem image on removable media bypasses that ownership boundary entirely, because the node is interpreted by the kernel, not by the filesystem owner.
-- **Preconditions:** physical USB access and an image the automounter accepts; the tree offers no evidence that filesystem ownership or provenance is checked.
-- **Impact boundary:** this does not by itself yield code execution. It yields a channel to block devices that the permission model assumed were root-only, which is materially worse than reading removable media should be, and it composes with anything that can act on a mounted device — including this register's unseparated media parsers (V-007).
-- **Verified vs inferred:** the flag value, the call site and the absence of `nodev` are verified. That `/media` and its subdirectories are reachable and that a crafted node is accepted are inferred from the mount call and fstab, and require one runtime check.
-- **Falsified cheaply:** mount any USB image through the service and inspect `/proc/mounts`; if the entry carries `nodev`, this entry is wrong.
-- **Remediation:** add `MS_NODEV` (and keep `nosuid`, `noexec`) to the mass-storage mount flags. Independently, mount removable media in a mount namespace owned by an unprivileged context and expose only a bind of the media root, so flags stop being the only barrier. Reject images containing device or setuid nodes before exposure.
 
 ## Rejected / out-of-scope items
 

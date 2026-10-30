@@ -186,6 +186,48 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C16 — V-006's unquoted root shell sink is not descriptor-based command injection
+
+- **Was:** static review stopped at `util_replace_whitespace()` and concluded that
+  USB serial punctuation, `${IFS}`, separators and redirects reached
+  `/app/bin/usb-automount` unchanged. V-006 was therefore labelled a confirmed
+  CWE-78 USB-to-root path and a physical payload sequence was documented.
+- **Now:** `builtin_usb_id` next calls `util_replace_chars(..., NULL)`. Its default
+  allowlist is alphanumerics plus `#+-.:=@_`; other tested printable characters
+  become `_`. QEMU `usb-mtp` exercised the authentic udev → root automounter →
+  `system()` chain. The old payload was sanitized and no command executed.
+- **Why:** the call at `0x1c33e` was misidentified as trimming rather than the
+  security-relevant character filter. Static sink analysis omitted an upstream
+  transformation at the trust boundary.
+- **Boundary:** the shell construction is still unsafe and a leading `#` can
+  disrupt it. Other firmware/udev builds and untested property paths require
+  separate validation. Physical-head-unit parity is unverified.
+- **Evidence:** `v006-exploit-host.log` SHA-256
+  `568f3197ff178cbf8356674c74a149b66ec1bfd96eedd5f2098a830c84adb27a`;
+  sanitizer matrix SHA-256
+  `de0757442ca4a74d3a3f87db79e8c3eb2b16b101dc47131d266af71ac734b0a1`;
+  `Ioniq5-VULNERABILITIES.md` V-006.
+
+---
+
+## C17 — Missing `MS_NODEV` does not mean every USB image can carry a live device node
+
+- **Was:** the confirmed absence of `MS_NODEV` was immediately described as a
+  first-ranked path where “any normal image containing `mknod` nodes” exposes raw
+  internal block devices.
+- **Now:** the automounter constructs vendor filesystem names `tntfs`/`texfat`;
+  other types become literal `mtp`. FAT/exFAT do not natively encode POSIX device
+  inodes. Whether a special-file encoding produced on NTFS is materialized as a
+  device by this exact Tuxera module is untested. Even if it is, a local process
+  must still open and use the node; the node does not execute from USB.
+- **Why:** mount flags establish policy, not on-disk filesystem semantics or an
+  execution trigger. Those are separate reachability steps.
+- **Boundary:** omitting `MS_NODEV` remains a real hardening error. V-011 is now a
+  post-execution/DAC-bypass candidate pending a harmless dynamic special-node
+  test, not a stock-to-root claim.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

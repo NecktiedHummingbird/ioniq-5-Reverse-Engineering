@@ -3,6 +3,15 @@
 Date: 2026-11-01. Target: `work/decrypted-eu-260128/extracted-safe/mango-rootfs` (build `NE_E.EUR.S5W_L.001.001.260128`).
 Mode: **static analysis only.** No VM boot, no QEMU, no execution of target binaries. Rootfs read read-only.
 
+> **2026-10-30 correction to the ranking below:** absence of `MS_NODEV` is
+> verified, but the document overstates its immediate consequence. The mass-
+> storage code accepts vendor `tntfs`/`texfat`; FAT/exFAT do not natively carry
+> POSIX device inodes, and this exact Tuxera NTFS module has not been shown to
+> materialize a crafted special-file encoding. A local process must also open/use
+> such a node. Treat V-011 as a hardening gap and post-execution DAC-bypass
+> candidate, not the highest-confidence first-step USB root vector. See
+> `evidence/corrections-log.md` C17 and the current vulnerability register.
+
 Tagging: **[V]** = verified by disassembly/byte inspection of the named file at the named offset.
 **[I]** = inferred from code structure, standard library/kernel semantics, or one verified fact extended by
 reasoning. **[U]** = unresolved / not established. Every claim carries one of these.

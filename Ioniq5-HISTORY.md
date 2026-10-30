@@ -1586,3 +1586,22 @@ and are superseded by corrections rather than silently rewritten.
 - Worth noting the shape of that: three candidate attacks were investigated today and two dissolved
   under evidence, while the one that survived was visible in a constant at a single offset. Evidence
   keeps selecting for the boring answer.
+
+## 2026-10-30 — a real media corruption path, and another scope correction
+
+- The shipped ASF demuxer accepted a 33rd stream into a fixed 32-entry array and crashed authentic
+  `gst-discoverer-1.0`. This is the first current-build parser memory-corruption condition reproduced
+  dynamically rather than inferred from a version string. It is V-012 because V-011 was already
+  assigned concurrently to the missing-`nodev` mount finding.
+- A source-layout reconstruction shows the first out-of-range `AsfStream` aliases the live
+  `flowcombiner` pointer with a newly allocated `GstPad *` and corrupts several fields of
+  `old_stream[0]`. The file does not directly supply those pointer values, so the result is a strong
+  crash primitive, not yet an attacker-chosen write or code-execution proof.
+- Authentic thumbnail and PlayerEngine services were started as root and their D-Bus methods were
+  recovered. Bounded calls failed before ASF pad creation in the incomplete VM media environment.
+  Production-service reachability is therefore still open rather than being inferred from the library
+  link alone.
+- The previous missing-`nodev` interpretation was also narrowed. The automounter accepts vendor
+  `tntfs`/`texfat`; FAT/exFAT cannot natively store POSIX device inodes, Tuxera's NTFS special-file
+  semantics are untested, and a local process must still open the node. V-011 remains a hardening
+  defect and post-execution candidate, not a proven first-step USB root path.

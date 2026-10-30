@@ -1,10 +1,30 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-10-27**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-10-30**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
+
+## Security checkpoint — 2026-10-30
+
+- **V-006 corrected:** QEMU `usb-mtp` exercised the authentic udev → root
+  `usb-automount` → `system()` chain. `ID_SERIAL_SHORT` is reduced to
+  `[A-Za-z0-9#+\-.:=@_]`; the old `${IFS}`/separator payload became underscores
+  and did not execute. Retain V-006 as unsafe shell construction and possible
+  denial of service, not a demonstrated USB-to-root path on `260128`.
+- **V-012 added:** the shipped GStreamer ASF plugin
+  `libgstasf.so` (`05e887...f45d`) is dynamically affected by CVE-2026-2920. A
+  valid 33-stream WMA causes authentic `gst-discoverer-1.0` to accept stream 33,
+  corrupt element state and exit 139 after a kernel-recorded segfault. This proves
+  memory corruption/crash in the isolated VM, not RCE or installed-unit reachability.
+- New tracked tooling: `tools/uk_fw/asf_stream_probe.py` plus
+  `tests/test_asf_stream_probe.py`. Primary write-up:
+  `evidence/gstreamer-cve-2026-2920.md`.
+- Next security work: make a real production playback/indexing path reach
+  `asfdemux`; confirm the source-derived post-`stream[31]` layout against the loaded
+  vendor binary; keep physical bench tests crash-only until recovery and service
+  restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 
@@ -115,7 +135,7 @@ remaining edge policy empirically.
 
 EC-03 remains gated. Nothing has been measured: no VM boot, no target execution,
 no fixture run, and no EGL behaviour claim. The parallel live workstream remains
-the confirmed V-006 root command injection awaiting a disclosure decision.
+the now-corrected V-006 root shell sink and the VM-confirmed V-012 ASF parser crash.
 
 ## Parallelism/Council checkpoint — 2026-10-27
 
@@ -608,7 +628,7 @@ under `work/ui-recovery/`, `work/kbuild/`, `work/envelope-20261021/`; full runbo
   tooling is placeholder-only). On-unit the rootfs/navi are plaintext. Both goals
   (run the real UI; install own apps) need device/rootfs access.
 
-## Next useful work
+## Historical next useful work (superseded by recovered/decrypted userspace)
 
 - **Acquire the plaintext vendor rootfs or the per-update key.** This is now the
   single blocker for both goals. Any read access unblocks it: an engineering-mode

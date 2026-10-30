@@ -35,7 +35,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   mount on `/media` when `/media` is writable — an amplifier whose severity depends on a `/media` mode
   that is still unverified.
 
-## 1.08.0 - authentic ASF parser overflow reproduced; V-006 guidance corrected
+## 1.09.0 - authentic ASF parser overflow reproduced; V-006 guidance corrected
 
 - Dynamically reproduced CVE-2026-2920 in the shipped GStreamer ASF plugin
   `/usr/lib/gstreamer-1.0/libgstasf.so` (SHA-256
@@ -47,7 +47,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   valid ASF stream object, repairs header/file sizes, assigns unique 7-bit stream IDs, refuses
   malformed templates and in-place output, and audits the upstream rejection marker. Added five unit
   tests.
-- Recorded the parser finding as V-011. The VM proves memory corruption and denial of service, not
+- Recorded the parser finding as V-012. The VM proves memory corruption and denial of service, not
   arbitrary code execution, persistence or physical-head-unit applicability. Upstream/NVD describe
   RCE potential, but instruction-pointer control was not attempted or claimed.
 - Traced likely production context: `libthumbnailextractor.so` links GStreamer and contains a
@@ -61,6 +61,12 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   execution.
 - Added `evidence/gstreamer-cve-2026-2920.md` with artifact hashes, exact dynamic sequence, production
   reachability boundary, related-CVE triage, remediation and regression criteria.
+- Resolved the concurrent vulnerability-ID collision: the earlier missing-`nodev` hardening gap remains
+  V-011 and the ASF memory-corruption finding is V-012.
+- Tightened V-011's impact claim. The automounter accepts vendor `tntfs`/`texfat`, not arbitrary ext
+  images; FAT/exFAT cannot natively store POSIX device inodes, and Tuxera NTFS special-node semantics
+  remain untested. Missing `MS_NODEV` is confirmed, but a useful device node and privilege bypass are
+  not. It is not a first-step root path.
 
 ## 1.07.0 - authentic init chain runs to a kernel oops, and the MICOM contract is written
 
