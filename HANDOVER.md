@@ -19,11 +19,25 @@ followed by stateful service/CAN/persistence reconstruction.
   Sixteen upstream malformed exfatprogs fixtures produced three clean rejects
   and thirteen clean bounded mounts; no kernel parser fault was observed. This
   is a small corpus negative result, not a broad safety claim.
-- Exact vendor-binary review rejects four version-derived local-root candidates
-  for recovered EU `260128`: Dirty COW/CVE-2016-5195, the AF_PACKET races
-  CVE-2016-8655 and CVE-2017-1000111, and the generic Stack Clash missing-gap
-  premise. The shipped code contains the relevant `FOLL_COW`, socket-locking,
-  and 1 MiB inter-VMA guard-gap backports despite its `4.1.27-abl` banner.
+- Exact vendor-binary review rejects five version-derived local-root candidates
+  for recovered EU `260128`: CVE-2016-0728, Dirty COW/CVE-2016-5195, the
+  AF_PACKET races CVE-2016-8655 and CVE-2017-1000111, and the generic Stack
+  Clash missing-gap premise. The shipped code contains the relevant keyring
+  reference release, `FOLL_COW`, socket-locking, and 1 MiB inter-VMA guard-gap
+  backports despite its `4.1.27-abl` banner.
+- **V-013 added:** exact `snd-seq.ko` lacks CVE-2017-15265's port use-lock fix.
+  A tracked benign diagnostic confirmed numeric uid/gid 65534 can open
+  `/dev/snd/seq` and complete one create/delete sequence under the recovered
+  `root:root 0644` DAC mode. A bounded race issued 200,000 create and 400,000
+  delete attempts without a fault; no UAF, root transition, or code execution
+  is claimed. See
+  `evidence/alsa-sequencer-cve-2017-15265.md` and
+  `tools/uk_fw/alsa_seq_probe.py`.
+- Exact IPv4 and IPv6 review confirms pre-fix CVE-2017-1000112 UFO control flow.
+  It remains conditional: `CONFIG_USER_NS=n` blocks the published unprivileged
+  root setup, production `NETIF_F_UFO` interface features are unknown, and the
+  no-NIC VM did not dynamically trigger it. See
+  `evidence/vendor-kernel-ufo-cve-2017-1000112.md`.
 - A clean 64 MiB NTFS 3.1 control mounted cleanly through exact Tuxera NTFS
   `3016.7.1.2.3`. The V-011 inert-node test is also complete: `tntfs` retained
   character node `1:3`; numeric uid/gid 65534 under SMACK `_` opened it
@@ -33,7 +47,7 @@ followed by stateful service/CAN/persistence reconstruction.
 - Next filesystem work: deterministic copy-on-write exFAT/NTFS mutations and
   production mount-path/SMACK reachability analysis for V-011.
 
-## Security checkpoint — 2026-10-30
+## Security checkpoint — 2026-11-01
 
 - **V-006 corrected:** QEMU `usb-mtp` exercised the authentic udev → root
   `usb-automount` → `system()` chain. `ID_SERIAL_SHORT` is reduced to

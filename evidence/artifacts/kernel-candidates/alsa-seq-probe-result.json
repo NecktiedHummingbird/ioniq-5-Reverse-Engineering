@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "probe_sha256": "f12c99be0fd854d5ef7d1402c9ffd2292afe74a1a7b138d4c71d84735c42e5b1",
+  "probe_build": "work/public-vuln-research-20261101/kernel-candidates/alsa-seq-tool-run-v2",
+  "run_directory": "work/vm/vendor-userspace-260128/runs/1793348885038302000",
+  "expected_snd_seq_module_sha256": "ccc802452bb4ac4527d2def96ddef463211c03ae2c07d9003fdc7ebed9eb091d",
+  "workspace_prepare_sha256": "fa2d4d0b1ebd8ca109a03fc4e42f1d8d6d1bf820a6dc1ce720f0f03252d657fa",
+  "workspace_rootfs_sha256": "4953a005683e009e84390bbf07d65a6a3313cc6abd692a3023e6b660066d036f",
+  "workspace_kernel_sha256": "85e0086202758117015437a5ce7b580d7d32484807d1953c3a16e571f65f3f59",
+  "network": "disabled by vm_boot (-nic none)",
+  "rootfs": "snapshot-backed",
+  "simulated_udev_mode": "root:root 0644",
+  "probe_identity": "numeric uid/gid 65534",
+  "classification": "unprivileged-reachable",
+  "vm_return_code": 0,
+  "vm_result": {
+    "init": "/init",
+    "userspace": true,
+    "root_mounted": true,
+    "command_exit_code": 0,
+    "compatibility_patch": true,
+    "micom_serial": false,
+    "micom_serial_bytes": 0,
+    "timeout": false,
+    "error": null,
+    "qemu_returncode": 0,
+    "elapsed_seconds": 4.6
+  },
+  "salient_lines": [
+    "ALSA_SEQ_PROBE_BEGIN",
+    "ALSA_SEQ_MODULE_SHA256=ccc802452bb4ac4527d2def96ddef463211c03ae2c07d9003fdc7ebed9eb091d",
+    "ALSA_SEQ_DEVICE=character special file mode=644 uid=0 gid=0 dev=74:1",
+    "ALSA_SEQ_PROBE_SHA256=f12c99be0fd854d5ef7d1402c9ffd2292afe74a1a7b138d4c71d84735c42e5b1",
+    "ALSA_SEQ_OPEN_OK",
+    "ALSA_SEQ_CLIENT_ID_OK",
+    "ALSA_SEQ_CREATE_PORT_OK",
+    "ALSA_SEQ_DELETE_PORT_OK",
+    "ALSA_SEQ_UNPRIV_RC=0",
+    "ALSA_SEQ_DMESG_DELTA_BEGIN",
+    "ALSA_SEQ_DMESG_DELTA_END",
+    "ALSA_SEQ_PROBE_COMPLETE"
+  ]
+}

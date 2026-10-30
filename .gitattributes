@@ -1,0 +1,3 @@
+# Preserve authoritative upstream patch bytes; nested unified-diff context lines
+# intentionally contain leading space+tab and otherwise trip `git diff --check`.
+evidence/artifacts/kernel-candidates/*.patch -diff

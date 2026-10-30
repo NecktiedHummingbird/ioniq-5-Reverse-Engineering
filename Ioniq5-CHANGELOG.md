@@ -3,6 +3,32 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.13.0 - exact ALSA/UFO kernel candidates and a bounded sequencer diagnostic
+
+- Added V-013 for CVE-2017-15265 after exact `snd-seq.ko` review showed the
+  pre-fix port lifetime flow. The finding is grounded in module instructions,
+  not the `4.1.27-abl` banner.
+- Added `tools/uk_fw/alsa_seq_probe.py`, a no-network, snapshot-backed harness
+  for a freestanding single-create/delete diagnostic. It hash-verifies the
+  transferred probe and runs it as numeric uid/gid 65534 under the recovered
+  `root:root 0644` DAC mode. The run confirmed read-only open, client-ID,
+  create-port and delete-port reachability.
+- Preserved the impact boundary: a separate bounded race issued 200,000 create
+  and 400,000 delete attempts without a kernel fault. No dynamic UAF,
+  controlled reuse, privilege transition, or arbitrary execution is claimed.
+- Confirmed exact pre-fix IPv4 and IPv6 logic for CVE-2017-1000112. This remains
+  conditional because `CONFIG_USER_NS=n` blocks the published unprivileged root
+  setup, production `NETIF_F_UFO` features are unknown, and the VM remains
+  intentionally NIC-free.
+- Rejected CVE-2016-0728 through exact `join_session_keyring` evidence: the
+  shipped function contains the missing-reference `key_put()` operation. Added
+  correction C22.
+- Added dedicated evidence reports, updated the kernel triage and exploit
+  inventory, and retained all version-derived claims as candidates until exact
+  shipped code and reachability are established. Canonical validation reports
+  `196 passed, 25 subtests passed`; the canonical rootfs hash and clean
+  `e2fsck -fn` counts remain unchanged.
+
 ## 1.12.0 - the MICOM daemon does transmit first, and the command table exists
 
 - Measured on the authentic multi-user boot with `--micom-serial`: **1056 bytes, 103 frames** on

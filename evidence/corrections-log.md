@@ -293,6 +293,22 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C22 — Enabled keyrings do not make CVE-2016-0728 present
+
+- **Was:** CVE-2016-0728 remained a local-root candidate because
+  `CONFIG_KEYS=y`, the vulnerable-era API exists, and the base version predates
+  its upstream stable fix.
+- **Now:** exact `join_session_keyring` disassembly releases the lookup reference
+  when the located keyring equals the new credentials' current session keyring.
+  This is the complete operation added by upstream commit `23567fd052a9`.
+- **Why:** subsystem enablement and version range establish reachability for
+  triage, not the absence of a vendor backport.
+- **Boundary:** this rejects CVE-2016-0728 only. It does not validate unrelated
+  keyring lifetime or permission paths.
+- **Evidence:** `evidence/vendor-kernel-keyring-backport.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

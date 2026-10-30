@@ -233,6 +233,18 @@ bring-up defect. That question is open.
 - **Acceptance:** 32-stream positive control parses as before; 33+ streams fail cleanly before pad creation; malformed/repeated headers do not crash; production thumbnail, scanner and playback paths are tested under non-root identities.
 - **Evidence:** `evidence/gstreamer-cve-2026-2920.md`.
 
+## V-013 — ALSA sequencer port-creation race (EXACT PRE-FIX CODE; ENTRY POINT REACHABLE)
+
+- **Status:** CVE-2017-15265's pre-fix lifetime logic is present in the exact shipped module. A benign offline VM diagnostic confirmed that numeric uid/gid 65534 can open `/dev/snd/seq` and complete one client-ID, create-port, and delete-port sequence under the recovered `root:root 0644` DAC mode. No use-after-free, root transition, or code execution was observed.
+- **Component:** `/lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko`, SHA-256 `ccc802452bb4ac4527d2def96ddef463211c03ae2c07d9003fdc7ebed9eb091d`; `CONFIG_SND_SEQUENCER=m`; aliases `devname:snd/seq` and `char-major-116-1`.
+- **Mechanism:** shipped `snd_seq_create_port` publishes the new port without the use-lock reference added by upstream fix `71105998845fb012937332fe2e806d443c09e026`. Shipped `snd_seq_ioctl_create_port` consequently lacks both matching unlock paths. Another caller sharing the client can delete the port before later create-ioctl dereferences.
+- **Dynamic reachability:** the tracked diagnostic contains no race, fork/clone, heap grooming, payload, or privilege operation. It produced `ALSA_SEQ_OPEN_OK`, `ALSA_SEQ_CLIENT_ID_OK`, `ALSA_SEQ_CREATE_PORT_OK`, `ALSA_SEQ_DELETE_PORT_OK`, and `ALSA_SEQ_UNPRIV_RC=0`. Probe SHA-256: `f12c99be0fd854d5ef7d1402c9ffd2292afe74a1a7b138d4c71d84735c42e5b1`; tool host-log SHA-256: `1f8d3dc1d29534945f9de21f02cbc8dbfb0f7a83307829a6c4ec11568ce4b23f`.
+- **Negative control:** a bounded disposable race made 200,000 create and 400,000 delete attempts and completed without a kernel fault. This does not negate the missing lifetime guard, but it means no dynamic UAF is claimed. Race host-log SHA-256: `605a284973e62dfe0acb9ce8e5ff58af371313bec942ed98f1eee52d2474feb4`.
+- **Impact boundary:** this is a local kernel memory-safety and denial-of-service surface and a conditional post-execution escalation candidate. The VM modeled the recovered DAC rule but does not prove access from every production SMACK domain. No controlled object reuse, arbitrary read/write, instruction-pointer control, or root path is demonstrated; installed-device firmware remains unknown.
+- **Tooling:** `tools/uk_fw/alsa_seq_probe.py` builds, hash-verifies, transfers, and runs the single-create/delete diagnostic in the offline snapshot-backed VM. Source: `tools/uk_fw/guest/alsa_seq_reachability.S`; tests: `tests/test_alsa_seq_probe.py`.
+- **Remediation:** backport upstream `71105998845fb012937332fe2e806d443c09e026`; remove or restrict the static sequencer node if untrusted applications do not require it; apply least-privilege DAC and SMACK policy.
+- **Evidence:** `evidence/alsa-sequencer-cve-2017-15265.md`.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

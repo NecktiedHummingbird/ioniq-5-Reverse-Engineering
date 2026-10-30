@@ -1655,3 +1655,24 @@ and are superseded by corrections rather than silently rewritten.
   1 MiB Stack Clash guard-gap backport in the recovered `4.1.27-abl` image.
   Those four local-root candidates are rejected for EU `260128`; no substitute
   local-root path was claimed.
+
+## 2026-11-01 — one reachable local UAF candidate, without calling it root
+
+- Exact `snd-seq.ko` instructions show that the CVE-2017-15265 use-lock fix is
+  absent. A small freestanding diagnostic then established the practical entry
+  boundary: uid/gid 65534 can open the mode-0644 sequencer node and complete a
+  client-ID/create/delete sequence in the offline vendor-kernel VM.
+- The deliberately bounded race is equally important evidence. Two processes
+  issued 200,000 create and 400,000 delete attempts without a kernel fault. That is
+  not proof of safety and does not override the missing lifetime operation, but
+  it prevents the report from turning a static UAF mechanism into a claimed
+  exploit. V-013 is a local memory-safety candidate; root remains unproven.
+- The same exact-code discipline split two other candidates cleanly. The
+  CVE-2016-0728 keyring reference release is backported, so that path is
+  rejected. The CVE-2017-1000112 IPv4/IPv6 UFO guards are absent, so that bug is
+  retained, but `CONFIG_USER_NS=n` blocks the published unprivileged root setup
+  and production UFO interface reachability is unknown.
+- The tracked sequencer tool performs only one benign create/delete operation,
+  keeps QEMU offline and snapshot-backed, and records a machine-readable
+  classification. The race source and all generated binaries/logs remain in
+  ignored `work/`; no exploit payload was added to the repository.

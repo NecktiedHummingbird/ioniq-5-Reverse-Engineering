@@ -80,7 +80,7 @@ Legend:
 |---|---|---|---|---|---|---|
 | CVE-2016-5195 | **Dirty COW** — `get_user_pages` FOLL_WRITE race | **4.1.35** | (4.8.3 / 4.4.23 upstream) | LOCAL | none | **Not present in recovered `260128`: vendor binary contains the `FOLL_COW | FOLL_FORCE` plus dirty-PTE checks and sets `FOLL_COW` on retry.** See `evidence/vendor-kernel-dirty-cow-backport.md`. |
 | CVE-2017-1000364 | "Stack Clash" — stack guard-page bypass | **4.1.42** | (4.12) | LOCAL | none | **Mitigation present in recovered `260128`: `vm_start_gap`, configurable `stack_guard_gap`, and the 1 MiB default are in the vendor binary.** See `evidence/vendor-kernel-stack-guard-backport.md`. |
-| CVE-2017-1000112 | UDP/UFO `__ip_append_data` / `__ip6_append_data` frag-length inconsistency → OOB write | **4.1.44** | (4.13) | LOCAL (send UDP w/ MSG_MORE; no cap) | none | 4.1.44 "ipv4: Should use consistent conditional judgement for ip fragment…" + ipv6 twin (e4c5e13aa45c); not CVE-tagged in changelog |
+| CVE-2017-1000112 | UDP/UFO `__ip_append_data` / `__ip6_append_data` frag-length inconsistency → OOB write | **4.1.44** | (4.13) | LOCAL, conditional on a `NETIF_F_UFO` route | none for the syscall; published root setup needs unprivileged userns | **Pre-fix code confirmed in recovered `260128`: both vendor functions lack the queue-length guard. `CONFIG_USER_NS=n` blocks the published unprivileged setup, and production UFO features are unknown.** See `evidence/vendor-kernel-ufo-cve-2017-1000112.md`. |
 | CVE-2017-9242 | `__ip6_append_data` OOB write (too-late check) | **4.1.42** | — | LOCAL (IPv6 UDP sendmsg) | none | 4.1.42 "ipv6: fix out of bound writes in __ip6_append_data()" (232cd35d0804) |
 | CVE-2017-9074 | IPv6 fragment: invalid `nexthdr` option → OOB read in `ip6_fragment` | **4.1.42** | — | LOCAL (crafted send; reproducer uses SOCK_RAW) | none–CAP_NET_RAW | 4.1.42 "ipv6: Prevent overrun when parsing v6 header options" (2423496af35d) + follow-up |
 | CVE-2016-8399 | `ping_common_sendmsg` stack OOB (`memcpy_fromiovec`) | **4.1.37** | — | LOCAL (ping socket) | none if `ping_group_range` allows, else CAP_NET_RAW | 4.1.37 `CVE-2016-8399` cited |
@@ -129,8 +129,10 @@ CVE-2016-8632 (TIPC, 4.1.37 — TIPC probably not built), CVE-2016-9191 (cgroup,
 4.1.39), CVE-2017-2618 (SELinux proc attr, 4.1.39), CVE-2017-6951 (dead keyring,
 4.1.40), CVE-2017-7472 (keyring DoS, 4.1.40), CVE-2017-7482 (rxrpc kerberos,
 4.1.43 — rxrpc likely not built), CVE-2017-12193 (assoc_array, 4.1.46),
-CVE-2017-0861 (ALSA pcm UAF, 4.1.49), CVE-2017-15265 (ALSA seq race, 4.1.46),
-CVE-2018-1000004 (ALSA seq pool, 4.1.51), CVE-2017-5753 (Spectre-class KVM
+CVE-2017-0861 (ALSA pcm UAF, 4.1.49), **CVE-2017-15265 (ALSA seq race,
+4.1.46; pre-fix module and unprivileged ioctl reachability confirmed as V-013,
+see `evidence/alsa-sequencer-cve-2017-15265.md`)**, CVE-2018-1000004 (ALSA seq
+pool, 4.1.51), CVE-2017-5753 (Spectre-class KVM
 barrier, 4.1.50), CVE-2017-1000365/1000370/1000371 (stack/args exhaustion,
 4.1.43; 1000370/71 are i386-only), CVE-2017-1000407 (KVM port 0x80, 4.1.49),
 CVE-2017-12154 (KVM CR8, 4.1.46), CVE-2017-17741 (KVM write_mmio infoleak,
@@ -167,12 +169,18 @@ Ranked by (reachability × impact × whether 4.1.27 is actually exposed):
    established connection. Fixed in 4.1.37 → gap if not cherry-picked.
 
 Then, once *any* local code execution exists (app / compromised userland
-service), this table no longer supplies a confirmed local-root path.
-**CVE-2016-5195, CVE-2016-8655, CVE-2017-1000111, and the generic
-CVE-2017-1000364 missing-guard-gap premise are no longer candidates:** exact
-vendor-binary analysis confirms the Dirty COW `FOLL_COW` backport, both
-AF_PACKET socket-locking fixes, and the 1 MiB inter-VMA stack guard despite the
-`4.1.27-abl` banner. Remaining rows require their own exact-code checks.
+service), this table now supplies two exact-code memory-safety candidates but
+still no confirmed local-root path. **CVE-2017-15265/V-013** has pre-fix ALSA
+sequencer code plus VM-confirmed numeric-uid-65534 create/delete ioctl
+reachability; its bounded race did not fault. **CVE-2017-1000112** has pre-fix
+IPv4/IPv6 UFO logic, but `CONFIG_USER_NS=n` blocks the published unprivileged
+root setup and production UFO interface features are unknown. Conversely,
+**CVE-2016-0728, CVE-2016-5195, CVE-2016-8655, CVE-2017-1000111, and the
+generic CVE-2017-1000364 missing-guard-gap premise are no longer candidates:**
+exact vendor-binary analysis confirms the keyring reference release, Dirty COW
+`FOLL_COW` backport, both AF_PACKET socket-locking fixes, and the 1 MiB
+inter-VMA stack guard despite the `4.1.27-abl` banner. Remaining rows require
+their own exact-code checks.
 
 ---
 

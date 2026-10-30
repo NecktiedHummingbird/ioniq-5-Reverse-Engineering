@@ -1,17 +1,16 @@
 # Attack-surface prioritisation for the `260128` bench unit
 
-Status: synthesis of this session's static work plus four completed subagent
-surveys. No device interaction. This ranks the routes that remain open and names
-the single dependency that blocks all of them.
+Status: historical prioritisation, corrected 2026-11-01 with current recovery
+and kernel evidence. No physical-device interaction. For the current finding
+inventory use `evidence/exploit-inventory.md`.
 
-## The blocking dependency
+## Former blocking dependency — resolved offline
 
-Every interesting code path — `AppUpgrade`, `AppDMClient`, `.lge.upgrade.xml`,
-the update parser, the Wi-Fi daemons, the USB gadget stack, Android Auto and
-CarPlay — lives inside AES-encrypted payloads (entropy 8.00, no keystream reuse,
-no known plaintext). Analysis of those components is impossible without the
-unit-derived `DecryptToPIPE` + `decryption_key.der`. This is a cryptographic
-dependency, not an effort limit.
+The original encrypted-payload blocker no longer applies. The EU `260128`
+payloads were recovered and the authentic userspace now boots in the isolated
+VM. This enables exact userland and module review, but does not provide an OEM
+signature bypass, installed-device execution, or evidence about the owner's
+unknown installed firmware.
 
 ## Ranked routes
 
@@ -54,7 +53,7 @@ parser — a classic memory-safety target, but auditable only after decryption.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 4. Kernel — analysed, and not the weak link
+### 4. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -72,6 +71,14 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `RUN_TESTS` path. Device-node mode and label are inside the encrypted rootfs.
 - Built-in reachable code: netfilter/xtables (1,610 symbols), TCP (588),
   IPv6 (525), CAN (306, including `micom_*`), UDP (161).
+- Exact checks reject CVE-2016-0728, Dirty COW, both ranked AF_PACKET races,
+  and the generic missing Stack Clash guard-gap premise despite the old banner.
+- V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
+  diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
+  bounded race did not fault and no root primitive is established.
+- CVE-2017-1000112's IPv4/IPv6 UFO guards are absent, but
+  `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
+  interface UFO features are unknown.
 
 ### 5. MICOM / CAN — post-exploitation
 
@@ -93,14 +100,15 @@ the public KOFFEE report confirms it needs code execution first, then reaches
 
 ## Decisive next evidence, in order
 
-1. UART capture at `ttyS2`, 115200 8N1 (command line recovered from the
-   plaintext `ipk.` header; early console at MMIO `0xfc000000`).
-2. Engineering Mode state on the unit: does the SOP gate fire, and does PIN
-   `21` reach the menu?
-3. Unit-derived `DecryptToPIPE` + `decryption_key.der` → decrypt
-   `mango-rootfs.tar.gz`.
-4. With plaintext: `tools/uk_fw/dump_survey.py` on the extracted rootfs, then
-   component version triage and USB/iAP2 parser audit.
+1. Finish authentic production reachability for V-012 through PlayerEngine,
+   thumbnail extraction, or LightMediaScanner before making any media-to-root
+   claim.
+2. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
+   first post-free use without attempting or claiming a root exploit.
+3. Measure production interface features before treating CVE-2017-1000112 as a
+   reachable path; keep the current VM NIC-free.
+4. If physical bench access later becomes available, capture UART and installed
+   version state before any write or engineering-mode experiment.
 
 ## Sources
 
