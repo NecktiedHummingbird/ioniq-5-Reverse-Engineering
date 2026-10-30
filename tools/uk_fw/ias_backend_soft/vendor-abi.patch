@@ -1,0 +1,58 @@
+diff --git a/src/compositor.h b/src/compositor.h
+index 58ae94b..98f65a3 100644
+--- a/src/compositor.h
++++ b/src/compositor.h	
+@@ -55,6 +55,7 @@ struct weston_buffer;
+ struct shell_surface;
+ struct weston_seat;
+ struct weston_output;
++struct ias_plugin;
+ struct input_method;
+ struct weston_pointer;
+ struct linux_dmabuf_buffer;
+@@ -188,6 +189,12 @@ struct weston_output {
+ 	/** Output area in global coordinates, simple rect */
+ 	pixman_region32_t region;
+ 
++	/* Vendor (LG 1.10.0-r21_9) additions. The shipped weston binary has these
++	 * members; offsets after `region` are 0x18 higher than upstream 1.10.
++	 * Verified against the DWARF in /usr/bin/weston; see
++	 * tools/uk_fw/ias_backend_soft/README.md. */
++	pixman_region32_t damage;
++
+ 	pixman_region32_t previous_damage;
+ 	int repaint_needed;
+ 	int repaint_scheduled;
+@@ -236,6 +243,11 @@ struct weston_output {
+ 			  uint16_t *b);
+ 
+ 	struct weston_timeline_object timeline;
++
++	/* Vendor additions, present in the shipped weston binary. */
++	int (*is_input_per_output)(struct weston_output *output);
++	int (*repeat_redraw)(struct weston_output *output);
++	struct ias_plugin *plugin;
+ };
+ 
+ enum weston_pointer_motion_mask {
+@@ -588,6 +600,9 @@ struct weston_seat {
+ 
+ 	struct input_method *input_method;
+ 	char *seat_name;
++
++	/* Vendor addition, present in the shipped weston binary. */
++	uint32_t output_mask;
+ };
+ 
+ enum {
+@@ -787,6 +802,10 @@ struct weston_compositor {
+ 
+ 	void *user_data;
+ 	void (*exit)(struct weston_compositor *c);
++
++	/* Vendor additions, present in the shipped weston binary. */
++	int normalized_rotation;
++	int damage_outputs_on_init;
+ };
+ 
+ struct weston_buffer {

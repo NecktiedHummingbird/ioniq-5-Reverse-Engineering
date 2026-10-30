@@ -36,6 +36,8 @@
 #include "pixman-renderer.h"
 #include "presentation_timing-server-protocol.h"
 
+void ias_publish(struct wl_display *display);
+
 struct headless_backend {
 	struct weston_backend base;
 	struct weston_compositor *compositor;
@@ -288,5 +290,7 @@ backend_init(struct weston_compositor *compositor,
 	b = headless_backend_create(compositor, &param, display_name);
 	if (b == NULL)
 		return -1;
+
+	ias_publish(compositor->wl_display);
 	return 0;
 }

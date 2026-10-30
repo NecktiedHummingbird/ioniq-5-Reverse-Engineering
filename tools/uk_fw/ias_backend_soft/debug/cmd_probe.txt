@@ -1,0 +1,18 @@
+/bin/busybox mkdir -p /run/user/root /tmp/ias; /bin/busybox chmod 0700 /run/user/root
+/bin/busybox cp /etc/xdg/weston/.config/ias.conf /tmp/ias/ias.conf
+export XDG_RUNTIME_DIR=/run/user/root XDG_CONFIG_HOME=/tmp/ias HOME=/root WAYLAND_DISPLAY=wayland-0
+setsid /usr/bin/weston --backend=ias-backend-soft.so --shell=/usr/lib/weston/ias-shell.so --idle-time=0 --log=/tmp/w.log </dev/null >/dev/null 2>&1 &
+sleep 8
+echo MARK_BOOTED
+/bin/busybox cat /proc/$(/bin/busybox pidof weston)/comm; echo MARK_PID_RC=$?
+echo MARK_RUN1_BEGIN
+/usr/bin/wrandr; echo MARK_WRANDR_RC=$?
+sleep 4
+/bin/busybox cat /proc/$(/bin/busybox pidof weston)/comm; echo MARK_ALIVE1_RC=$?
+echo MARK_RUN2_BEGIN
+/usr/bin/wrandr --crtc=0; echo MARK_CRTC_RC=$?
+sleep 4
+/bin/busybox cat /proc/$(/bin/busybox pidof weston)/comm; echo MARK_ALIVE2_RC=$?
+echo MARK_LOG_BEGIN
+/bin/busybox cat /tmp/w.log
+echo MARK_LOG_END

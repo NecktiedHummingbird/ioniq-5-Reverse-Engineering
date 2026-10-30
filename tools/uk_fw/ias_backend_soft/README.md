@@ -91,3 +91,57 @@ Two channels were tried and one works for large files:
 - **`-chardev file,...,path=/tmp/out` on a second `isa-serial,index=2`**: lossless. Guest writes
   `busybox base64 /tmp/wp.h > /dev/ttyS2` and the host reads the file. This produced the verified
   97042-byte header, matching the in-guest size exactly.
+
+## The wrandr segfault (solved): `struct weston_output` ABI skew
+
+Symptom: `wrandr` bound `ias_crtc` and weston died within milliseconds with `caught signal: 11`, after
+`libwayland: error marshalling arguments for geometry (signature iiiiissi): null value passed for arg 5`.
+
+The protocol code was innocent. Two controls proved it:
+
+- A backend built from the same source **with `ias_publish()` deleted** crashed identically (same two
+  log lines, same `[000000000040a860]` fault PC).
+- With the instrumented build the handlers are never even reached before the crash; `bind_crtc` runs
+  only after the fix.
+
+Fault PC `0x40a860` resolves through the DWARF in `/usr/bin/weston` (not stripped) to `bind_output` →
+inlined `wl_output_send_mode`, i.e. the mode loop at `output->mode_list`. The `geometry` marshal failure
+one line earlier is the same defect: `output->make` read as NULL.
+
+Cause: `work/weston-source-1.10/full/src/compositor.h` was an upstream-shaped reconstruction, but the
+shipped LG `weston 1.10.0-r21_9` has a larger `struct weston_output`. It adds `pixman_region32_t damage`
+**after `region`**, shifting every later member by `0x18`:
+
+| member | vendor binary | reconstructed header (before fix) |
+|---|---|---|
+| `previous_damage` | 0x128 | 0x110 |
+| `make` / `model` | 0x250 / 0x258 | 0x238 / 0x240 |
+| `mode_list` | 0x298 | 0x280 |
+
+So `output->base.make = "gen5w"` wrote 0x18 too low, `wl_list_init(&output->base.mode_list)` initialised
+the wrong bytes, and weston's real `mode_list.next` stayed `NULL` (zalloc'd): `rbx = next - 0x10`,
+`movl 0x4(%rbx)` → NULL deref.
+
+Also absent from the reconstruction and restored the same way: `weston_output`'s trailing
+`is_input_per_output`/`repeat_redraw`/`plugin` (0x308/0x310/0x318, `sizeof` 0x300 → 0x320),
+`weston_seat.output_mask` (0x108, `sizeof` 0x108 → 0x110 — this one overran `struct headless_backend`),
+and `weston_compositor`'s trailing `normalized_rotation`/`damage_outputs_on_init`.
+
+Verification method, repeatable: `llvm-dwarfdump --name=<struct> --show-children /usr/bin/weston` versus
+`zig cc -target x86_64-linux-gnu -Xclang -fdump-record-layouts` over `compositor.h`. All member offsets of
+`weston_output`, `weston_seat`, `weston_compositor`, `weston_plane`, `weston_backend`, `weston_mode` and
+`weston_timeline_object` match the binary exactly after the fix.
+
+Second, smaller fix: `bind_crtc` now posts the `mode` event on bind, so a client sees the CRTC's mode
+instead of an empty list (`wrandr` showed `CRTC = 1` with no rows before).
+
+Result (clean two-file build in `work/vm/softbackend`): `wrandr` prints `0: 1920 x 720 @ 60000`,
+`wrandr --crtc=0` exits 0, weston stays alive across both, and `weston-info` reports
+`make: 'gen5w', model: 'HDMI1'`, 1920x720 @ 60 Hz.
+
+`debug/` holds the throwaway crash-hunt scaffolding (`ias_dbg.c`, instrumented protocol copy, injector and
+runner). Nothing in `debug/` is part of the shipped plugin.
+
+The fix is tracked as `vendor-abi.patch` because `work/` is gitignored; `build.sh` applies it
+idempotently (`patch -p1` from `work/weston-source-1.10/full`) before compiling, and the two-file
+build it produces reproduces the injected `ias-backend-soft.so` byte for byte.

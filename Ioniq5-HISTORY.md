@@ -1904,6 +1904,60 @@ and are superseded by corrections rather than silently rewritten.
   disassembly, and decompiler output in ignored `work/`. Physical and dynamic
   validation remains deferred until a disconnected bench exists.
 
+## 2026-11-01 — both PCB-selected Bluetooth daemons retain an old BNEP parser
+
+- The product does not ship one generic Bluetooth binary. Its setup script reads
+  MICOM PCB state: versions 11/12 select BSA `00.63.00` with one of two
+  controller patchrams; other values select BSA `00.51.00` and a third patchram.
+- Exact comparison avoided relying on either BSA version. Both exported
+  `bnep_process_control_packet()` implementations read the extension/control
+  bytes before the remaining-length checks later added for CVE-2017-0782. The
+  same pre-fix order persists in later multi-byte control fields.
+- The daemon unit is enabled with a configured uid-0 default, while recovered
+  policy intends `App::bluetooth`. Contrary reachability evidence matters:
+  both engineering profiles say `PAN : N/A`, startup calls `BNEP_Init`, and no
+  direct `BNEP_Register` reference was found. The parser is therefore dormant
+  pending evidence of indirect/runtime registration. Adapter state, pairing/
+  authorization, accepted channel, and controller byte preservation remain unknown.
+- No Bluetooth process, adapter, pairing, packet, malformed input, crash, or
+  disclosure was used. V-019 records exact conditional parser behavior without
+  promoting Android's generic critical-RCE rating to a vehicle exploit claim.
+
+## 2026-11-01 — Dropbear package remnants do not form a listener
+
+- The RPM inventory's Dropbear version initially looked like another old daemon
+  candidate. Filesystem reconciliation changed the conclusion: there is no
+  `dropbear` or `dropbearmulti` executable, socket unit, host-key service/key, or
+  enable link in recovered `260128`.
+- The remaining template documents intended per-connection socket mode with
+  passwords disabled. Its pre-start script would overwrite root's authorized
+  keys with one shipped static public key, while the default does not disable
+  root public-key login. That is latent trust material, not usable authentication
+  without the private key and a restored server/socket chain.
+- The default init branch creates the template's condition marker, so the marker
+  is not the decisive blocker. Missing executable and activation dependencies
+  are. No process, port, banner, or login was exercised.
+
+## 2026-11-01 — exact wpa_supplicant code rejects two version-derived P2P findings
+
+- The recovered package and binary advertise wpa_supplicant 2.5, but exact
+  instructions contain later security backports. In `p2p_add_device()`, the
+  peer-controlled SSID element length is rejected above 32 before the copy,
+  matching the CVE-2015-1863 fix.
+- CVE-2021-27803 required a more careful control-flow comparison. The recovered
+  Provision Discovery Request handler calls `p2p_add_device()`, then on every
+  successful return unconditionally calls `p2p_get_device(p2p, sa)` and replaces
+  the old pointer. This is the fixed flow; it is not conditional on the prior
+  pointer being NULL.
+- P2P is still a real compiled surface. ConnMan contains peer, find, listen,
+  provision-discovery, and GO-negotiation machinery, and an enabled path unit
+  can conditionally launch supplicantmanager. This capability evidence does not
+  undo the exact fixed-code conclusions or prove production radio exposure.
+- No target process, interface, P2P discovery, frame, or malformed input was
+  used. The next physical evidence is passive capture of installed hashes,
+  marker/arguments, process label, interface ownership, and find/listen state on
+  a disconnected bench.
+
 ## 2026-11-01 — exact fortification changes an old ConnMan overflow into an abort
 
 - Followed the same package lead into CVE-2023-28488, but stopped at exact code.
@@ -2044,3 +2098,20 @@ and are superseded by corrections rather than silently rewritten.
   over the protocol, then "nothing is visible" is no longer true in principle, only unimplemented.
 - The honest limit is that wrandr cannot yet drive a CRTC, because the interface tables are still only in
   the extraction document. Written down as the next step rather than folded into a claim of success.
+
+## 2026-10-29 — the vendor did not ship stock Weston
+
+- The crash was not a bug in what we wrote. The shipped compositor has a struct layout that differs from
+  upstream by one inserted member, which shifts everything after it by 24 bytes. A field we initialised
+  correctly landed in the wrong place, and the crash surfaced three functions away in the compositor's
+  own output binding.
+- What made this findable was two negative controls: removing our new code entirely did not change the
+  crash, and putting logging inside our handlers showed they were never called. When a crash survives
+  deleting the suspect, the suspect is not the cause — that inference is worth more than any amount of
+  reading the protocol tables again.
+- The vendor's binary ships its own DWARF, so the layout could be read out exactly rather than guessed,
+  and then checked member by member against what the compiler produced. Reverse engineering against a
+  documented layout is a different activity from reverse engineering against a remembered one.
+- The control path now works end to end: a client enumerates a CRTC, sets a mode, and the compositor
+  reports 1920x720 at 60 Hz on an output named HDMI1. The display architecture decision has its first
+  working slice.

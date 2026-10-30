@@ -3,6 +3,33 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.20.0 - the CRTC works, and the cause was a modified vendor ABI
+
+- **The falsification criteria from the scope document are now met.** `wrandr` reports
+  `Mode ID W H R CRTC = 1` with `0: 1920 x 720 @ 60000`, `wrandr --crtc=0` returns 0, weston stays alive
+  throughout, and `weston-info` reports `make: 'gen5w', model: 'HDMI1', width: 1920 px, height: 720 px,
+  refresh: 60 Hz`. The vendor IAS control path now drives our backend.
+- The segfault was **not** in the protocol code. Our module was compiled against upstream Weston 1.10
+  headers, but the shipped `weston 1.10.0-r21_9` has a modified layout: `struct weston_output` gains a
+  `pixman_region32_t damage` member after `region`, shifting every later field by `0x18` (`make` at
+  `0x250` instead of `0x238`, `sizeof` `0x320` instead of `0x300`). `wl_list_init(&output->base.mode_list)`
+  therefore wrote 24 bytes too low, leaving `mode_list.next` NULL, and `bind_output` →
+  `wl_output_send_mode` dereferenced it. The marshalling warning about a null `make` was the same defect.
+  `weston_seat.output_mask` and two `weston_compositor` fields were missing as well.
+- Two controls kept this honest: a build with `ias_publish()` deleted **crashed identically**, and
+  instrumented handlers were **never reached**. Both point away from the new code, which is why the
+  layout hypothesis was worth testing rather than assuming a protocol bug.
+- Fixed by `vendor-abi.patch`, applied idempotently by `build.sh`, restoring the vendor layout for
+  `weston_output`, `weston_seat`, `weston_compositor`, `weston_plane`, `weston_backend`, `weston_mode` and
+  `weston_timeline_object`. Verification was systematic: every member offset was diffed against the
+  shipped binary's own DWARF and now matches exactly.
+- `bind_crtc` also now posts the `mode` event on bind, so the CRTC reports its mode to a client that only
+  binds and asks.
+- **This was only possible because the shipped `/usr/bin/weston` is unstripped**: it carries
+  `.debug_info` (360,666 bytes), `.debug_loc` (286,264), and `.symtab`. Recorded in the register as
+  hardening finding V-012, because full debug symbols in a production infotainment binary materially
+  lower the cost of exactly this kind of ABI reconstruction.
+
 ## 1.19.0 - our own backend runs the vendor IAS shell
 
 - `ias-backend-soft` now exists as an actual backend: derived from the vendored `compositor-headless.c`
@@ -22,6 +49,57 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Two smaller observations recorded rather than glossed: `wl_output` reports `make: '(null)', model:
   '(null)'`, so the vendor geometry path does not read the fields this backend sets, and no mode event
   was observed in `weston-info` output.
+
+## 1.26.0 - Confirm exact BNEP bounds in both Broadcom BSA variants
+
+- Added V-019 for CVE-2017-0782's exact pre-fix BNEP control parser in both
+  PCB-selectable `vbtd-51` and `vbtd-63`.
+- Mapped the instruction order showing extension/control and later multi-byte
+  fields read before the checks introduced by the public AOSP fix; avoided
+  transferring public generic RCE claims to the untested vehicle route.
+- Documented PCB-specific binary/patchram selection, enabled unit, configured
+  uid-0 default, intended `App::bluetooth` policy, ELF hardening, and compiled
+  profile surface.
+- Incorporated contrary reachability evidence: both engineering profiles say
+  `PAN : N/A`; startup calls `BNEP_Init`, but no direct `BNEP_Register` reference
+  was found. V-019 is dormant pending indirect/runtime registration evidence.
+- Preserved remaining gates: adapter, ACL/L2CAP channel, pairing/authorization,
+  controller delivery, owner PCB/hash, allocation-bound impact, and restart
+  behavior remain unknown. No radio or packet was used.
+- Added `evidence/broadcom-bsa-bluetooth-cves.md` and a sanitized exact evidence
+  excerpt; other Android/Bluedroid CVEs remain unaccepted without exact BSA
+  instruction proof.
+
+## 1.25.0 - Close recovered Dropbear activation as inert
+
+- Reconciled the RPM package record with the actual product filesystem: the
+  socket-fed template, public-key installer, and static root authorized public
+  key remain, but `dropbear`, `dropbearmulti`, the socket unit, host-key
+  service/key, and enable links are absent.
+- Reconstructed intended authentication without starting anything: `-s`
+  disables passwords, the shipped default does not add `-w`, and the pre-start
+  script would copy the static key into root's authorized keys. This is only a
+  route for a holder of the matching private key if the missing server chain is
+  independently restored; a bounded recovered-filesystem marker/filename search
+  identified no candidate private key.
+- Added `evidence/dropbear-activation-and-authentication.md` and a sanitized
+  artifact excerpt. No listener, login attempt, credential, or target process
+  was used.
+
+## 1.24.0 - Reject two wpa_supplicant P2P CVEs by exact fixed-code evidence
+
+- Identified exact recovered `wpa_supplicant` and `supplicantmanager` hashes,
+  package record, Build ID, path-unit activation, and conditional marker gate.
+- Confirmed CVE-2015-1863 is fixed: `p2p_add_device()` rejects peer-controlled
+  SSID lengths above 32 before the copy path.
+- Confirmed CVE-2021-27803 is fixed: after successful `p2p_add_device()`, the
+  Provision Discovery Request handler unconditionally re-fetches the peer and
+  replaces the old pointer before continuing.
+- Preserved the exposure boundary: wpa_supplicant and ConnMan contain P2P
+  machinery, but production interface creation, discovery/listen state, launch
+  arguments, peer-table state, SMACK label, and radio delivery remain unknown.
+- Added `evidence/wpa-supplicant-p2p-cves.md` and a sanitized reviewed excerpt;
+  no radio, wireless frame, target execution, or malformed input was used.
 
 ## 1.23.0 - Expand oFono directionality and confirm QMI list corruption
 
