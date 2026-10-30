@@ -138,10 +138,11 @@ See `evidence/gstreamer-cve-2026-2920.md`.
 
 These remain evidence-gathering paths, not established root exploits:
 
-- V-011 missing `MS_NODEV`: first prove that this exact Tuxera `tntfs` module
-  materializes a harmless NTFS special-file encoding. FAT/exFAT cannot natively
-  provide the required inode, and an exposed node still requires local code to
-  open it. Do not target internal storage in the test;
+- V-011 missing `MS_NODEV`: exact Tuxera `tntfs` now materializes a retained
+  harmless NTFS character-node representation, and a numeric uid/gid 65534
+  process can open it read-only when `nodev` is absent. The `nodev` control
+  denies the same open. This validates the hardening effect, not a root path:
+  useful major/minor access and production SMACK/path reachability remain open;
 - filesystem-parser review must use the exact commercial modules recovered here:
   Tuxera NTFS `3016.7.1.2.3` (`tntfs.ko`, SHA-256
   `da2ae1545125a1679bd37d987f2fcb81fdbca89b69042eb3a97d54a5ef9454be`) and
@@ -162,6 +163,81 @@ These remain evidence-gathering paths, not established root exploits:
 - SMACK boundaries: record labels and policy decisions before treating uid 0 as
   unrestricted.
 
+## Offline Tuxera parser harness
+
+`tools/uk_fw/tuxera_fs_probe.py` now attaches one project-local raw image to the
+recovered-kernel VM through QEMU EHCI/USB storage. QEMU opens the image with
+`readonly=on`; the fixed guest script accepts only `tntfs` or `texfat`, identifies
+exactly one `/dev/sd?` candidate, and mounts it with
+`ro,nodev,nosuid,noexec`. The canonical VM root remains snapshot-backed. The
+harness refuses external paths, symlinks, rootfs aliases (including hard links),
+unsafe QEMU path separators, and images outside its size bounds.
+
+A clean 64 MiB NTFS 3.1 image generated with `mkntfs` also mounted and unmounted
+successfully through authentic Tuxera NTFS `3016.7.1.2.3`:
+
+- image SHA-256:
+  `220ad1d065856ae49d971c5d014ab527aca36aa1367f9e8709ceb9d446295cde`;
+- host log `tuxera-ntfs-clean-probe-host.log`, SHA-256
+  `e9d19e192700398c00b2fd083cc39fea726b8170ca0d5eb5e81f2a85ee17d036`;
+- result: `clean-mount`, bounded enumeration, clean unmount, and no parser fault.
+
+The separate V-011 semantics run used a copy-on-write disposable copy. The same
+Tuxera driver created character node `inert-null` (`1:3`) on that NTFS volume.
+After unmount and remount without `nodev`, the inode remained a `root:root`
+character device with mode `0755`; root and numeric uid/gid 65534, SMACK label
+`_`, could open it read-only. Remounting with `nodev` preserved its metadata but
+denied the open with `EACCES`. Only QEMU `/dev/null` was addressed. No eMMC,
+block storage, or host device was touched. Evidence:
+
+- initial special-file control host log SHA-256
+  `4d68550b5cb8420622e25cdfd35ccb9fee194b48fb16f946090607c3f784a494`;
+- numeric-uid/no-`nodev` versus `nodev` host log SHA-256
+  `8c41d9025183781ade987cd688d4724d48d6964cb876492004649803eb2403f3`.
+
+This confirms that omission of `MS_NODEV` has a real VFS effect for this Tuxera
+NTFS build. It does not identify a useful privileged device, prove a production
+application's SMACK access, or establish privilege escalation.
+
+A clean 64 MiB exFAT image generated with exfatprogs 1.4.3 mounted and unmounted
+successfully through authentic Tuxera exFAT `3016.6.23.3`:
+
+- image SHA-256:
+  `63dc4f133e2fc41183aafbb8ff2163cc9461571f48cbe738b407d202934da934`;
+- host log `tuxera-exfat-clean-probe-v2-host.log`, SHA-256
+  `f4965c43c5f9446a5586e51c37745d6692144e2650ea2b8ea8460476d0199573`;
+- result: `clean-mount`, including `TUXERA_PROBE_MOUNT_OK`, bounded root
+  enumeration, `TUXERA_PROBE_UNMOUNT_OK`, and no parser fault marker.
+
+Sixteen bounded malformed exFAT images from the upstream exfatprogs fsck tests
+were also exercised read-only. `bad_bitmap_size`, `bad_root`, and `bs_bad_csum`
+were cleanly rejected. The other thirteen mounted, completed bounded root
+enumeration, and unmounted without a detected kernel fault. These are
+compatibility/negative controls for a different exFAT implementation, not proof
+that the proprietary module is generally safe and not a claim that Linux
+in-tree exFAT CVEs affect it. Retained host-log SHA-256 values:
+
+- `bad_bitmap_size`: `3d78a9783d80f677bb868d886fea58cd45cc09da1b739b88b8197d9d6a84a914`;
+- `bad_root`: `32faad69c2288d573b55e404b13025ce41361bcaee0bda732e757a97ddb86cbe`;
+- `bad_dentries`: `57f40f47c892fac6e8ee2008a821848a02e96d9156892381bf3ac1d008b84404`;
+- `file_invalid_clus`: `e7c40ee0b019c1e9f27118930775e02dd72416e849894e8f3497dc0dd5eebc5d`;
+- `invalid_name`: `f3ba47661a7be9b3eced9fed0352ec52c9ef34c8eb746b5f8681050c2c6b73c2`;
+- `loop_chain`: `b5b861ea1fa5ac73ba7ced974aaca520095a94947e868c1d6e4285e5791973f1`;
+- `bad_bitmap`: `e4fb81250f52aa7d3d83fa25ed7fb06b615d07f967de5cbe95b20752b5b02866`;
+- `bad_dentries2`: `d8c99341f7d7ac4612a4ec6f66c59a2cdeeffe003839c2bb1bf5a57690144636`;
+- `bad_file_size`: `40b9da2ac856ebc72858e4ab193c522f05f3a4c2400ea173e5064a0d038448db`;
+- `bad_first_clu`: `d5affdcf9b9ea13814d9ed830c4b0ebe2c81c3e64b5b8261f0d9e6e5d726dfb7`;
+- `bad_num_chain`: `b3c0fb03d1f00df1b5dae91ff114e51d3ded897a52e3a1d4704a377ec96dfc9f`;
+- `bs_bad_csum`: `f469fff79f50cd58dae9156c51aeed5426f34d62ae7052a5bc4071168caff3cf`;
+- `de_bad_csum`: `e4140d240f8f9637e2e9ba49f60dec87037e71e0df409df608c95b98842a3fbe`;
+- `duplicate_clu`: `29a43f703d46f6d7729f741225acc6e379d11365d693873891db14e4f0a4faf9`;
+- `duplicated_name`: `7d22efa2c268ae90c7e240ceb822c81a6c6def86a589002dfb8a0db6c00f9e8d`;
+- `unused-dentries`: `594401a8a92e8b2898c2b90963b343ebebbe813dfd693def21072cecdca7db7b`.
+
+This establishes a safe baseline for deterministic mutation campaigns. It does
+not yet establish a Tuxera parser vulnerability, a physical-unit trigger, or root
+execution.
+
 ## Stop conditions
 
 Stop immediately on repeated reboot, storage errors, unexpected writes outside
@@ -176,3 +252,6 @@ the disconnected bench setup can interact with vehicle networks.
 - VM behavior proves the owner's installed build or physical hardware behavior.
 - Root in one SMACK domain implies unrestricted CAN, ECU-key or safety-system
   access.
+- V-011 is a first-step USB-to-root path merely because Tuxera NTFS preserves
+  special nodes; a local opener and useful permitted device operation are still
+  required.

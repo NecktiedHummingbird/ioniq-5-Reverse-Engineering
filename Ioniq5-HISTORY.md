@@ -1635,3 +1635,23 @@ and are superseded by corrections rather than silently rewritten.
   the launcher's own call order narrows it to two candidates.
 - A worker on this task was cut off mid-sentence and produced nothing. Rather than present the round as
   organised work, the measurement was taken directly and the record says so.
+
+## 2026-11-01 — exact parser and backport evidence replaces version guesses
+
+- A new offline harness now exercises the recovered commercial Tuxera modules
+  against project-local raw images without mounting them on the host. QEMU opens
+  parser inputs read-only, the guest uses `ro,nodev,nosuid,noexec`, and the
+  canonical root remains snapshot-backed. Sixteen malformed exFAT fixtures
+  produced no detected kernel fault; that is a bounded negative result, not a
+  parser-safety claim.
+- The clean NTFS control settled V-011's central filesystem question. Exact
+  Tuxera NTFS retained a character node across remount. Without `nodev`, a
+  process reduced to uid/gid 65534 under SMACK `_` opened the harmless QEMU
+  `/dev/null` target; with `nodev`, VFS denied it. The omission therefore has a
+  real policy effect, while still not providing execution, a useful target, or
+  a first-step root path by itself.
+- The old kernel banner was again a poor vulnerability oracle. Direct binary
+  checks found the Dirty COW fix, both ranked AF_PACKET locking fixes, and the
+  1 MiB Stack Clash guard-gap backport in the recovered `4.1.27-abl` image.
+  Those four local-root candidates are rejected for EU `260128`; no substitute
+  local-root path was claimed.

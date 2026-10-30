@@ -3,7 +3,7 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
-## 1.10.0 - the MICOM daemon does transcribe first, and the command table exists
+## 1.12.0 - the MICOM daemon does transmit first, and the command table exists
 
 - Measured on the authentic multi-user boot with `--micom-serial`: **1056 bytes, 103 frames** on
   `/dev/ttyS1`, against `micom_serial_bytes: 0` on every earlier attempt. The contract's weakest link
@@ -25,7 +25,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   taken directly instead. `micom-contract.md` was unchanged by that worker, so nothing is being
   credited to it that it did not do.
 
-## 1.10.0 - bounded Tuxera harness and exact kernel-backport checks
+## 1.11.0 - bounded Tuxera harness and exact kernel-backport checks
 
 - Added `tools/uk_fw/tuxera_fs_probe.py` and its tests: a no-network,
   snapshot-backed harness that attaches only a project-local regular raw image
@@ -39,15 +39,22 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   malformed upstream exfatprogs fixtures yielded three clean rejections and
   thirteen clean bounded mounts/unmounts, with no detected kernel parser fault.
   This is a bounded negative result rather than evidence of parser safety.
+- Generated a clean 64 MiB NTFS 3.1 control with project-local Alpine `mkntfs`;
+  exact Tuxera NTFS `3016.7.1.2.3` mounted and unmounted it cleanly. The V-011
+  harmless semantics test then retained character node `1:3` across remount.
+  Numeric uid/gid 65534 under SMACK `_` opened QEMU `/dev/null` read-only when
+  `nodev` was omitted; the `nodev` control denied the same open. This confirms a
+  device-policy bypass primitive, not a demonstrated USB-to-root path.
 - Exact recovered-binary analysis rejects four version-derived local-root
   candidates for EU `260128`: Dirty COW/CVE-2016-5195, AF_PACKET
   CVE-2016-8655, AF_PACKET CVE-2017-1000111, and the generic Stack Clash
   missing-guard-gap premise. The vendor kernel contains the relevant
   `FOLL_COW`, socket-locking, and 1 MiB inter-VMA guard-gap backports despite its
   `4.1.27-abl` banner.
-- Added dedicated evidence reports and corrections C18-C20. V-011 remains a
-  hardening gap: exact Tuxera NTFS special-file materialization and harmless
-  access still require isolated testing.
+- Added dedicated evidence reports and corrections C18-C21. V-011 remains a
+  hardening gap/post-execution primitive: production mount-path access, useful
+  major/minor selection, application SMACK labels, and any root consequence are
+  still unverified.
 
 ## 1.09.0 - normal multi-user reached; the blockers are now the two known ones
 

@@ -78,14 +78,14 @@ Legend:
 
 | CVE | Subsystem | Fixed-in 4.1.x | Else fixed-in | Reachability | Privilege | 4.1.x ChangeLog evidence |
 |---|---|---|---|---|---|---|
-| CVE-2016-5195 | **Dirty COW** — `get_user_pages` FOLL_WRITE race → write to read-only file maps → unprivileged root | **4.1.35** | (4.8.3 / 4.4.23 upstream) | LOCAL | none | 4.1.35 "mm: remove gup_flags FOLL_WRITE games from __get_user_pages()" (upstream 19be0eaffa3a) |
-| CVE-2017-1000364 | "Stack Clash" — stack guard-page bypass | **4.1.42** | (4.12) | LOCAL | none | 4.1.42 "mm: larger stack guard gap, between vmas" (1be7107fbe18) |
+| CVE-2016-5195 | **Dirty COW** — `get_user_pages` FOLL_WRITE race | **4.1.35** | (4.8.3 / 4.4.23 upstream) | LOCAL | none | **Not present in recovered `260128`: vendor binary contains the `FOLL_COW | FOLL_FORCE` plus dirty-PTE checks and sets `FOLL_COW` on retry.** See `evidence/vendor-kernel-dirty-cow-backport.md`. |
+| CVE-2017-1000364 | "Stack Clash" — stack guard-page bypass | **4.1.42** | (4.12) | LOCAL | none | **Mitigation present in recovered `260128`: `vm_start_gap`, configurable `stack_guard_gap`, and the 1 MiB default are in the vendor binary.** See `evidence/vendor-kernel-stack-guard-backport.md`. |
 | CVE-2017-1000112 | UDP/UFO `__ip_append_data` / `__ip6_append_data` frag-length inconsistency → OOB write | **4.1.44** | (4.13) | LOCAL (send UDP w/ MSG_MORE; no cap) | none | 4.1.44 "ipv4: Should use consistent conditional judgement for ip fragment…" + ipv6 twin (e4c5e13aa45c); not CVE-tagged in changelog |
 | CVE-2017-9242 | `__ip6_append_data` OOB write (too-late check) | **4.1.42** | — | LOCAL (IPv6 UDP sendmsg) | none | 4.1.42 "ipv6: fix out of bound writes in __ip6_append_data()" (232cd35d0804) |
 | CVE-2017-9074 | IPv6 fragment: invalid `nexthdr` option → OOB read in `ip6_fragment` | **4.1.42** | — | LOCAL (crafted send; reproducer uses SOCK_RAW) | none–CAP_NET_RAW | 4.1.42 "ipv6: Prevent overrun when parsing v6 header options" (2423496af35d) + follow-up |
 | CVE-2016-8399 | `ping_common_sendmsg` stack OOB (`memcpy_fromiovec`) | **4.1.37** | — | LOCAL (ping socket) | none if `ping_group_range` allows, else CAP_NET_RAW | 4.1.37 `CVE-2016-8399` cited |
-| CVE-2016-8655 | AF_PACKET TPACKET_V3 `packet_set_ring` race → UAF | **4.1.37** | — | LOCAL | CAP_NET_RAW | 4.1.37 "packet: fix race condition in packet_set_ring" (84ac7260236a) |
-| CVE-2017-1000111 | AF_PACKET `PACKET_RESERVE` race (analog of 8655) | — | 4.12 / 4.4.x / 4.9.x | LOCAL | CAP_NET_RAW | not in 4.1 |
+| CVE-2016-8655 | AF_PACKET TPACKET_V3 `packet_set_ring` race → UAF | **4.1.37** | — | LOCAL | CAP_NET_RAW | **Not present in recovered `260128`: `af_packet.ko` locks both `PACKET_VERSION` changes and `packet_set_ring` before the racy state.** See `evidence/vendor-kernel-af-packet-backport.md`. |
+| CVE-2017-1000111 | AF_PACKET `PACKET_RESERVE` race (analog of 8655) | — | 4.12 / 4.4.x / 4.9.x | LOCAL | CAP_NET_RAW | **Not present in recovered `260128`: the `PACKET_RESERVE` branch locks around ring checks and `tp_reserve`.** See `evidence/vendor-kernel-af-packet-backport.md`. |
 | CVE-2020-14386 | AF_PACKET `tpacket` overflow | — | 5.9-rc4 | LOCAL | CAP_NET_RAW | not in 4.1 |
 
 ### Netfilter/xtables reachable **without** CAP_NET_ADMIN (task item 2)
@@ -167,10 +167,12 @@ Ranked by (reachability × impact × whether 4.1.27 is actually exposed):
    established connection. Fixed in 4.1.37 → gap if not cherry-picked.
 
 Then, once *any* local code execution exists (app / compromised userland
-service), the top local escalations that a 4.1.27 device is missing are, in
-order: **CVE-2016-5195 (Dirty COW → root)** (fixed 4.1.35),
-**CVE-2017-1000364 (Stack Clash)** (fixed 4.1.42),
-**CVE-2016-8655 / CVE-2017-1000111 (AF_PACKET UAF → root, needs CAP_NET_RAW)**.
+service), this table no longer supplies a confirmed local-root path.
+**CVE-2016-5195, CVE-2016-8655, CVE-2017-1000111, and the generic
+CVE-2017-1000364 missing-guard-gap premise are no longer candidates:** exact
+vendor-binary analysis confirms the Dirty COW `FOLL_COW` backport, both
+AF_PACKET socket-locking fixes, and the 1 MiB inter-VMA stack guard despite the
+`4.1.27-abl` banner. Remaining rows require their own exact-code checks.
 
 ---
 

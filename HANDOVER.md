@@ -1,10 +1,37 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-10-30**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-11-01**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
+
+## Filesystem/parser and kernel checkpoint — 2026-11-01
+
+- Added `tools/uk_fw/tuxera_fs_probe.py`, an offline, snapshot-backed, read-only
+  harness for exact vendor `tntfs`/`texfat` modules. It rejects path/rootfs
+  alias hazards, uses QEMU `readonly=on`, mounts only with
+  `ro,nodev,nosuid,noexec`, bounds enumeration, and retains JSON results.
+- QEMU xHCI triggers a vendor `xhci_toggle_dis_perr_det()` compatibility fault;
+  EHCI plus authentic `ehci-pci` is stable. This is a VM compatibility issue,
+  not a production finding.
+- Authentic Tuxera exFAT `3016.6.23.3` accepted a clean 64 MiB exFAT control.
+  Sixteen upstream malformed exfatprogs fixtures produced three clean rejects
+  and thirteen clean bounded mounts; no kernel parser fault was observed. This
+  is a small corpus negative result, not a broad safety claim.
+- Exact vendor-binary review rejects four version-derived local-root candidates
+  for recovered EU `260128`: Dirty COW/CVE-2016-5195, the AF_PACKET races
+  CVE-2016-8655 and CVE-2017-1000111, and the generic Stack Clash missing-gap
+  premise. The shipped code contains the relevant `FOLL_COW`, socket-locking,
+  and 1 MiB inter-VMA guard-gap backports despite its `4.1.27-abl` banner.
+- A clean 64 MiB NTFS 3.1 control mounted cleanly through exact Tuxera NTFS
+  `3016.7.1.2.3`. The V-011 inert-node test is also complete: `tntfs` retained
+  character node `1:3`; numeric uid/gid 65534 under SMACK `_` opened it
+  read-only without `nodev`, while the `nodev` control returned `EACCES`. Only
+  QEMU `/dev/null` was used. This confirms a device-policy bypass primitive, not
+  USB-to-root; production opener/SMACK/useful-device reachability remains open.
+- Next filesystem work: deterministic copy-on-write exFAT/NTFS mutations and
+  production mount-path/SMACK reachability analysis for V-011.
 
 ## Security checkpoint — 2026-10-30
 

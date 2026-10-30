@@ -222,9 +222,74 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
   must still open and use the node; the node does not execute from USB.
 - **Why:** mount flags establish policy, not on-disk filesystem semantics or an
   execution trigger. Those are separate reachability steps.
-- **Boundary:** omitting `MS_NODEV` remains a real hardening error. V-011 is now a
-  post-execution/DAC-bypass candidate pending a harmless dynamic special-node
-  test, not a stock-to-root claim.
+- **Boundary at correction time:** omitting `MS_NODEV` remained a real hardening
+  error and V-011 became a post-execution/DAC-bypass candidate, not a
+  stock-to-root claim. The harmless dynamic test has since been completed; see
+  C21.
+
+---
+
+## C18 — The `4.1.27-abl` banner does not make Dirty COW present
+
+- **Was:** CVE-2016-5195 was ranked as the leading post-execution local-root
+  candidate because upstream Linux 4.1 did not receive the fix until 4.1.35.
+- **Now:** the recovered vendor binary contains the fix's paired invariants:
+  `follow_page_mask` requires `FOLL_FORCE | FOLL_COW` and a dirty PTE before
+  following a forced write PTE, while `__get_user_pages` sets `FOLL_COW` after
+  the COW fault. The vulnerable `FOLL_WRITE`-clearing sequence is not used.
+- **Why:** the original ranking was version-gap triage and explicitly did not
+  confirm vendor cherry-picks. Exact binary inspection now supplies that check.
+- **Boundary:** this rejects Dirty COW only for recovered EU `260128`; it does
+  not validate other kernel CVEs or the owner's unknown installed build.
+- **Evidence:** `evidence/vendor-kernel-dirty-cow-backport.md`.
+
+---
+
+## C19 — Both ranked AF_PACKET races are backported in the shipped module
+
+- **Was:** the TPACKET_V3 version-change and `PACKET_RESERVE` races remained
+  ranked as AF_PACKET local-root hypotheses based on upstream fix dates.
+- **Now:** shipped `af_packet.ko` acquires the socket lock at the start of
+  `packet_set_ring`, locks the `PACKET_VERSION` branch around ring checks and
+  `tp_version`, and separately locks the `PACKET_RESERVE` branch around ring
+  checks and `tp_reserve`. These are the changes from upstream commits
+  `84ac7260236a` and `c27927e372f0`.
+- **Why:** as with Dirty COW, a base version identifies candidates but cannot
+  establish that an OEM kernel omitted a backport.
+- **Boundary:** this rejects CVE-2016-8655 and CVE-2017-1000111 only; other
+  AF_PACKET bugs and actual
+  `CAP_NET_RAW` assignments need separate checks.
+- **Evidence:** `evidence/vendor-kernel-af-packet-backport.md`.
+
+---
+
+## C20 — The larger Stack Clash guard gap is present despite the old banner
+
+- **Was:** CVE-2017-1000364 remained the leading version-derived local-root
+  hypothesis after Dirty COW and the AF_PACKET races were rejected.
+- **Now:** the vendor binary contains `vm_start_gap`, `stack_guard_gap`, its boot
+  parameter parser, and an initialized 1 MiB gap. Those are the central changes
+  from upstream commit `1be7107fbe18`.
+- **Why:** ranking by the upstream stable version again missed an OEM backport.
+- **Boundary:** the larger gap is mitigation rather than a proof against every
+  stack-growth technique, but the generic missing-fix premise is false here.
+- **Evidence:** `evidence/vendor-kernel-stack-guard-backport.md`.
+
+---
+
+## C21 — Exact Tuxera NTFS does preserve usable special-node semantics
+
+- **Was:** after C17, Tuxera NTFS special-file materialization and the practical
+  effect of `nodev` remained unverified.
+- **Now:** exact `tntfs` `3016.7.1.2.3` retained an inert character node (`1:3`)
+  across unmount/remount. Without `nodev`, numeric uid/gid 65534 under SMACK `_`
+  opened it read-only; with `nodev`, the same open failed with `EACCES`.
+- **Why:** filesystem semantics must be measured separately from mount-flag
+  recovery. The test used only QEMU `/dev/null` and a disposable NTFS image.
+- **Boundary:** this confirms a device-policy bypass primitive, not USB-to-root.
+  A production local opener, useful major/minor, access mode and SMACK/path
+  permission are still required.
+- **Evidence:** `evidence/usb-root-test-plan.md` and the hashes recorded there.
 
 ---
 
