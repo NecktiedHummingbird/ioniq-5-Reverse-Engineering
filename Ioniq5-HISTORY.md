@@ -1332,3 +1332,16 @@ and are superseded by corrections rather than silently rewritten.
   plain foreground helper.
 - The open question therefore moves from surface creation to visibility: whether a foreground
   request reaches the surface ids that exist and on which plane.
+
+## 2026-10-29 — visibility requests issued but never bound to a surface
+
+- Counted visibility markers in the compositor log during the valet-stub run: sixteen
+  set_surface_visible calls, sixteen set_visible_for_qtwayland calls, eight foreground
+  requests and sixteen layout calls, but zero ivi_surface_visibility events.
+- The only surface id logged as created is 30000, whereas the helper programmes visibility for
+  3000. The requests are therefore issued correctly and never bind to a surface that exists,
+  which matches the manager continuing to report drawing application 0.
+- The 3000-versus-30000 discrepancy is consequently promoted from a suspicion to the leading
+  explanation, now backed by the visibility event count rather than by inference.
+- The next step is to establish how the environment value maps to the created id, then either
+  point the helper at the id that exists or make AppNavi create the id the helper expects.
