@@ -56,6 +56,14 @@ unknown installed firmware.
   not network-to-root.
 - Evidence: `evidence/connman-cve-2026-115863.md`.
 
+A second exact ConnMan result, V-016/CVE-2023-28488, is **not** ranked as a root
+candidate. Ordinary IPv4 startup does reach its pre-fix L2 total-length path,
+but this exact build calls `__memcpy_chk` with the 628-byte object size and exact
+libc reaches `__chk_fail` before an underflowed copy. Its strongest current
+classification is conditional adjacent-network service termination/availability,
+not memory corruption or code execution. See
+`evidence/connman-cve-2023-28488.md`.
+
 ### 3. USB storage via AppNavi replacement — published but installation-gated
 
 - Mechanism: `navi_extended` replaces `AppNavi`; on launch it runs
@@ -149,10 +157,12 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    display/input gates for a disconnected bench with a benign marker—not the
    installed shell unit. Parser and synthetic udevd-to-systemd semantics are
    complete; do not describe them as physical-device reproduction.
-2. For V-015, preserve the current NIC-free VM. On a disconnected bench, first
-   record installed `connmand`, interface ownership, IPv6 state, and benign
-   RA/DHCPv6 behavior. Do not move to a malformed control unless restart and
-   recovery are proven, and do not develop a privilege payload.
+2. For V-015 and V-016, preserve the current NIC-free VM. On a disconnected
+   bench, first record installed `connmand` and libc hashes, interface ownership,
+   IPv4/IPv6 state, and benign DHCP/RA behavior. Do not move to a malformed
+   control unless restart and recovery are proven, and do not develop a
+   privilege payload. Exact fortification already constrains V-016 to an abort
+   before the reviewed copy.
 3. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
    explicit `requestThumbnails(as)`, and repair the bounded VM thumbnail
    service-name/delivery boundary. Exact static code maps that request to

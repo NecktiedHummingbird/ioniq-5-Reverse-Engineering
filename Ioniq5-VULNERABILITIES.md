@@ -267,6 +267,16 @@ bring-up defect. That question is open.
 - **Remediation:** replace the parser with a strictly length-aware DNS-label decoder; reject cursor/label/expanded-name overflow and missing termination; update ConnMan when the upstream fix is available; disable unneeded DHCPv6; reduce daemon privilege; retain restart-rate and crash diagnostics.
 - **Evidence:** `evidence/connman-cve-2026-115863.md`; reviewed excerpt `evidence/artifacts/network-candidates/connman-cve-2026-115863-static-evidence.txt`; deterministic RPM dump parser `tools/uk_fw/rpm_nvra_inventory.py`.
 
+## V-016 — ConnMan DHCPv4 total-length underflow (EXACT PRE-FIX ORDER; FORTIFY BLOCKS THE STACK COPY)
+
+- **Status:** the exact shipped `connmand` retains CVE-2023-28488's pre-fix ordering and reaches the affected L2 callback through ordinary IPv4 `INIT_SELECTING`. Exact `_FORTIFY_SOURCE` output changes the reviewed outcome: no oversized stack copy occurs because `__memcpy_chk` reaches `__chk_fail` first. No packet was generated and no dynamic abort occurred.
+- **Component:** `/usr/sbin/connmand`, SHA-256 `d82d4018bfa9d8f8d67407453bd783a3c896f6764f147dcf23cf06b978024c28`, with `/lib/libc-2.25.so`, SHA-256 `04946077dfd7554a20438ee581367e3995931b26c9ee516ffeeecdc0ee9f331f`.
+- **Mechanism:** the receiver requires the original read to contain 28 IPv4+UDP header bytes, replaces that count with untrusted 16-bit `ip.tot_len`, rejects only totals greater than the read, then computes `size_t(ip.tot_len - 28)`. The exact call supplies a 628-byte destination size to `__memcpy_chk`.
+- **Static route:** normal IPv4 startup sets state `INIT_SELECTING`, selects listening mode 1, creates an `AF_PACKET` datagram socket, binds it to the interface/IPv4 protocol, and registers the affected callback. Runtime exposure still requires a ConnMan-managed interface to be acquiring an IPv4 lease and a frame to pass protocol, header, port/length, and checksum checks.
+- **Mitigations/impact boundary:** all totals below 28 produce a 64-bit underflow larger than 628. Every exact libc checked-copy implementation reviewed branches to non-returning `__chk_fail`/`__fortify_fail` before copying. Totals 28..656 copy at most 628 bytes, while larger totals are rejected. Conditional unauthenticated daemon termination is statically plausible; a stack overwrite, RCE, root access, persistence, and applicability to the owner's installed build are not established. `Restart=on-failure` limits but does not eliminate availability impact.
+- **Remediation:** backport upstream `99e2c16ea1cced34a5dc450d76287a1c3e762138`; retain fortification but do not use a fatal bound check as the parser fix; reduce daemon privilege and rate-limit/review restart failures.
+- **Evidence:** `evidence/connman-cve-2023-28488.md`; reviewed excerpt `evidence/artifacts/network-candidates/connman-cve-2023-28488-fortify-evidence.txt`; packet-free arithmetic model `tools/uk_fw/connman_length_model.py`.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

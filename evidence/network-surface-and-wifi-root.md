@@ -113,6 +113,21 @@ PIE, a non-executable stack, stack canaries, and full RELRO; a conditional daemo
 crash is the only currently defensible impact. Do not call this Wi-Fi-to-root.
 See `evidence/connman-cve-2026-115863.md`.
 
+### Related availability finding: ConnMan CVE-2023-28488
+
+Exact binary review also confirms V-016/CVE-2023-28488's pre-fix DHCPv4
+IP-total-length ordering and its normal activation route. Ordinary IPv4 startup
+enters `INIT_SELECTING`; listening mode 1 creates an `AF_PACKET` datagram socket
+and registers the affected callback.
+
+This is not another Wi-Fi-to-root candidate for recovered `260128`. Exact code
+calls `__memcpy_chk` with a 628-byte destination size, and all recovered libc
+checked-copy implementations reviewed branch to `__chk_fail` before an
+underflowed request writes the stack. Non-underflowing lengths that survive the
+read check fit the destination. The exact-build result is therefore conditional
+ConnMan process termination/availability. No packet or dynamic abort was
+produced. See `evidence/connman-cve-2023-28488.md`.
+
 The package database also identifies older network components, including
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
 `dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are triage leads,
@@ -126,8 +141,9 @@ runtime listeners still control applicability. ConnMan's installed
 2. The IP the unit hands out or receives, and the subnet.
 3. Output of `net_surface.py --target <ip> --authorised` only after an isolated,
    owner-controlled bench network is available.
-4. Passive interface/IPv6/ConnMan state and benign RA/DHCPv6 capture before any
-   malformed input is considered.
+4. Passive interface/IPv4/IPv6/ConnMan state and benign DHCP/RA capture before
+   any malformed input is considered; acquire the installed libc hash alongside
+   `connmand` before applying V-016's exact fortify conclusion.
 5. Whether any dealer/engineering Wi-Fi menu is reachable on the unit UI.
 6. The installed build and, if acquired read-only, the installed `connmand` hash.
 

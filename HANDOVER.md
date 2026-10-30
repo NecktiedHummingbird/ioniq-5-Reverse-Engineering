@@ -67,6 +67,17 @@ followed by stateful service/CAN/persistence reconstruction.
   and full RELRO are present. No packet, crash, RCE, root transition, or
   installed-device reachability is claimed. See
   `evidence/connman-cve-2026-115863.md`.
+- **V-016 added — exact CVE-2023-28488 parser order, but the stack copy is
+  fortify-blocked:** ordinary IPv4 startup enters `INIT_SELECTING`, opens the
+  `AF_PACKET` L2 listener, and registers the affected callback. The callback
+  retains the pre-fix `ip.tot_len - 28` ordering, but exact code calls
+  `__memcpy_chk` with object size 628. Every recovered libc implementation
+  reviewed branches to `__chk_fail`/`__fortify_fail` before copying an
+  underflowed size. A packet-free exhaustive model covered all 43,057,152 length
+  pairs. Treat this as conditional adjacent-network ConnMan termination, not a
+  stack overwrite, RCE, or root path for recovered `260128`; no packet or
+  dynamic abort occurred. See `evidence/connman-cve-2023-28488.md` and
+  `tools/uk_fw/connman_length_model.py`.
 - Added `tools/uk_fw/rpm_nvra_inventory.py`, a strict read-only parser for
   printable Berkeley DB dumps. A compatible project-local Berkeley DB 18.1.40
   dump of the exact `Nvra` index produced 1,679 records; the dump and complete
@@ -148,7 +159,10 @@ followed by stateful service/CAN/persistence reconstruction.
   for a disconnected bench rather than starting the root shell. For V-015, keep
   the current VM NIC-free and defer even benign RA/DHCPv6 controls until the
   disconnected bench can record the installed binary, interface/IPv6 state, and
-  restart/recovery behavior. Continue identifying an authentic caller of V-012
+  restart/recovery behavior. For V-016, record installed `connmand` and libc
+  hashes plus ordinary IPv4/ConnMan ownership before considering a crash-only
+  control; exact fortification already closes the reviewed stack-write claim.
+  Continue identifying an authentic caller of V-012
   `requestThumbnails` or playback after indexing and repair the VM-only thumbnail
   service-registration boundary; analyze allocation/lifetime behavior without
   developing a payload. Keep physical bench tests non-destructive until recovery
