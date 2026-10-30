@@ -64,7 +64,25 @@ classification is conditional adjacent-network service termination/availability,
 not memory corruption or code execution. See
 `evidence/connman-cve-2023-28488.md`.
 
-### 3. USB storage via AppNavi replacement — published but installation-gated
+### 3. oFono SMS decoder overflows — strongest static cellular candidate
+
+- Exact shipped `ofonod` instructions retain CVE-2023-4233's missing address
+  destination bound and CVE-2023-2794's missing 140-byte deliver-data bound.
+  This is exact-code evidence, not an inference from
+  `ofono-0.6.8+5w.master.199-r1`.
+- Two callbacks in the compiled vendor `lgeqmimodem` SMS driver pass direct QMI
+  indications and stored/raw-read messages to the affected deliver decoder.
+- A packet-free exhaustive model confirms that both writes can leave the
+  `0x128`-byte `sms` object. In this exact caller neither reviewed maximum
+  directly reaches the stack canary; no dynamic crash or control-flow result is
+  claimed.
+- The conditional service defaults to uid 0 and is assigned SMACK `App::tms`.
+  Telematics/no-ISA markers, unit enablement, modem/QMI state, cellular delivery,
+  owner-device applicability, RCE, SMACK escape, and unrestricted root remain
+  unknown.
+- Evidence: `evidence/ofono-sms-decoder-cves.md`.
+
+### 4. USB storage via AppNavi replacement — published but installation-gated
 
 - Mechanism: `navi_extended` replaces `AppNavi`; on launch it runs
   `main_loop.sh` from the root of an exFAT USB.
@@ -77,7 +95,7 @@ not memory corruption or code execution. See
 - Unknown: whether `260128` still accepts the replacement, and whether the SOP
   gate can be cleared without already having execution.
 
-### 4. Other Wi-Fi/network daemon candidates — exact identity now available, reachability still gated
+### 5. Other Wi-Fi/network daemon candidates — exact identity now available, reachability still gated
 
 The recovered RPM Btree contains 1,679 records and identifies, among others,
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
@@ -92,7 +110,7 @@ though the affected code may exist in the package.
 listener and banner capture tool. No public end-to-end Wi-Fi-to-root for this
 Gen5W_L build has been established.
 
-### 5. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
+### 6. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
 
 Kernel config enables `USB_F_IAP2`, `USB_U_IAP2`, `USB_G_SERIAL`,
 `GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules and the
@@ -102,7 +120,7 @@ finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 6. Kernel — analysed; conditional post-execution candidates remain
+### 7. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -133,7 +151,7 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.
 
-### 7. MICOM / CAN — post-exploitation
+### 8. MICOM / CAN — post-exploitation
 
 `micom_*` (24 symbols) includes a user-writable sysfs handler
 (`micom_sys_spidump_store`). CVE-2020-8539 (`micomd`) is a **local** issue:
@@ -163,18 +181,22 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    control unless restart and recovery are proven, and do not develop a
    privilege payload. Exact fortification already constrains V-016 to an abort
    before the reviewed copy.
-3. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
+3. For V-017, record installed `ofonod`, unit/marker state, uid/SMACK label,
+   modem devices, QMI services, and benign SMS behavior before any malformed
+   control. Treat any later test as crash-only on a disconnected disposable
+   state; do not develop a payload.
+4. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
    explicit `requestThumbnails(as)`, and repair the bounded VM thumbnail
    service-name/delivery boundary. Exact static code maps that request to
    `VideoContext → uridecodebin → eligible asfdemux`, while LightMediaScanner
    startup indexing uses a separate non-GStreamer ASF plugin. Manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
    or RCE is established.
-4. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
+5. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
-5. Measure production interface features before treating CVE-2017-1000112 as a
+6. Measure production interface features before treating CVE-2017-1000112 as a
    reachable path; keep the current VM NIC-free.
-6. If physical bench access later becomes available, capture UART and installed
+7. If physical bench access later becomes available, capture UART and installed
    version state before any write or engineering-mode experiment.
 
 ## Sources

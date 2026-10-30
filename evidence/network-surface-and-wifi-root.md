@@ -128,6 +128,27 @@ read check fit the destination. The exact-build result is therefore conditional
 ConnMan process termination/availability. No packet or dynamic abort was
 produced. See `evidence/connman-cve-2023-28488.md`.
 
+## Separate cellular candidate: oFono SMS decoding
+
+V-017 is not a Wi-Fi listener or an IP-service result. The recovered RPM
+inventory identifies `ofono-0.6.8+5w.master.199-r1.corei7_64`, and exact shipped
+instructions retain both CVE-2023-4233's missing destination bound in SMS
+address decoding and CVE-2023-2794's missing 140-byte destination bound before
+the deliver-data `memcpy`.
+
+Two callbacks in the compiled vendor `lgeqmimodem` driver pass QMI direct
+indications and stored/raw-read SMS PDUs into `ofono_sms_deliver_notify`, which
+invokes the affected decoder. Exact arithmetic permits writes beyond the local
+`0x128`-byte `sms` object. The maximum reviewed writes do not directly reach the
+caller canary, and no dynamic corruption or execution was attempted.
+
+The conditional service would run as uid 0 but receives SMACK label `App::tms`.
+It requires a telematics marker, and the recovered `ofono.path` also watches a
+`no_isa` marker; no enable symlink for that path was identified. Production
+activation, modem/QMI state, carrier attachment, SMS byte preservation, the
+owner's installed hash, RCE, and unrestricted root are unproven. See
+`evidence/ofono-sms-decoder-cves.md`.
+
 The package database also identifies older network components, including
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
 `dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are triage leads,
@@ -145,7 +166,11 @@ runtime listeners still control applicability. ConnMan's installed
    any malformed input is considered; acquire the installed libc hash alongside
    `connmand` before applying V-016's exact fortify conclusion.
 5. Whether any dealer/engineering Wi-Fi menu is reachable on the unit UI.
-6. The installed build and, if acquired read-only, the installed `connmand` hash.
+6. The installed build and, if acquired read-only, the installed `connmand`,
+   libc, and `ofonod` hashes.
+7. For the separate cellular surface, passive `ofono` unit/marker state,
+   process uid/SMACK label, modem devices, QMI services, and normal benign SMS
+   behavior before any malformed control is considered.
 
 ## Safety
 

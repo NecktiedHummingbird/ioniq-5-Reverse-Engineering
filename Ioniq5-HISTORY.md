@@ -1924,6 +1924,31 @@ and are superseded by corrections rather than silently rewritten.
   production interface state and the owner's installed build for a disconnected
   bench.
 
+## 2026-11-01 — cellular SMS decoding adds a separate conditional root-daemon surface
+
+- The RPM inventory pointed to an old oFono build, but the package label was
+  only the start. Exact `ofonod` instructions retain both missing destination
+  checks fixed for CVE-2023-4233 and CVE-2023-2794.
+- The route is product-specific rather than hypothetical upstream code. Two
+  callbacks in the compiled LG QMI modem driver pass direct indications and
+  stored/raw-read SMS data into `ofono_sms_deliver_notify`, then the affected
+  deliver decoder.
+- Exact layout narrows the generic advisory. The address path can write 257
+  bytes into 23; deliver data can copy 255 into 140. Both can leave the local
+  `sms` object, but neither maximum directly reaches this caller's canary. The
+  deliver copy is plain `memcpy`, so the fortify result that constrained V-016
+  does not apply here.
+- The service would be uid 0 but executes under SMACK `App::tms`, and its unit
+  is marker-gated. No recovered path-unit enable link was found. Activation,
+  modem/QMI state, carrier delivery, dynamic corruption, RCE, and unrestricted
+  root remain open rather than assumed.
+- Added a packet-free arithmetic model, exhaustive tests, reviewed evidence,
+  and a disconnected-bench observation plan. No target binary, modem input,
+  PDU, packet, or privilege action was used.
+- Fable remained unavailable. DeepSeek Flash's route doctor was static-ready,
+  but native dispatch failed as an unknown model; no substitute model or failed
+  output was used.
+
 ## 2026-10-29 — the control protocol, read out of the binary
 
 - The IAS interface had been inferred from wrandr's help text. It is now read directly: five methods and

@@ -78,6 +78,18 @@ followed by stateful service/CAN/persistence reconstruction.
   stack overwrite, RCE, or root path for recovered `260128`; no packet or
   dynamic abort occurred. See `evidence/connman-cve-2023-28488.md` and
   `tools/uk_fw/connman_length_model.py`.
+- **V-017 added — exact conditional cellular SMS memory corruption:** exact
+  `ofonod` instructions retain CVE-2023-4233's missing address destination
+  bounds and CVE-2023-2794's missing 140-byte deliver-data bound. Two compiled
+  vendor `lgeqmimodem` callbacks pass QMI direct indications and stored/raw-read
+  messages to `ofono_sms_deliver_notify` and the affected decoder. A packet-free
+  model exhausts all address lengths and 65,536 `(UDL,DCS)` pairs; both writes
+  can leave the `0x128`-byte `sms` object, but neither reviewed maximum directly
+  reaches this caller's canary. The conditional service defaults to uid 0 with
+  SMACK `App::tms`. Unit/marker state, modem/QMI state, cellular delivery,
+  dynamic corruption, RCE, SMACK escape, unrestricted root, and owner-device
+  applicability remain unproven. See `evidence/ofono-sms-decoder-cves.md` and
+  `tools/uk_fw/ofono_sms_bounds_model.py`.
 - Added `tools/uk_fw/rpm_nvra_inventory.py`, a strict read-only parser for
   printable Berkeley DB dumps. A compatible project-local Berkeley DB 18.1.40
   dump of the exact `Nvra` index produced 1,679 records; the dump and complete
@@ -168,7 +180,10 @@ followed by stateful service/CAN/persistence reconstruction.
   restart/recovery behavior. For V-016, record installed `connmand` and libc
   hashes plus ordinary IPv4/ConnMan ownership before considering a crash-only
   control; exact fortification already closes the reviewed stack-write claim.
-  Continue identifying an authentic caller of V-012 `requestThumbnails` outside
+  For V-017, first record installed `ofonod`, unit/marker state, uid/SMACK label,
+  modem devices, QMI services, and benign SMS reception; keep any later fault
+  control crash-only and disconnected. Continue identifying an authentic caller
+  of V-012 `requestThumbnails` outside
   the now-reviewed scan/property paths—especially QML-facing ownership and
   indirect virtual/callback dispatch—or playback after indexing, and repair the
   VM-only thumbnail service-registration boundary; analyze allocation/lifetime

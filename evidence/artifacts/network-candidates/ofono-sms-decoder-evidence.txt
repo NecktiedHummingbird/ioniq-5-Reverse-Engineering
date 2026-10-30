@@ -1,0 +1,210 @@
+V-017 exact recovered oFono SMS decoder evidence
+=================================================
+
+Scope
+-----
+Recovered EU Gen5W 260128 userspace only. Static instruction review and a
+packet-free arithmetic model were used. No recovered target binary was run; no
+SMS PDU, QMI message, modem input, or network traffic was generated.
+
+Exact identities
+----------------
+/usr/sbin/ofonod
+  SHA-256 3f6daee7c2ccd4b4e222c73d3d22478a997ec336e8a9d65042805625d987ac32
+  ELF x86-64 PIE, Build ID f596c565c77e4abb24d6b5b516ffb2bd6110b1ee
+  RPM ofono-0.6.8+5w.master.199-r1.corei7_64
+  RPM Nvra dump SHA-256
+    88b0f30f0684ddf719b13fd49ca6f702cbae47b5ec64b324188ec83221ef21b0
+
+/lib/systemd/system/ofono.service
+  SHA-256 acdd93595d4430dfdfca34f2953623489b87e96c49dadad7b1544f91033b0f2d
+/lib/systemd/system/ofono.path
+  SHA-256 8df3c4ff684aa89f481e20e37f7cd2351fd1b3a155cfc36139740f316c351d42
+/etc/dbus-1/system.d/ofono.conf
+  SHA-256 d99fb5577a88af21b02ac0e1602c7c5979e00269f8d5263630280357899f549f
+/etc/smack/accesses.d/tms
+  SHA-256 00b8dfa4b1d74915fdfb27b88a1a94c8d769faa3cf2759e283623c063e86c897
+/etc/smack-relabel-ro.sh
+  SHA-256 8275625764c30b6e82d99e5fdf887038261f97e9f0ef5a36da8faa743a35a15f
+
+The binary embeds this exact source identity and driver:
+  .../ofono/0.6.8-5w.master.199-r1/git/drivers/lgeqmimodem/sms.c
+  lgeqmimodem
+  LGE IVI QMI modem driver
+
+Published-fix evidence
+----------------------
+Upstream commits and locally preserved patch hashes:
+
+* 1a5fbefa59465bec80425add562bdb1d36ec8e23
+  "smsutil: Validate the length of the address field"
+  "This addresses CVE-2023-4233."
+  Adds `if (addr_len > 20) return FALSE;`.
+  Patch SHA-256
+    010de45f39c5dc37064c30c966a4ddfaf1823269a5dceac4e9440781b8cf2e53
+
+* a90421d8e45d63b304dc010baba24633e7869682
+  "smsutil: ensure the address length in bytes <= 10"
+  Adds `byte_len > 10` to the available-input rejection.
+  Patch SHA-256
+    84538d00a133ed646ea2bcb144bd0f49d52c27267929e0a67ce4991887c51e2d
+
+* 5209fd65ff41653d7725e407ccc359c54bb3121f
+  "smsutil: check that user data length fits in internal buffer"
+  "This addresses CVE-2023-2794."
+  Adds a destination-size check against `sizeof(out->deliver.ud)`.
+  Patch SHA-256
+    c2bace42fa324781a1565c16b87437516549d3348b3ee0c85872f650f644b9ab
+
+NVD oFono query snapshot SHA-256
+  7414c62054a8799389ffd89669d62d98388526d45359b17d2be64f0067f4d1f7
+
+Exact authentic QMI-to-parser route
+----------------------------------
+All addresses are file virtual addresses in the PIE.
+
+The vendor `lgeqmimodem` SMS region contains the nearby source/log identities
+`raw_read_cb`, `event_notify`, `QMI_WMS_RAW_READ`, "3GPP Message with
+Indication", "ack_required ... transaction id", and "PDU length".
+
+Direct indication/transfer path at 0x4a8cb..0x4a8d6:
+
+  4a8cb: lea 0x8(%r13), %rsi       # QMI-provided PDU
+  4a8cf: mov %ebx, %ecx            # TPDU length
+  4a8d1: mov %ebx, %edx            # total length
+  4a8d3: mov %rbp, %rdi            # struct ofono_sms *
+  4a8d6: call 0xa5580               # ofono_sms_deliver_notify
+
+Stored/raw-read path at 0x4a9d5..0x4a9e7:
+
+  4a9d5: mov 0x8(%r13), %rsi        # QMI result PDU pointer
+  4a9d9: mov %r14d, %ecx            # TPDU length
+  4a9dc: mov %r12, %rdi             # struct ofono_sms *
+  4a9df: movzbl (%rsi), %eax         # SMSC length octet
+  4a9e2: lea 0x1(%r14,%rax), %edx   # total length
+  4a9e7: call 0xa5580               # ofono_sms_deliver_notify
+
+`ofono_sms_deliver_notify` allocates a 0x128-byte `struct sms` at `rsp+0x30`
+and calls the internal decoder:
+
+  a55d6: lea 0x30(%rsp), %rbp
+  a55e3: mov %r14d, %ecx
+  a55e6: mov %r12, %r8
+  a55e9: mov %ebx, %esi
+  a55eb: mov %rbp, %rdi
+  a55ee: call 0xae8a0               # sms_decode
+
+The handler then checks the decoded type at `sms+0x20` and continues normal
+handling only for type 0 (`SMS_TYPE_DELIVER`). The decoder's type-0 dispatch
+calls deliver decoding at 0xadca0.
+
+CVE-2023-4233: exact missing address bound
+------------------------------------------
+The address decoder begins at 0xada70. It reads the one-byte address length at
+0xada99, advances the offset, reads the type octet, and calculates the
+non-service-centre encoded length as `(addr_len + 1) >> 1` at
+0xadadf..0xadae4. At 0xadae7..0xadaed it compares only that length with the
+remaining source bytes. There is no rejection for `addr_len > 20` or
+`byte_len > 10`.
+
+For a non-alphanumeric address, destination `sms+0x3c` is selected at 0xadb28.
+The loop at 0xadb48..0xadb70 writes two lookup bytes for each encoded source
+byte. Instructions 0xadb72..0xadb78 then write a terminator at twice the
+encoded length. The destination array is 23 bytes.
+
+Exact one-byte input domain (assuming the separately checked source bytes are
+present):
+
+  addr_len 0..20: specification-bounded, 21 values
+  addr_len 21..22: oversized but still 23-byte-array-bounded, 2 values
+  addr_len 23..255: address-array overflow, 233 values
+  addr_len 255: 128 encoded bytes -> 257 output bytes
+  maximum array overrun: 234 bytes
+  maximum write end: sms+0x13d
+  maximum beyond the 0x128-byte sms object: 21 bytes
+
+CVE-2023-2794: exact missing deliver-data bound
+----------------------------------------------
+The deliver decoder begins at 0xadca0 and calls the address decoder at 0xadd1c.
+It stores UDL at `sms+0x68`, then calls the recovered `sms_udl_in_bytes` logic
+at 0xad1c0:
+
+  add95: mov %dil, 0x68(%rbx)
+  add99: call 0xad1c0
+  add9e: cmp %ebp, %eax
+  adda0: jg 0xaddc0                 # source availability only
+  adda2: lea 0x69(%rbx), %rdi       # 140-byte destination
+  ...
+  addb0: call memcpy@plt            # unfortified copy
+
+There is no comparison with 140 before the copy. Exhausting all 65,536
+`(UDL,DCS)` octet pairs in the exact arithmetic gives:
+
+  bounded copy (0..140 bytes):              46,416
+  overwrite within remaining sms union:      9,368
+  write beyond 0x128-byte sms object:         9,752
+  total:                                    65,536
+  maximum copy: 255 bytes
+  maximum overrun of 140-byte array: 115 bytes
+  maximum beyond sms object: 64 bytes
+  pairs reaching later caller scratch at sms+0x130: 8,288
+  pairs reaching caller canary at sms+0x1c8: 0
+
+Deterministic model report SHA-256
+  1ae024c3c5ea5db27672a54c252deec4a1d618b9768b65d4a09f51b2f395f818
+
+Exact caller and hardening boundary
+----------------------------------
+In `ofono_sms_deliver_notify`, the sms object starts at caller `rsp+0x30`, a
+later scratch object starts at `rsp+0x160` (`sms+0x130`), and the stack canary
+is at `rsp+0x1f8` (`sms+0x1c8`). Neither reviewed maximum write directly
+reaches the canary in this exact caller. Later code initializes the scratch
+object on the reviewed path, but that does not make the earlier out-of-bounds
+writes safe or prove that no corrupted object state is consumed.
+
+ELF review:
+
+  Type: DYN (PIE)
+  GNU_STACK: RW (NX)
+  GNU_RELRO present
+  BIND_NOW present
+  imports __stack_chk_fail
+  imports both memcpy and __memcpy_chk
+
+The vulnerable call at 0xaddb0 is `memcpy@plt`, not `__memcpy_chk`. These
+mitigations do not prevent the two exact writes, but the writes alone do not
+demonstrate controlled instruction-pointer corruption or code execution.
+
+Service, uid, D-Bus, and SMACK boundary
+---------------------------------------
+`ofono.service` contains:
+
+  ConditionPathExists=/tmp/telematics_code_TELEMATICS
+  Type=dbus
+  BusName=org.ofono
+  ExecStart=/usr/sbin/ofonod -nd
+  Restart=always
+
+No `User=` is present, so systemd starts the service as uid 0. The executable
+is assigned `security.SMACK64EXEC=App::tms` by `smack-relabel-ro.sh`. The tms
+policy permits `_`, its own data/log labels, and many application labels, but
+SMACK remains a mandatory boundary. This is not evidence of unrestricted root.
+
+`ofono.path` requires both `/tmp/no_isa` and the telematics marker and names
+`ofono.service`. No enabling symlink for `ofono.path` was found under the
+recovered `multi-user.target.wants`. `mof.service` is enabled and has
+`After=... ofono.service ...`, but `After=` orders units and does not pull in
+the named service. A unit and conditional path therefore prove available
+activation machinery, not observed owner-vehicle activation.
+
+Claim boundary
+--------------
+The exact recovered binary retains both published pre-fix conditions, has an
+authentic vendor QMI SMS-to-deliver-decoder route, and performs the reviewed
+out-of-bounds writes when all parser conditions and source-availability checks
+are met. If this service starts, it is uid 0 with the `App::tms` SMACK label.
+
+Not established: the owner's installed binary, telematics/no-ISA marker state,
+unit activation, modem attachment, QMI service state, carrier/base-station/SMS
+delivery of the required bytes, dynamic process corruption or termination,
+controlled execution, SMACK escape, persistence, or a root transition.
