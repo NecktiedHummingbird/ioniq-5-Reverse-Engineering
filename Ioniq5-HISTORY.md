@@ -1345,3 +1345,30 @@ and are superseded by corrections rather than silently rewritten.
   explanation, now backed by the visibility event count rather than by inference.
 - The next step is to establish how the environment value maps to the created id, then either
   point the helper at the id that exists or make AppNavi create the id the helper expects.
+
+## 2026-10-29 — surface id fixed at 30000 regardless of the environment variable
+
+- Ran AppNavi with QT_WAYLAND_SET_SURFACE_ID set to 0 and the created surface id was still
+  30000, identical to the run with 3000. The variable therefore does not determine the id in
+  this path.
+- Combined with the earlier marker counts this closes the diagnosis: AppNavi creates surface
+  30000 and attaches buffers, the helper programmes visibility for 3000, and sixteen
+  set_surface_visible calls consequently produce zero ivi_surface.visibility events.
+- The fix is to address the id that exists, by rebuilding the widget-linking helper with
+  parent 30000, which is cheaper than establishing where 30000 originates and making it
+  configurable.
+
+## 2026-10-29 — retargeting the helper to 30000 does not produce visibility
+
+- Rebuilt the widget-linking helper with parent id 30000 and ran it through the same harness.
+  The visibility request counts were unchanged at sixteen set_surface_visible and eight
+  foreground requests, and ivi_surface.visibility events remained at zero.
+- The conclusion recorded is that addressing the id that exists is necessary but not
+  sufficient. The mismatch was real, but some further condition governs whether the window
+  manager emits a visibility event for this surface.
+- Candidate causes were written down in cost order: the helper's requests possibly not reaching
+  the owning window-manager instance, its log being empty throughout and therefore suspicious;
+  visibility requiring a later state change such as another commit or a layout change; or 30000
+  not being the parent surface at all.
+- The next discriminator is to confirm the helper connects and its first request is accepted,
+  by capturing both its output and the compositor's response.
