@@ -1512,3 +1512,23 @@ and are superseded by corrections rather than silently rewritten.
 - The symlink is interesting on its own account and went into the register as a candidate rather than
   a finding. What matters is the permission and ownership of `/tmp` on real hardware, which this
   environment cannot establish.
+
+## 2026-10-29 — the injection sink is reachable and the exploit is not
+
+- Two workers ran in parallel, one on the VM and one on static analysis, which worked because the
+  static job needed no image access. Both came back with evidence rather than conclusions.
+- The security result inverted the entry it was meant to confirm. The vulnerable `system()` call is
+  reachable at runtime — proven by the shell complaining about the missing helper, which only that
+  call can produce — but the string arriving there has already been reduced to an allow-listed
+  alphabet by udev, so nothing resembling a metacharacter survives. The register had asserted the
+  opposite, and that assertion is now withdrawn rather than quietly left in place.
+- What made this decidable was the positive control: the same payload executed perfectly when handed
+  straight to `/bin/sh`. Without it there were two candidate explanations for the silence, the payload
+  and the sanitiser, and the wrong one could easily have been recorded as fact.
+- The through-line of the day is that three separate things I had treated as working were not: the
+  serial device never enumerated, the mount service never started, and the injection could not reach
+  the sink. Each had a specific, findable cause, and each had been masked by an earlier assumption.
+- On the HMI question the analysis reframed the problem. The VM has never run the authentic init
+  chain, so the missing `/tmp` state that keeps breaking services is a symptom of the harness rather
+  than a series of unrelated faults. The display is the hard blocker: the vendor compositor wants an
+  Intel i915 CRTC that nothing in the VM provides.

@@ -98,7 +98,7 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
   - `0x53b9` `popen()` runs `"cat /proc/mounts | grep %s"` (`.rodata 0x7936`) using the same serial-derived string.
   - `ID_SERIAL_SHORT` is read at `0x4146` via `udev_device_get_property_value` (`.rodata 0x760c`).
   - Branch selection at `0x44c3`–`0x44cf` requires `ID_USB_INTERFACES` to contain `060101` (PTP/Still-Image) or `ffff00` (vendor-specific). Plain mass-storage-only devices take a different branch that uses `mount(2)`/`umount2(2)`/`mkdir(2)` and no shell — so **the claim's "mount script" mechanism is wrong, but the injection is real on the MTP path.**
-- **Why the usual udev mitigation does not help:** `systemd-udevd`'s `usb_id` builtin sanitises with `util_replace_whitespace` (`0x22b20`); at `0x22b72` it tests only the `_ISspace` ctype bit (mask `0x2000`). Only whitespace is rewritten to `_`. Shell metacharacters (`; $ ( ) \` | & ' " < > * ? # ! { } /`) pass through unchanged.
+- **Why the usual udev mitigation does not help** (see the runtime amendment below, which falsifies the pass-through claim in this bullet): `systemd-udevd`'s `usb_id` builtin sanitises with `util_replace_whitespace` (`0x22b20`); at `0x22b72` it tests only the `_ISspace` ctype bit (mask `0x2000`). Only whitespace is rewritten to `_`. Shell metacharacters (`; $ ( ) \` | & ' " < > * ? # ! { } /`) pass through unchanged.
 - **Encoding constraints on the attacker string:** the serial filter at `0x1c2df` accepts bytes `0x20`–`0x7f` and rejects `0x2c` (comma). Literal spaces are therefore neutralised to `_`, and comma-list brace expansion is unavailable; parameter expansion such as `${IFS}` needs neither, so the filter is not a mitigation.
 - **Aggravating detail:** `/tmp` is mounted as tmpfs read-write by `lib/systemd/esinit:10` with default options, so it is executable and suid-capable. `/usr/bin/go-mtpfs` is **absent** from the image, but the shell parses and expands the entire command line before attempting execution, so a missing helper does not prevent an injected command from running.
 - **Preconditions:** physical access to a USB port; a device that advertises a PTP (`06/01/01`) or vendor-specific (`ff/ff/00`) interface; a chosen `iSerialNumber`; and the `usb-automount` service starting with effective uid 0 (configured, but not observed at runtime).
@@ -106,6 +106,35 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 - **Remediation:** remove both `system()` and `popen()`. Launch an absolute path with `execve()`/`posix_spawn()` and a fixed argument vector plus controlled environment. Read `/proc/mounts` directly and compare decoded fields instead of shelling out to `grep`. Derive mount-directory names independently of the raw serial; constrain paths beneath an owned directory and prevent traversal and symlink races. Treat serial validation as defence in depth, never as a substitute for removing the shell. Disable the MTP branch cleanly when the helper is absent. Move descriptor handling and helper execution out of root, retaining only narrowly scoped privileged mount operations.
 - **Acceptance / regression:** shell metacharacters, separators, `${IFS}`-style expansion, over-long serials, comma and non-ASCII serials, and a missing helper must all produce no shell interpretation; legitimate PTP and mass-storage mount and unmount must still work; no privileged child of the automounter should exist.
 - **Not yet done:** isolated-VM dynamic confirmation (see below). Do not describe this as "USB-to-root demonstrated".
+
+**Runtime amendment (2026-10-29) — the metacharacter pass-through claim above is falsified.**
+
+Dynamic confirmation was attempted in the isolated VM and reached the vulnerable sink without
+executing injected code. Three things were established, in order:
+
+1. **Reachability is real.** A QEMU `usb-mtp` device presents `bInterfaceClass=06 SubClass=01
+   Protocol=01`, udev records `E:ID_USB_INTERFACES=:060101:`, and the automounter takes the MTP branch,
+   emitting `sh: /usr/bin/go-mtpfs: No such file or directory`. That message can only be produced by
+   the `system()` call at `0x535f`, so the unquoted `sprintf` path is confirmed reachable at runtime,
+   not merely in disassembly.
+2. **The delivered property is heavily sanitised.** udev hands over
+   `ID_SERIAL_SHORT=a_id__tmp_v006.id_echo__IFS_V006KMSG__dev_kmsg_#` for a submitted
+   `a;id>/tmp/v006.id;echo${IFS}V006KMSG>/dev/kmsg;#`. A second sanitiser exists beyond
+   `util_replace_whitespace`: an allow-list of alphanumerics plus `#+-.:=@_` is present in
+   `lib/systemd/systemd-udevd` and `lib/libudev.so.1.6.4`, and every other printable byte is rewritten
+   to `_`. Semicolons, redirects, `$`, backticks, braces and `${IFS}` therefore cannot survive.
+3. **The payload itself is sound.** Feeding the identical string directly to the guest's `/bin/sh`
+   yields `uid=0(root) gid=0(root)`, so the failure is the property sanitiser, not the payload, the
+   guest, or the harness.
+
+**Revised status.** The source defect stands: `sprintf` into `system()` with no quoting, plus `popen`
+with a serial-derived string, are genuine CWE-78 patterns and must be removed. But this entry is
+**downgraded from "confirmed exploitable-by-construction" to a latent defect that is not exploitable on
+260128 through the udev property path**, because the value reaching the sink is reduced to
+`[A-Za-z0-9#+-.:=@_]`. It becomes exploitable again under any of: a udev version or rule set without
+that allow-list, a path that reads the raw descriptor instead of the property, or a caller that passes
+an unsanitised string. Treat the allow-list as accidental defence in depth, not as the fix. The earlier
+statement in this register that shell metacharacters "pass through unchanged" is withdrawn.
 
 **Reproduction harness status (2026-10-29).** The emulated-device half of the harness now works: a
 QEMU USB device presenting `0403:6001` with an arbitrary serial string enumerates on UHCI with that

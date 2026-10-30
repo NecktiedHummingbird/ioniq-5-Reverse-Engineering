@@ -3,6 +3,33 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.05.0 - MTP branch proven reachable, and its injection is blocked by udev
+
+- The V-006 sink is now confirmed reachable at runtime: an emulated `usb-mtp` device yields
+  `ID_USB_INTERFACES=:060101:`, the automounter takes the MTP branch, and the guest reports
+  `sh: /usr/bin/go-mtpfs: No such file or directory` — a message only the `system()` call can emit.
+- Injection does **not** fire. udev delivers a sanitised property: the submitted
+  `a;id>/tmp/v006.id;echo${IFS}V006KMSG>/dev/kmsg;#` arrives as
+  `a_id__tmp_v006.id_echo__IFS_V006KMSG__dev_kmsg_#`. A second sanitiser beyond
+  `util_replace_whitespace` enforces alphanumerics plus `#+-.:=@_` and rewrites every other printable
+  byte to `_`. The allow-list string is present in `systemd-udevd` and `libudev`.
+- A positive control settles the cause: the same string handed directly to the guest's `/bin/sh`
+  produces `uid=0(root)`, so the payload, the guest and the harness are all fine and the sanitiser is
+  the obstacle.
+- V-006 is therefore downgraded to a latent defect rather than an exploitable-by-construction one, and
+  the register's own "metacharacters pass through" claim is withdrawn. The `sprintf`-into-`system()`
+  pattern is still a real defect worth removing.
+- Static HMI gap analysis completed (569 lines, `hmi-gap-analysis.md`). The harness `/init` is an
+  artefact, so the authentic chain `init=/lib/systemd/esinit` and systemd itself have never run in the
+  VM, which is why the `/tmp` state that services authenticate against keeps being missing.
+- Ranked blockers recorded: authentic init chain, a live `com.lge.car.micom` with the 35-byte
+  `AskSysBootinfo`, a DRM node for the vendor compositor, weston's start condition and session-bus
+  ordering, the `mnt-wt` resource table and theme assets, `can0`, `/dev/ttyGPS`, then touch and audio.
+- Largest single blocker identified: the vendor compositor needs `HDMI1` at 1920x720 through
+  `ias-backend.so` over i915/GBM, and neither emulated QEMU VGA nor the vendor kernel provides an i915
+  device, so `/dev/dri/card0` cannot exist as configured. Every HMI result so far used a substituted
+  compositor.
+
 ## 1.04.0 - the mount service runs in the VM, and a passwd symlink surfaces
 
 - `usb-automount` now stays alive in the emulated userspace and owns `com.lge.car.automount` on the
