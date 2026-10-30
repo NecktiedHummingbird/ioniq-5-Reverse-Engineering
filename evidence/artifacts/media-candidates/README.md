@@ -33,3 +33,17 @@ the daemon survived, and a full session-bus capture contained no PlayerEngine or
 thumbnail call. This excludes LightMediaScanner's indexing step as the observed
 V-012 trigger, but not later browser, playback, thumbnail, or media-manager
 handoffs.
+
+## Thumbnail request route
+
+`thumbnail-extractor-asf-route-evidence.txt` records the exact session-bus
+contract, MediaBrowser's public `requestThumbnails(as)` forwarding path,
+`ThumbnailService::Start(as) → VideoContext`, and the exact
+`uridecodebin ... appsink` pipeline in `libthumbnailextractor.so`. Its custom
+autoplug callback does not exclude `asfdemux`.
+
+This establishes a static, explicit client-request route to the vulnerable
+plugin. Reviewed scan callbacks do not call it, and bounded VM attempts did not
+observe name acquisition, a delivered `Start`, `libgstasf` mapping, or a natural
+crash. It is not evidence of automatic insertion/indexing, UI behavior, RCE, or
+physical-unit reachability.

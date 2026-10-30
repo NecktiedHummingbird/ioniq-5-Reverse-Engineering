@@ -142,8 +142,11 @@ the isolated VM. A valid WMA/ASF file with 33 Stream Properties Objects reaches 
 fixed 32-entry array and crashes authentic `gst-discoverer-1.0` after creating
 stream 33.
 
-This establishes memory corruption and denial of service only. It does not
-establish code execution or automatic physical-unit reachability.
+This establishes memory corruption and denial of service only. Exact static code
+also maps an explicit MediaBrowser thumbnail request through
+`thumbnail_extractor Start(as) → VideoContext → uridecodebin`, but reviewed scan
+callbacks do not issue that request and bounded VM attempts did not deliver it.
+This does not establish code execution or automatic physical-unit reachability.
 
 Before any bench test:
 

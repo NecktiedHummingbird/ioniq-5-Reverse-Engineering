@@ -131,9 +131,11 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    display/input gates for a disconnected bench with a benign marker—not the
    installed shell unit. Parser and synthetic udevd-to-systemd semantics are
    complete; do not describe them as physical-device reproduction.
-2. Trace post-index V-012 reachability through media-manager/browser selection,
-   thumbnail extraction, and playback handoff. LightMediaScanner startup indexing
-   is now confirmed to use a separate non-GStreamer ASF plugin; manual authentic
+2. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
+   explicit `requestThumbnails(as)`, and repair the bounded VM thumbnail
+   service-name/delivery boundary. Exact static code maps that request to
+   `VideoContext → uridecodebin → eligible asfdemux`, while LightMediaScanner
+   startup indexing uses a separate non-GStreamer ASF plugin. Manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
    or RCE is established.
 3. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's

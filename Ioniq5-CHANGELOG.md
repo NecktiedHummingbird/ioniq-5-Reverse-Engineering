@@ -3,7 +3,7 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
-## 1.19.0 - Confirm synthetic udevd-to-systemd benign unit activation
+## 1.19.0 - Confirm synthetic udev activation and map the thumbnail ASF route
 
 - Added `tools/uk_fw/udev_systemd_probe.py` and focused tests for matched
   negative/positive controls using exact recovered `systemd`, `systemd-udevd`,
@@ -25,6 +25,16 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Fable remained unavailable for native subagents. DeepSeek Flash passed static
   route checks but native dispatch was rejected as an unknown model; no failed
   worker output or silent substitute was used.
+- Corrected V-012's thumbnail model using exact binaries. MediaBrowser's
+  `requestThumbnails(as)` forwards to the extractor's session-bus `Start(as)`;
+  that method always selects `VideoContext`, whose exact pipeline is
+  `uridecodebin ... appsink` and whose autoplug callback does not reject
+  `asfdemux`. The separate audio/TagLib context is for cover art.
+- Preserved the reachability boundary: reviewed scan callbacks do not request
+  thumbnails, and bounded VM attempts observed no delivered `Start`, ASF-plugin
+  map, cache output, or natural crash. The new evidence is a static explicit
+  client-request route, not automatic USB/UI invocation or dynamic thumbnail
+  corruption.
 
 ## 1.18.0 - Confirm benign second-property retention in the exact udev parser
 

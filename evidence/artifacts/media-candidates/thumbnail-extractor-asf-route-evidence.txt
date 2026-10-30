@@ -1,0 +1,139 @@
+CVE-2026-2920 / V-012 exact thumbnail-route evidence
+Captured: 2026-11-01
+Scope: static exact-binary route analysis plus bounded interpretation of ignored
+VM logs. No recovered executable was run while producing the static excerpts.
+
+Exact recovered EU 260128 identities
+-----------------------------------
+app/bin/MediaBrowser
+  SHA-256 df3d83b71861c1abe1a2a888a7abcb6971fd14170d58a8027064a58789ca72ec
+app/bin/thumbnail_extractor
+  SHA-256 e4e582424d5ff07bbc282bfaabe95ecb1ee3ea1b34e32b5b3230c10bd979ecd3
+app/lib/libthumbnailextractor.so
+  SHA-256 4fdb376830278f56fc862a64ecb04bd8b68d27a3040764c5578b18d18dca898c
+usr/lib/gstreamer-1.0/libgstasf.so
+  SHA-256 05e887731708f0b0a52ff9fc75767a00fda9984e422983e5ff1d672f4b1af45d
+usr/share/dbus-1/services/com.lge.thumbnailextractor.service
+  SHA-256 1f94516969180f73d208ef6ed885a263584149f83f2f1a04e19674a4582fe596
+app/bin/thumbnail-extractor.conf
+  SHA-256 a7e45412c54278b0f4adbf26a7c2b024c7952ddc7ff05d2a20f02b76cc2ee68d
+app/bin/thumbnail_extractor.sh
+  SHA-256 9139974b6de0f6d636b645767c88648b652742ed733702ef37bb6a620eb0d19e
+
+Exact internal D-Bus contract
+----------------------------
+Activation file:
+  Name=com.lge.thumbnailextractor
+  Exec=/app/bin/thumbnail_extractor.sh
+
+thumbnail_extractor literals and ThumbnailService::run() at 0x1a8c2 establish:
+  bus: GLib session bus (g_bus_own_name first argument 2)
+  destination: com.lge.thumbnailextractor
+  object: /com/lge/thumbnailextractor/service
+  interface: com.lge.thumbnailextractor.service
+
+The destination does not have the .service suffix. That suffix belongs to the
+interface name.
+
+Relevant introspection XML, beginning at thumbnail_extractor +0x2d060:
+  Start(as PathList)
+  Stop()
+  SetPlaytime(si Path Playtime)
+  SetPlayNG(s Path)
+  StartCoverart(a{ss} AlbumAritstList)
+  StopCoverart()
+  FactoryReset()
+  GetSingleAudioInfo(s InputPath)
+  ExtractorEvent(sssii)
+  CoverartEvent(ssss)
+  SingleAudioInfoEvent(sssssssi)
+
+MediaBrowser contains public/CommonAPI requestThumbnails(as) at string offset
+0x166a81 and exact internal addressing literals at:
+  0x174720  com.lge.thumbnailextractor
+  0x174780  com.lge.thumbnailextractor.service
+  0x1747a8  /com/lge/thumbnailextractor/service
+
+Reviewed direct request path:
+  requestThumbnails handler                     MediaBrowser +0xc6850
+    -> BrowserProvider::requestImageExtraction  MediaBrowser +0xeb120
+    -> ExtractorInterface::requestImages        MediaBrowser +0xf7710
+    -> com.lge.thumbnailextractor.service.Start(as)
+
+Exact thumbnail-to-GStreamer route
+----------------------------------
+Exported exact-binary symbols:
+  thumbnail_extractor +0x1aa28  ThumbnailService::startExtractThumb(...)
+  thumbnail_extractor +0x1b340  ThumbnailService::StartThumbnail()
+  thumbnail_extractor +0x224ce  VideoContext::VideoContext()
+  thumbnail_extractor +0x2255a  VideoContext::Extract(...)
+  libthumbnailextractor.so +0x3223e  ThumbnailProcess::Process()
+  libthumbnailextractor.so +0x38c7e  VideoProcess::VideoProcess(bool)
+  libthumbnailextractor.so +0x3956a  VideoProcess::Extract(ThumbnailResult&)
+
+startExtractThumb parses the `(as)` input, queues every path, calls
+StartThumbnail at call site +0x1ab20, and returns an empty D-Bus reply.
+StartThumbnail obtains a video context and calls VideoContext::Extract at call
+site +0x1b6c7. No extension/media-type branch diverts a `.wma` Start request to
+the separate audio cover-art context.
+
+libthumbnailextractor.so imports libgstreamer-1.0.so.0 and gst_parse_launch. Its
+pipeline literal at file offset 0x4bf40 is:
+  uridecodebin name=uridecode uri=%s ! videoconvert ! videoscale ! appsink name=sink caps="%s"
+
+Pipeline construction calls gst_filename_to_uri at +0x39037 and
+gst_parse_launch at +0x39076. The autoplug-select callback at +0x38bf5 returns
+skip only when the candidate factory name begins with the three-byte literal
+"mfx" at +0x4bec1; it does not reject asfdemux. The requested sink caps begin
+with the literal video/x-raw at +0x4bf29.
+
+The shipped libgstasf.so registers factory `asfdemux`. Therefore a cache-miss
+Start(as) request for an ASF/WMA path has a defensible static route through
+uridecodebin to the exact vulnerable plugin before a later no-video/caps failure.
+This is static routing evidence, not a dynamic parser or crash result for the
+thumbnail process.
+
+Invocation boundary
+-------------------
+The recovered edge is request-driven, not scan-time automatic:
+  - the only reviewed direct caller of BrowserProvider::requestImageExtraction
+    is the public requestThumbnails handler;
+  - BrowserProvider::onScanCompleted (+0xe83f0) and onMediaFileFound (+0xe8510)
+    forward events but have no reviewed call to requestImageExtraction,
+    ExtractorInterface::requestImages, or extractor Start.
+
+Thus a CommonAPI client can request the route statically. The evidence does not
+show that USB enumeration, LightMediaScanner indexing, MediaBrowser scanning, or
+a particular UI screen automatically makes that request.
+
+Bounded VM-attempt boundary
+---------------------------
+Ignored exploratory logs under work/vm/vendor-userspace-260128 show the exact
+thumbnail process loading libgstreamer and completing lengthy plugin/SQLite
+initialization, but the temporary session bus never exposed the expected
+well-known name before the probes ended. No delivered Start call, libgstasf map,
+thumbnail cache output, natural process crash, or 32-versus-33 comparison was
+observed. In these logs:
+  - NAME_READY=0 means the name was not observed;
+  - THUMB_ALIVE_*=0 means kill -0 succeeded and the process was alive;
+  - CALL_RC=0 for dbus-send without --print-reply proves only local send success;
+  - THUMB_WAIT_RC=1 followed harness termination and is not a parser-crash result.
+
+Absent /dev/media0 and missing optional plugin dependencies are VM-environment
+warnings, not evidence that production activation succeeds or fails. The
+established V-012 PlayerEngine 32/33 controls remain separate.
+
+Claim boundary
+--------------
+Established:
+  exact requestThumbnails -> Start(as) contract;
+  Start(as) -> VideoContext -> uridecodebin route;
+  exact shipped asfdemux is eligible under the custom autoplug callback;
+  route is explicitly client/request driven in reviewed code.
+
+Not established:
+  automatic scan-time thumbnail extraction;
+  delivery of a thumbnail Start request in the VM;
+  thumbnail-process selection of libgstasf for the 33-stream fixture;
+  thumbnail-process corruption or death;
+  production/head-unit reachability, controlled execution, or root transition.

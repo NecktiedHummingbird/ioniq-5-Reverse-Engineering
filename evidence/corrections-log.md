@@ -382,6 +382,27 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C26 — Thumbnail `Start(as)` does not select the audio/TagLib path by extension
+
+- **Was:** early exploratory thumbnail runs did not map `libgstasf`, and the
+  `.wma` route was described as following the extractor's audio/TagLib path.
+- **Now:** exact code shows `ThumbnailService::startExtractThumb()` queues every
+  path and `StartThumbnail()` always obtains `VideoContext`. Its pipeline is
+  `uridecodebin ... appsink`, and its custom autoplug callback does not reject
+  `asfdemux`. The separate `AudioProcess` is used by the cover-art context.
+- **Invocation boundary:** MediaBrowser exposes explicit CommonAPI
+  `requestThumbnails(as)` and forwards it to the extractor's session-bus
+  `Start(as)`. Reviewed scan-completed and media-file-found callbacks do not call
+  this request path, so automatic scan-time or UI invocation is not established.
+- **Dynamic boundary:** bounded VM attempts did not observe service-name
+  acquisition, a delivered `Start`, `libgstasf` mapping, cache output, or a
+  natural process crash. A no-reply `dbus-send` return code does not prove
+  delivery. This is exact static routing evidence, not a thumbnail crash.
+- **Evidence:**
+  `evidence/artifacts/media-candidates/thumbnail-extractor-asf-route-evidence.txt`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

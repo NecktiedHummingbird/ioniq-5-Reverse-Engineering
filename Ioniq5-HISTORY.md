@@ -1806,3 +1806,24 @@ and are superseded by corrections rather than silently rewritten.
 - This closes the synthetic udevd database/device-unit and manager-activation
   boundary. Hardware bytes reaching shipped helpers, physical hotplug, the
   installed shell-unit request, production VT9 access, and root remain untested.
+
+## 2026-11-01 — exact thumbnail routing corrects the V-012 media boundary
+
+- Exact MediaBrowser code maps public `requestThumbnails(as)` to the session-bus
+  destination `com.lge.thumbnailextractor`, object
+  `/com/lge/thumbnailextractor/service`, interface
+  `com.lge.thumbnailextractor.service`, method `Start(as)`.
+- Exact extractor code queues every `Start` path and selects `VideoContext`
+  without an extension branch. The earlier inference that `.wma` selected the
+  audio/TagLib context was corrected; that context handles cover-art work.
+- Exact `libthumbnailextractor.so` builds an `uridecodebin ... appsink` pipeline.
+  Its custom autoplug callback excludes only factory names beginning with `mfx`,
+  so the shipped vulnerable `asfdemux` remains eligible.
+- The recovered edge is explicit but request-driven. Reviewed scan callbacks
+  forward progress/file events without requesting thumbnails. Bounded VM
+  attempts did not observe service-name acquisition, a delivered `Start`, an ASF
+  plugin map, cache output, or a natural crash.
+- This strengthens static post-index reachability while preserving the dynamic
+  boundary: automatic USB/UI invocation and thumbnail-process corruption remain
+  unproven; manual uid-0 PlayerEngine remains the only dynamically confirmed
+  production-service V-012 route.

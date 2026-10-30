@@ -118,12 +118,21 @@ followed by stateful service/CAN/persistence reconstruction.
   GStreamer dependency, and a full session-bus capture showed no PlayerEngine or
   thumbnail call. This is a route-specific negative result, not broad media
   safety evidence.
+- **V-012 thumbnail route corrected and narrowed:** exact static analysis now
+  maps `MediaBrowser requestThumbnails(as)` to
+  `com.lge.thumbnailextractor.service.Start(as)`, then
+  `VideoContext → uridecodebin → eligible asfdemux`. The earlier assumption that
+  `.wma` `Start` followed the audio/TagLib path was wrong; the audio context is
+  for cover art. The route is explicit but request-driven: reviewed scan
+  callbacks do not call it, and bounded VM attempts observed neither a delivered
+  `Start` nor `libgstasf` in the thumbnail process. This is not automatic USB/UI
+  reachability or a thumbnail crash.
 - Next security work: preserve V-014's remaining physical-helper/port/VT gates
-  for a disconnected bench rather than starting the root shell; trace post-index
-  media-manager/browser selection,
-  thumbnail, and playback handoff into a consumer; analyze allocation/lifetime behavior
-  without developing a payload. Keep physical bench tests non-destructive until
-  recovery and service restart behavior are validated.
+  for a disconnected bench rather than starting the root shell; identify an
+  authentic caller of V-012 `requestThumbnails` or playback after indexing and
+  repair the VM-only thumbnail service-registration boundary; analyze
+  allocation/lifetime behavior without developing a payload. Keep physical bench
+  tests non-destructive until recovery and service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 
