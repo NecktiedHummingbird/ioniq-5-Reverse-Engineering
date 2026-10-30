@@ -142,6 +142,16 @@ These remain evidence-gathering paths, not established root exploits:
   materializes a harmless NTFS special-file encoding. FAT/exFAT cannot natively
   provide the required inode, and an exposed node still requires local code to
   open it. Do not target internal storage in the test;
+- filesystem-parser review must use the exact commercial modules recovered here:
+  Tuxera NTFS `3016.7.1.2.3` (`tntfs.ko`, SHA-256
+  `da2ae1545125a1679bd37d987f2fcb81fdbca89b69042eb3a97d54a5ef9454be`) and
+  Tuxera exFAT `3016.6.23.3` (`texfat.ko`, SHA-256
+  `b0f5ea01ead8a6588a0427334ad4de9e1caba4ca55d6a259cccb124d8f49289f`).
+  NVD keyword queries for `Tuxera` and `TexFAT` returned no records when checked
+  on 1 November 2026. CVEs for
+  Linux's separate in-tree exFAT implementation are not evidence that these
+  proprietary modules are affected. This is an unknown parser surface to test
+  in disposable VM snapshots, not a known-CVE claim;
 - password-gated serial console: identify the actual boot caller, active account
   database and physical UART before testing authentication;
 - removable-media updater: validate signatures, manifest checks, downgrade rules
