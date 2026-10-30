@@ -1939,3 +1939,17 @@ and are superseded by corrections rather than silently rewritten.
   anything.
 - The blocker is unglamorous and immediate: pixman headers are absent, so the first build decision is
   where that small amount of header surface comes from.
+
+## 2026-10-29 — the toolchain answers first, as it should
+
+- Before writing a backend it was worth knowing whether one could be built at all: an arm64 host with no
+  cross-gcc, targeting a 2015 embedded x86_64 userspace. The bundled zig does it, and the proof is an
+  ELF file exporting the right symbol rather than an opinion about compilers.
+- The remaining blockers came from reading the source's own include list. That is a minute of work that
+  would otherwise have been an afternoon of compiler errors, and it named the one genuinely missing piece
+  on this machine: there is no wayland-scanner here.
+- The pixman skew is the kind of detail that silently poisons a result later. Headers newer than the
+  runtime will compile cleanly and then misbehave in ways that look like a backend bug, so it is written
+  down now, with the fallback stated.
+- Also a small housekeeping correction: the scaffold was first written under work/, which this repository
+  ignores, so it would have been lost from history. It now lives under tools/.

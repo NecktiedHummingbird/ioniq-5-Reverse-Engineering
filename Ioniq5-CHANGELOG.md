@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.16.0 - cross toolchain proven, and the real build blockers named
+
+- The bundled zig 0.13.0 cross-compiles to `x86_64-linux-gnu` and produces a valid **x86-64 ELF shared
+  object exporting `backend_init`**, which is the entrypoint this Weston build loads via `dlsym`. The
+  host is arm64 and has no system cross-gcc, so this was the one genuine toolchain unknown and it is now
+  settled with an artefact rather than an assumption.
+- pixman headers do exist on the host (Homebrew **0.46.4**) against an image runtime of **0.42.2**. The
+  `libpixman-1.so.0` ABI is stable and the calls the headless renderer makes are long-standing, but the
+  skew is recorded as a real risk rather than waved through; pinning to 0.42.2 headers is the fallback.
+- Four concrete build items remain, all identified by reading what the backend actually includes rather
+  than by trial and error: a minimal `config.h` (Weston generates it with autotools), the generated
+  `presentation_timing-server-protocol.h`, **`wayland-scanner`, which is absent from the host**, and a
+  wayland development tree for `wayland-server.h`. The Weston source tree supplies 21 internal headers.
+- A way around two of those exists and is recorded: the IAS interface tables are small and were already
+  recovered from `ias-backend.so`, so they can be written directly as `wl_interface` structs instead of
+  generated from XML that is not in the tree.
+- Scaffold and build notes live at `tools/uk_fw/ias_backend_soft/`. The previous scaffold location under
+  `work/` was gitignored and would not have been committed, which is why it moved.
+
 ## 1.15.0 - IAS protocol extracted; soft-backend slice scoped
 
 - The IAS control protocol is now known exactly, extracted from `ias-backend.so`'s `.data` by parsing
