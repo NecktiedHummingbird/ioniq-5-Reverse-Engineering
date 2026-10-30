@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.13.0 - IAS shell initialised with the vendor config; `/media` resolves to world-writable
+
+- The compositor now loads `ias-shell.so` **with its configuration**, and the IAS error is gone. The
+  path is `$XDG_CONFIG_HOME/ias.conf` exactly — not `$XDG_CONFIG_HOME/.config/ias.conf` — which is why
+  the vendor ships it at `etc/xdg/weston/.config/ias.conf`. With `XDG_CONFIG_HOME=/tmp/ias` holding a
+  copy and the CRTC renamed from `HDMI1` to the headless backend's `headless-0`, the shell initialises
+  without complaint, `wayland-0` exists, and `NaviUpdateApp` stays attached with only the benign
+  `QDBusConnection` warning.
+- `esinit` sets `XDG_RUNTIME_DIR="/run/user/root"` (line 148), so the earlier `/tmp/xdg` was a
+  research-side invention; the vendor path is now used.
+- **V-011's weakest link is resolved, in the more serious direction.** `etc/fstab_emmc:8` mounts
+  `tmpfs /media tmpfs defaults`, nothing in the tree sets a mode or owner (no `tmpfiles.d` entry, no
+  `/media` reference in `esinit`), and the kernel's tmpfs root default is `01777`. So `/media` is very
+  likely world-writable and sticky while the per-device subdirectories are `0755 root:root`: an
+  unprivileged process can create entries in `/media` but cannot rename root's.
+- That sharpens V-011 rather than changing its precondition. Because the kernel interprets a device
+  node's own recorded uid/gid/mode, an attacker crafting an image sets the node `0666` and defeats
+  `0660 root:disk` entirely — unprivileged read and write of **internal** storage, not merely removable
+  media. Physical USB access is still required; what changes is scope.
+- The `..` serial vector remains an amplifier, now with a plausibly writable mount root. Recorded as
+  unverified, with the specific test that would settle it.
+
 ## 1.12.0 - the vendor compositor runs and the UI connects to it
 
 - No build was needed to get a compositor: the image already ships **`headless-backend.so`** and

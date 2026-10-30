@@ -1855,3 +1855,19 @@ and are superseded by corrections rather than silently rewritten.
   product does not use, and the IAS shell wanted a config path that `HOME` normally supplies.
 - The remaining gap is now narrow and named. The shell needs its configuration to initialise outputs,
   and scanout still has to become real for anything to be seen.
+
+## 2026-10-29 — the shell comes up, and a permission boundary turns out to be thinner than stated
+
+- The IAS shell now initialises with its own configuration. The detail that mattered was unglamorous:
+  the config is read from `$XDG_CONFIG_HOME/ias.conf` directly, and the vendor ships it one directory
+  deeper, so the value of that variable is what makes the difference. Renaming the CRTC to the headless
+  output's name was the other half.
+- The security question of the day resolved against optimism. `/media` is a plain tmpfs with defaults
+  and nothing sets a mode, so the kernel default applies and it is very likely world-writable. The
+  earlier entry leaned on "probably 0755 root" as reassurance; that assumption is gone and the entry now
+  says so.
+- What survived is worth stating plainly: the mount lacks `nodev`, and node permissions are chosen by
+  whoever built the filesystem. That combination is a boundary failure regardless of how tidy the rest
+  of the permission model is.
+- Escalation still requires physical access. Being accurate about that matters as much as being accurate
+  about the defect.
