@@ -1549,3 +1549,23 @@ and are superseded by corrections rather than silently rewritten.
 - Recorded risk, for cheap falsification next: that the IVI modules depend only on the Weston backend
   ABI and the `ias_crtc` interface. One run with the software backend and a `wrandr --crtc=1` call will
   settle it.
+
+## 2026-10-29 — the real init chain runs, and dies on a kernel fault
+
+- Booting the authentic esinit rather than the research shim changed the diagnosis again. Everything
+  the services had been complaining about, the missing password file, fstab, weston configuration,
+  turned out to be produced correctly by esinit in seconds. The harness had been feeding the system
+  nothing and then attributing the resulting failures to individual services.
+- The new blocker is deeper and more interesting than any of those. A vendor module, loaded by a
+  vendor script during init, dereferences a null pointer on non-vendor hardware and orphans a lock on
+  the platform bus. Every subsequent platform driver then waits forever, and because the hung-task
+  detector is compiled out, nothing is printed. Progress looks like silence.
+- What made the silence readable was the pair of controls: the same module loads fine on a clean guest,
+  and a non-platform module still loads after the oops. That narrowed a whole-system stall to one bus.
+- The MICOM work moved from folklore to a contract. The 35 bytes are the answer, not the question, and
+  the framing is a five-byte header with an XOR checksum. The honest part of that document is the
+  weakest link it names: static evidence cannot separate two readings of why the daemon stays silent,
+  and one hex dump would settle it.
+- Also corrected a housekeeping error of my own: the repository ignores `/work/`, so the analysis
+  documents I believed I had committed were not in the repository at all. They are now under
+  `evidence/vm-bringup/`.

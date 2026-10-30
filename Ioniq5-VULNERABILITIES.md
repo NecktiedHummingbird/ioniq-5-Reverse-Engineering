@@ -190,6 +190,36 @@ init runs, and whether a local unprivileged context is reachable at all. Stated 
 worth checking on real hardware, not as an exploit. Evidence: `work/vm/vendor-userspace-260128/
 dbus-automount-findings.md` and the `dbus-automount-probe.py` driver.
 
+## V-010 — Null-pointer dereference in `sbi_apl_commit` wedges the platform bus (CANDIDATE)
+
+Loading the vendor module `lge_usb_adapter` on emulated hardware faults immediately:
+
+```
+BUG: unable to handle kernel NULL pointer dereference at 000000000000000c
+IP: [<ffffffff8105913b>] sbi_apl_commit+0x60/0x2bc
+```
+
+`/etc/esinit-modprobe.sh` runs that load during init, and the process is killed. The fault occurs while
+holding the platform `device` lock, which is then orphaned: the next platform driver to register
+(`lge_fan_init`, reached via `/sbin/modprobe fan`) blocks indefinitely in state `D` inside
+`__driver_attach`, and the system stops one line short of starting systemd. The hung-task detector is
+compiled out, so the stall produces no diagnostic.
+
+**Impact as observed:** a denial of service against boot, triggered by an in-tree module load rather
+than by attacker input, so it is a robustness defect first. Severity is not scored: reaching it
+requires the ability to load a module, which already implies privileged context.
+
+**Why it is in the register anyway:** `sbi_apl_commit` reaches a null pointer at offset `0x0c` through
+sideband access paths, and the argument that matters is whether any of the reachable paths can be
+influenced by unprivileged input or by device-supplied data. If they can, this is an arbitrary
+null-dereference or worse in a driver that runs before the HMI; if they cannot, it is a
+bring-up defect. That question is open.
+
+**Status: candidate.** Unverified: whether the faulting pointer is derived from data any less
+privileged actor controls, whether the same path is reachable after boot, and whether the vendor
+intends a hardware-presence precondition that emulation violates. Not a demonstrated security
+vulnerability. Evidence: `evidence/vm-bringup/esinit-bringup-findings.md`.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

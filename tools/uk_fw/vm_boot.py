@@ -293,6 +293,9 @@ def adapt_sdhci(rsp: RSP) -> dict:
 
 
 VM_CPU_CHOICES = ("max,vendor=GenuineIntel", "max,vendor=GenuineIntel,-avx2")
+# The research /init plus the one authentic vendor init recovered from the
+# shipped kernel command line (evidence/official-package-static.md:239-244).
+INIT_CHOICES = ("/init", "/lib/systemd/esinit")
 
 
 def qemu_command(workspace: Path, qemu: str, compat: bool,
@@ -300,11 +303,14 @@ def qemu_command(workspace: Path, qemu: str, compat: bool,
                  cpu: str = VM_CPU_CHOICES[0],
                  micom_serial: bool = False,
                  memory_mib: int = 1024,
-                 extra_devices: list[str] | None = None) -> list[str]:
+                 extra_devices: list[str] | None = None,
+                 init: str = "/init") -> list[str]:
     if display not in ("none", "cocoa"):
         raise ValueError("supported display backends: none, cocoa")
     if cpu not in VM_CPU_CHOICES:
         raise ValueError("unsupported VM CPU feature profile")
+    if init not in INIT_CHOICES:
+        raise ValueError("unsupported guest init (research /init or vendor esinit only)")
     if memory_mib < 256 or memory_mib > 8192:
         raise ValueError("VM memory must be between 256 and 8192 MiB")
     for device in extra_devices or []:
@@ -335,8 +341,8 @@ def qemu_command(workspace: Path, qemu: str, compat: bool,
     command += ["-device", "sdhci-pci,id=sdhci0", "-drive",
                 f"if=none,id=sd0,format=raw,file={workspace / 'rootfs.img'},snapshot=on",
                 "-device", "sd-card,drive=sd0", "-append",
-                "root=/dev/mmcblk0 rootwait rootdelay=2 rootfstype=ext4 rw init=/init "
-                "console=ttyS0,115200 panic=-1 loglevel=7 "
+                "root=/dev/mmcblk0 rootwait rootdelay=2 rootfstype=ext4 rw "
+                f"init={init} console=ttyS0,115200 panic=-1 loglevel=7 "
                 "ABL.oemkm=40@20000000 ABL.seed=21000000,21000040",
                 "-display", display, "-serial", "stdio", "-monitor", "none", "-no-reboot"]
     if micom_serial:
@@ -378,7 +384,8 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
         graphics_smoke: bool = False,
         cpu: str = VM_CPU_CHOICES[0], micom_serial: bool = False,
         memory_mib: int = 1024,
-        extra_devices: list[str] | None = None) -> int:
+        extra_devices: list[str] | None = None,
+        init: str = "/init") -> int:
     workspace = project_output(workspace)
     verify_workspace(workspace)
     qemu = shutil.which("qemu-system-x86_64")
@@ -395,12 +402,13 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
     run_dir = workspace / "runs" / f"{time.time_ns()}"
     run_dir.mkdir(parents=True)
     argv = qemu_command(workspace, qemu, compat, display, graphics_smoke, cpu,
-                        micom_serial, memory_mib, extra_devices)
+                        micom_serial, memory_mib, extra_devices, init)
     (run_dir / "command.json").write_text(json.dumps(argv, indent=2) + "\n")
     print(f"Run artifacts: {run_dir}", flush=True)
     token = uuid.uuid4().hex
     end_marker = f"VM_COMMAND_END_{token}"
-    result = {"userspace": False, "root_mounted": False, "command_exit_code": None,
+    result = {"init": init, "userspace": False, "root_mounted": False,
+              "command_exit_code": None,
               "compatibility_patch": compat, "micom_serial": micom_serial,
               "micom_serial_bytes": 0, "timeout": False, "error": None}
     start = time.monotonic()
@@ -477,7 +485,7 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
                         script = shell_script(command, end_marker)
                         proc.stdin.write(script.encode()); proc.stdin.flush()
                         sent = True
-                    if interactive and sent and select.select([sys.stdin], [], [], 0)[0]:
+                    if interactive and select.select([sys.stdin], [], [], 0)[0]:
                         line = sys.stdin.readline()
                         if not line:
                             break
@@ -534,6 +542,9 @@ def main(argv=None) -> int:
                       help="provide /dev/ttyS1 and capture its raw traffic to a project-local socket")
     boot.add_argument("--memory-mib", type=int, default=1024,
                       help="guest RAM in MiB (bounded to 256..8192; default: 1024)")
+    boot.add_argument("--init", choices=INIT_CHOICES, default="/init",
+                      help="guest PID 1: research /init (default) or the authentic "
+                           "vendor /lib/systemd/esinit chain")
     args = parser.parse_args(argv)
     try:
         if args.action == "prepare":
@@ -543,7 +554,7 @@ def main(argv=None) -> int:
             raise ValueError("--graphics-smoke supplies its own command; omit --cmd")
         return run(args.workspace, args.sdhci_compat, args.cmd, args.timeout,
                    args.interactive, args.display, args.graphics_smoke, args.cpu,
-                   args.micom_serial, args.memory_mib)
+                   args.micom_serial, args.memory_mib, init=args.init)
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         print(f"vm_boot: {exc}", file=sys.stderr)
         return 2

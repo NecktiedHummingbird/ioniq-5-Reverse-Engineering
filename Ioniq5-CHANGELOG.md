@@ -3,6 +3,40 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.07.0 - authentic init chain runs to a kernel oops, and the MICOM contract is written
+
+- The boot harness gained a validated `--init` choice (`/init` or `/lib/systemd/esinit`), defaulting to
+  the research init. The canonical image is provably untouched by this: the drive is already
+  `snapshot=on` so QEMU writes a throw-away overlay, and `rootfs.img` hashes identically before and
+  after four runs.
+- `esinit` now runs authentically through step 22 and stalls one line before systemd. The artefacts
+  that its absence kept costing us now exist: `/tmp/passwd` at 996 bytes, `/tmp/fstab`,
+  `/tmp/weston.ini`, and the `*_code_*` files. PID 1 never becomes systemd and no `Reached target`
+  line appears, held for 300 extra seconds across two long runs.
+- The blocker is a kernel fault, not a service failure. `/etc/esinit-modprobe.sh` killed
+  `/sbin/modprobe lge_usb_adapter`, which oopsed with a NULL dereference at `000000000000000c` in
+  `sbi_apl_commit+0x60/0x2bc`. That orphans the platform `device` lock, so the next platform driver
+  registration blocks: `/sbin/modprobe fan` never returns and sits in state `D` inside
+  `lge_fan_init`. The hung-task detector is compiled out, which is why the stall is silent.
+- Controls isolate it: `modprobe fan` on a clean guest returns 0, and `modprobe hid-generic` still
+  succeeds after the oops, so only the platform bus is wedged. Recorded as V-010.
+- `esinit`'s own weston launch is skipped for a second, independent reason: the SPI validation marker
+  `/tmp/spi_validation_NOK` persists because `/sys/module/micom/parameters/spi_validation` does not
+  exist. That branch is also console-silent, because the vendor wrote `echo "SPI NOK" > kmsg` with a
+  relative path, creating `/kmsg` instead of logging.
+- MICOM contract written from static evidence with each claim tagged verified, inferred or
+  unestablished: bus `com.lge.car.micom`, object `/Ihu`, interface `com.lge.car.micom.ihu`, method
+  `AskSysBootinfo` taking no arguments and returning `ay`. The 35 bytes are the reply payload, not the
+  request: frames are `AA id_hi id_lo L payload CS` with an XOR checksum over the whole frame, and a
+  reply carries the request id with bit 15 set, at 115200 baud on `/dev/ttyS1`. Five methods in
+  dependency order would satisfy the launcher.
+- Weakest link stated plainly: it is unresolved whether the daemon transmits before it receives, since
+  the retained trace filtered a single fd, so a MICOM-init precondition and a wrong-fd write are not
+  separable from static evidence. One `xxd` of `micom-serial.bin` settles it.
+- **Correction:** `/work/` is gitignored, so earlier commits that appeared to include the analysis
+  documents did not. Sanitised analysis now lives under `evidence/vm-bringup/`, which is the tracked
+  location the repository policy intends.
+
 ## 1.06.0 - display architecture decided: software IAS backend, stock weston
 
 - Decision recorded after reviewing the gap analysis against the actual kernel tree: patch only
