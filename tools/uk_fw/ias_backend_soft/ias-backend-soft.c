@@ -102,18 +102,29 @@ headless_output_repaint(struct weston_output *output_base,
 
 	ec->renderer->repaint_output(&output->base, damage);
 
-	/* Diagnostic: dump the backend framebuffer so the scene can be inspected even
-	 * when the shell provides no screenshooter. */
-	if (output->image_buf && repaint_count < 3) {
+	/* Diagnostic: write a downscaled PPM of the backend framebuffer. Small enough to
+	 * move out of the guest over the serial link without truncation. */
+	if (output->image_buf && repaint_count < 10) {
 		static char path[64];
-		snprintf(path, sizeof path, "/tmp/fb-%d.raw", repaint_count);
-		FILE *f = fopen(path, "wb");
-		if (f) {
-			size_t n = (size_t) output->base.current_mode->width *
-				   output->base.current_mode->height * 4;
-			fwrite(output->image_buf, 1, n, f);
-			fclose(f);
-			weston_log("ias-soft: dumped %s (%zu bytes)\n", path, n);
+		const int sw = 240, sh = 90;
+		int w = output->base.current_mode->width;
+		int h = output->base.current_mode->height;
+		const unsigned char *src = output->image_buf;
+
+		snprintf(path, sizeof path, "/tmp/fb-%d.ppm", repaint_count);
+		{
+			FILE *f = fopen(path, "wb");
+			if (f) {
+				fprintf(f, "P6\n%d %d\n255\n", sw, sh);
+				for (int y = 0; y < sh; y++)
+					for (int x = 0; x < sw; x++) {
+						size_t o = ((size_t)(y * h / sh) * w + (x * w / sw)) * 4;
+						unsigned char bgr[3] = { src[o+2], src[o+1], src[o+0] };
+						fwrite(bgr, 1, 3, f);
+					}
+				fclose(f);
+				weston_log("ias-soft: dumped %s\n", path);
+			}
 		}
 	}
 
@@ -286,6 +297,36 @@ err_free:
 	return NULL;
 }
 
+
+/* ---- research shim: place surfaces the missing IAS layout plugin would place ----
+ * grid_layout.so is absent from the image, so ias-shell never creates views and the
+ * compositor has nothing to draw. For the research build only, create a view for every
+ * new surface and put it on the output. This is a shim, not vendor behaviour. */
+static int shim_mapped;
+
+static void
+shim_on_create_surface(struct wl_listener *listener, void *data)
+{
+	struct weston_surface *ws = data;
+	struct weston_compositor *ec = ws->compositor;
+	struct weston_view *v;
+
+	(void) listener;
+	v = weston_view_create(ws);
+	if (!v)
+		return;
+	weston_view_set_position(v, 0, 0);
+	weston_layer_entry_insert(&ec->cursor_layer.view_list, &v->layer_link);
+	weston_view_update_transform(v);
+	weston_compositor_schedule_repaint(ec);
+	shim_mapped++;
+	weston_log("ias-soft: shim mapped surface %p (%d total)\n", (void *) ws, shim_mapped);
+}
+
+static struct wl_listener shim_create_surface_listener = {
+	.notify = shim_on_create_surface,
+};
+
 WL_EXPORT int
 backend_init(struct weston_compositor *compositor,
 	     int *argc, char *argv[],
@@ -319,5 +360,8 @@ backend_init(struct weston_compositor *compositor,
 		return -1;
 
 	ias_publish(compositor->wl_display);
+
+	wl_signal_add(&compositor->create_surface_signal, &shim_create_surface_listener);
+
 	return 0;
 }

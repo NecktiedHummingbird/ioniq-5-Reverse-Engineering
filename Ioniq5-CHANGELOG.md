@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.27.0 - the shim works: surfaces are mapped and the compositor repaints
+
+- Installed a research shim in the backend that creates a view for every new surface, via
+  `compositor->create_surface_signal`, and inserts it on the output. It is explicitly a shim standing in
+  for the absent `grid_layout.so`, not vendor behaviour.
+- **It works at the layer that was broken.** With the shim: `ias-soft: shim mapped surface …` is logged,
+  **repaints now happen** (framebuffer dumps `fb-1.raw`/`fb-2.raw` were produced), and the earlier state —
+  literally zero repaints — is gone. This confirms the diagnosis: the compositor was idle only because
+  nothing was ever placed.
+- First attempt used `ec->surface_list`, which **does not exist in this Weston variant**; iteration over that
+  list is impossible here, and the comment in `compositor.h` referencing it is stale. The signal-based hook
+  replaced it and compiles and runs.
+- **Still not verified: pixel content.** The capture through `weston_screenshooter` still reports
+  `mean R=0.0`, and the framebuffer dump could not be moved out of the guest intact — a full 1920x720x4
+  dump (5.5 MB) exceeds what the serial channel will carry before the run ends, and the earlier gzip+base64
+  attempt was truncated. The dump now writes a downscaled 240x90 PPM instead, which is small enough to
+  transfer; that path needs one clean run to confirm.
+- Honest summary: the placement problem is solved at the level of "the compositor now renders", and the
+  remaining work is entirely about *observing* the result rather than producing it.
+
 ## 1.28.0 - reconstruct AppUpgrade routing and constrain the plaintext marker
 
 - Added `tools/uk_fw/embedded_elf.py`, a strict read-only extractor that keeps

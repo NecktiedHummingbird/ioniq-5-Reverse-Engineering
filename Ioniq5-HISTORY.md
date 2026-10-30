@@ -2246,3 +2246,14 @@ and are superseded by corrections rather than silently rewritten.
 - AppSetup also became simpler under exact review. It asks the manager to move to app ID 300; it is not the
   descriptor parser previously assigned to it by the public operating model. Finding the actual owner of
   `.lge.upgrade.xml` is the next update task.
+
+## 2026-10-31 — the compositor draws now
+
+- The shim replaced the missing plugin well enough that the compositor started repainting. That is the
+  first time in this whole line of work that the scene is not empty by construction.
+- Two structural surprises: this Weston build has no compositor-wide surface list despite a comment saying
+  it does, so a signal hook was the only way in, and the framebuffer is far too large to carry out of the
+  guest over the channel available. Both are the kind of thing only measurement settles.
+- What remains is observation, not construction. That distinction is worth keeping straight, because
+  "I cannot see it" and "it is not happening" have looked identical several times in this session, and each
+  time the control experiment was what separated them.
