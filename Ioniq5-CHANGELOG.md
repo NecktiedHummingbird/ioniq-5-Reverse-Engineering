@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.12.0 - the vendor compositor runs and the UI connects to it
+
+- No build was needed to get a compositor: the image already ships **`headless-backend.so`** and
+  **`fbdev-backend.so`** alongside `ias-backend.so`, so the vendor's own weston can run without a DRM
+  device.
+- Running `/usr/bin/weston --backend=headless-backend.so --shell=/usr/lib/weston/ias-shell.so` with
+  `XDG_RUNTIME_DIR` set produces a live socket: `wayland-0` and `wayland-0.lock` appear, weston stays
+  alive, and `ias-shell.so` loads.
+- **`NaviUpdateApp` no longer fails on display.** It stays alive and its only remaining output is the
+  benign `QDBusConnection: session D-Bus connection created before QCoreApplication` warning. The
+  earlier `Failed to create display (No such file or directory)` is gone, which means the UI process
+  connects to the vendor compositor.
+- Two ordinary obstacles were cleared on the way. Weston initially quit because it could not launch
+  `/usr/libexec/weston-desktop-shell`; that is the wrong shell for this product, and `ias-shell.so` is
+  the right one. And `ias-shell` then reported
+  `Failed to open IAS config file (//.config/ias.conf)` because `HOME` is unset, so the config path
+  collapses to `//.config/ias.conf` instead of the vendor's `etc/xdg/weston/ias.conf`.
+- Next: supply the IAS config so the shell initialises its outputs, confirm a surface is created, and
+  then replace the headless backend with real scanout — which is where the display architecture
+  decision applies.
+
 ## 1.11.0 - the MICOM daemon's exit was the missing device, and the gate is now the compositor
 
 - **`micommanager` starts successfully** on the authentic multi-user boot once `/dev/ttyS1` exists:

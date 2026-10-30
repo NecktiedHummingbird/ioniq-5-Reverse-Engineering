@@ -1842,3 +1842,16 @@ and are superseded by corrections rather than silently rewritten.
   emulation fails. The remaining work is to create that runtime environment deliberately.
 - Two workers were dispatched and neither returned anything. Rather than dress that up, the records note
   it, and the round's actual finding came from an existing log.
+
+## 2026-10-29 — the UI connects
+
+- The compositor turned out to be a non-problem. The image ships a headless backend next to the Intel
+  one, so the vendor's own weston runs with no DRM device at all, and the socket appears. The build
+  that had been estimated in weeks was unnecessary for reaching the next gate.
+- The UI process then did the thing that matters: it stopped complaining about the display. That single
+  changed line, an error that is no longer printed, is the first evidence that the vendor stack is
+  talking to itself rather than to a substitute.
+- Two failures along the way were both configuration, not capability: weston wanted a shell this
+  product does not use, and the IAS shell wanted a config path that `HOME` normally supplies.
+- The remaining gap is now narrow and named. The shell needs its configuration to initialise outputs,
+  and scanout still has to become real for anything to be seen.
