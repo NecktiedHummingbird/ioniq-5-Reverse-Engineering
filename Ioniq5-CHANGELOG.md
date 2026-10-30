@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.23.0 - the home screen runs; the capture is still black, with a named hypothesis
+
+- With a system bus and `micommanager_userspace` running, `AppHomeScreen` **stays alive** (alive at 22 s,
+  where earlier runs died), and it creates real state on disk: `CustomLayoutDB` 20,480 bytes and `SetupDB`
+  16,384 bytes under `/app/data/AppHomeScreen/`. The layout-database error is gone.
+- It also genuinely talks to the compositor: with `WAYLAND_DEBUG=1` the client log shows **24 `attach`,
+  9 `commit`, 1 `wl_surface@`, and 12 `ias_`** calls, so it is not a client that never submits.
+- **The capture is still uniformly black**, and `ias-shot` now reports it directly:
+  `mean R=0.0 G=0.0 B=0.0`. So the remaining gap is not client liveness, EGL, or the capture path — the
+  control capture with `weston-simple-shm` still works, so the pipeline itself is sound.
+- The app is also blocked on **shared memory it does not own**: repeated
+  `Cannot attach to shared memory to update! QSharedMemory::handle:: UNIX key file doesn't exist` from
+  `CPCallWidget`, `ElectricityUseWidget`, `PHEVVehicleOSDWidget`, `PHEVWidget`, `VoiceMemoWidget` and
+  `WeatherWidget`. Those widgets read a boot-info segment created by another component; without it they
+  render nothing even when their surface is committed. That is the leading explanation for a committed but
+  empty scene.
+- Working hypothesis for the black frame, now stated explicitly: the vendor surfaces are committed but not
+  mapped onto the CRTC our capture reads, because mapping under `ias-shell` is the composer's job via
+  `ias_hmi`. The control client is mapped by default; a vendor client waiting to be placed is not.
+- `ias-shot` gained a mean/histogram report so a black frame is self-evident at capture time rather than
+  needing a round trip.
+
 ## 1.27.0 - Build a passive disconnected-bench state bundle and harden rootfs repacking
 
 - Added `tools/uk_fw/bench_state_bundle.py`. It emits a versioned POSIX-shell

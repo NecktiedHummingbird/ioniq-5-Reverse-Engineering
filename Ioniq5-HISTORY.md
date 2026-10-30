@@ -2175,3 +2175,17 @@ and are superseded by corrections rather than silently rewritten.
   resulting package.
 - No bench, network, radio, modem, firmware update or target executable was used.
   Root access and custom-update acceptance remain evidence questions, not claims.
+
+## 2026-10-31 — the app lives, the screen does not
+
+- Two separate causes were hiding behind one black frame. The first was liveness: with a bus and the MICOM
+  daemon the home screen now survives and writes its databases. The second is presentation: it commits
+  surfaces that never appear.
+- The shared-memory messages are the interesting part. Widgets are asking for boot information that another
+  process is supposed to publish. A committed surface with nothing to draw in it looks exactly like a
+  broken compositor, which is why the control capture mattered — it separates "our capture is wrong" from
+  "their scene is empty".
+- Naming the hypothesis rather than chasing it: under this shell, mapping a client onto a CRTC is the
+  composer's job. A plain client is mapped automatically; a vendor client waiting to be placed is not.
+- The useful shift is that the failure is now in vendor application logic — shared boot state and surface
+  placement — rather than anywhere in the emulation we built.
