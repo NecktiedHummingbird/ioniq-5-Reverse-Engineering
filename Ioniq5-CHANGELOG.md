@@ -3,6 +3,34 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.28.0 - reconstruct AppUpgrade routing and constrain the plaintext marker
+
+- Added `tools/uk_fw/embedded_elf.py`, a strict read-only extractor that keeps
+  outer-file offsets, embedded-file offsets, and embedded virtual addresses
+  separate. Exact SCOMO and FUMO extents replace older broad carvings; malformed,
+  truncated, incidental, and overlapping synthetic ELFs fail closed.
+- Reconstructed the outer wrapper from exact instructions. Exact case-sensitive
+  `-un:1` selects `:/AppScomoUpgrade`; `-un:0` or no `-un:1` selects
+  `:/AppFumoUpgrade`. The wrapper forwards every application argument except
+  item zero to the child, uses the Qt event loop rather than a blocking wait,
+  discards setup/child status, and normally returns `1`.
+- Closed the AppLauncher argument gap. A dynamically requested app ID 300 calls
+  the normal option builder at `0x34510`, stores its list at
+  `AppProcess+0x60`, and passes it to `QProcess::start`. The recovered embedded
+  NE/EUR row contains `-un:0`; an exact `-un:1` plus app ID 311 conditionally
+  substitutes AppScomoDM for AppDMClient.
+- Corrected marker semantics. FUMO's mode byte starts at `1` and marker existence
+  at process startup changes it to `0` (`Unencryption Update`). Recovered SCOMO
+  MASS_PRODUCT/PENETRATION startup explicitly ignores the marker. The marker is
+  therefore route-specific, requires prior privileged execution, and does not
+  prove version/signature/hash/write/slot/boot/health bypass.
+- Excluded AppSetup as the descriptor parser: it initiates the app-ID-300
+  transition but does not perform the reviewed USB discovery, decryption,
+  version/model, authentication, route-selection, or marker work.
+- Added `evidence/appupgrade-update-trust.md` and corrected build/operating-model
+  documents that previously called the marker a universal unchecked plaintext
+  path. No recovered executable was run and no update or slot operation occurred.
+
 ## 1.26.0 - the IAS plugin ABI is extracted in full
 
 - The layout-plugin contract is now written down from vendor DWARF rather than inferred, in

@@ -15,7 +15,7 @@ operational live-vehicle exploit procedure.
 | `navi_extended` / AppNavi replacement | Historical initial execution | Platform family matches Linux `S5W_L`; applicability to `260128` is unconfirmed and plausibly blocked by Engineering/SOP-version gating. |
 | Engineering/dealer UI | Diagnostic UI | UI access alone is not root or code execution. |
 | `update_decryptor` | Extract encrypted update content | Downstream tool requiring a unit-derived `DecryptToPIPE` and key material not shipped publicly. |
-| `update-patcher` | Persistent modified update | Post-compromise mechanism requiring prior execution, decrypted rootfs and acceptance of unencrypted updates. |
+| `update-patcher` | Persistent modified-update workflow | Post-compromise mechanism requiring prior execution and a decrypted rootfs. Recovered FUMO has a marker-controlled `Unencryption` mode on the NE-style `-un:0` route, but complete package acceptance and owner applicability remain unproven; SCOMO production startup ignores the marker. |
 | Gen5W Wi-Fi/SSH loop | Post-root access | Requires an already-installed replacement/main-loop mechanism. |
 | CVE-2023-26243 through CVE-2023-26246 | Key disclosure and update signature/version-check bypasses | Demonstrated on `AE_E_PE_EUR.S5W_L001.001.211214`; patch status on `NE_E.EUR.S5W_L.001.001.260128` remains unknown. |
 | NEMESIS | Android/TCC803x root chain | Not directly applicable to this Linux/x86-64 package. |

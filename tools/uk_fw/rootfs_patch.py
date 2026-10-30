@@ -3,18 +3,17 @@
 
 Context
 -------
-The public operating model (`evidence/gen5w-public-operating-model.md`) shows two
-update paths:
+Public tooling documents a plaintext update mode. Exact recovered `260128`
+analysis (`evidence/appupgrade-update-trust.md`) constrains it: the outer wrapper
+selects FUMO unless exact `-un:1` selects SCOMO, and only the FUMO startup path
+maps `/update/disableEncryptionUpdate` to its zero-valued "Unencryption" mode.
+The recovered SCOMO production/penetration path explicitly ignores that marker.
+Neither route establishes that version, model, signature, digest, write, slot,
+boot, or health checks are absent.
 
-  * normal: payloads are AES-encrypted and decrypted by the unit's
-    `DecryptToPipe` before extraction;
-  * unchecked: if `/update/disableEncryptionUpdate` exists, `AppUpgrade` performs
-    **no decryption** and expects an entirely plaintext package. The
-    `.lge.upgrade.xml` version check still runs.
-
-This tool covers the second path. It takes a decrypted `mango-rootfs.tar.gz`,
-injects files (a systemd unit, SSH authorised keys, an application), and repacks
-in the exact format the upgrader expects:
+This tool only builds the plaintext rootfs archive used by the public workflow.
+It takes a decrypted `mango-rootfs.tar.gz`, injects files (a systemd unit, SSH
+authorised keys, an application), and repacks in the documented format:
 
     tar --format=ustar --numeric-owner -cf - ./ | gzip
 
@@ -22,8 +21,9 @@ It then reports the size and CRC-32 that the `.ver` manifest must carry for the
 rebuilt file, and optionally rewrites a copy of the manifest.
 
 It does **not** encrypt, does not produce a signed package, and does not write to
-the unit. Shipping the result still requires the target unit to accept
-unencrypted updates and to pass its own version check.
+the unit. Using the result would still require the target to select the FUMO
+route and pass every independent eligibility, authentication, integrity,
+installation, boot, and health check.
 
 Usage
 -----

@@ -32,10 +32,12 @@ Per-file split after removing the footer:
 | `.lge.upgrade.xml` | 17,670 | **3,611** | 17,812 | **3,497** |
 | `update.tar.gz` | 42,117,462 | 42,103,403 | 70,901,166 | 70,886,851 |
 
-`.lge.upgrade.xml` is therefore almost entirely footer: only ~3.5 KB is its own
-encrypted content. That is consistent with the documented behaviour — `AppSetup`
-decrypts this file first, reads the version from it, and only then hands over to
-`AppUpgrade`.
+`.lge.upgrade.xml` is therefore almost entirely shared suffix: only ~3.5 KB is
+file-unique ciphertext. That is consistent with a small encrypted descriptor,
+but exact recovered AppSetup does **not** perform the reviewed decryption or
+version comparison; it initiates an app-ID-300 transition. The exact owner and
+order of descriptor discovery, `DecryptToPIPE`, version/model checks, and
+handoff remain unresolved. See `evidence/appupgrade-update-trust.md`.
 
 ## Entropy profile
 
@@ -89,10 +91,12 @@ differing bytes              [8, 9, 10, 11, 20]
 What remains unproven is whether the upgrader relies on those CRC values, and
 whether a modified payload can still be decrypted and a footer still verified.
 Because the `.ver` CRC is computed over **ciphertext**, an attacker without the
-key still cannot produce a payload that decrypts to anything useful. So even if
-the CRC hypothesis holds, it is a **post-execution** mechanism — useful for
-persistence after the `disableEncryptionUpdate` path is established, not a route
-to first execution.
+key still cannot produce a payload that decrypts to anything useful. Even if the
+CRC hypothesis holds, it is at most a **post-execution** mechanism. Exact
+recovered code further constrains the marker: it selects FUMO's zero-valued
+`Unencryption` mode on a `-un:0`/non-`-un:1` route, while recovered SCOMO
+production/penetration startup ignores it. Neither mode proves payload
+acceptance or provides first execution.
 
 **Field evidence now weakens even that.** A public report
 (`navi_extended` issue #3, 2023-09-23) describes exactly this attack on a

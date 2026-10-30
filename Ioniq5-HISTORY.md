@@ -2226,3 +2226,23 @@ and are superseded by corrections rather than silently rewritten.
 - What remains is small and enumerated rather than vague: two ID types and one function signature. Recording
   the gap explicitly, rather than implying the picture is complete, is the difference between a specification
   someone can build from and a summary that flatters the work.
+
+## 2026-11-01 — one wrapper, two updater architectures
+
+- The apparent contradiction in the update evidence had a routing answer. The outer program is not the
+  updater proper: it chooses between two embedded executables. `-un:1` selects SCOMO; everything else selects
+  FUMO, and the original arguments are forwarded to whichever child runs.
+- The missing link was AppLauncher. Dynamic applications do not start with an empty argument list; they get
+  the same vehicle/model option builder as the static process set. The embedded IONIQ 5 NE/EUR row says
+  `-un:0`, so its recovered route is FUMO. `-un:1` is also what conditionally replaces AppDMClient with
+  AppScomoDM, making the split architectural rather than an isolated flag.
+- The encryption marker means different things on the two sides. FUMO loads a byte initialized to one and
+  changes it to zero when the marker exists at startup. SCOMO's production/penetration path says in its own
+  log text that it ignores the marker. Calling the marker either a universal bypass or a no-op would therefore
+  both be wrong.
+- The correction that matters most is about trust boundaries: selecting an unencrypted mode is not the same
+  as passing version, model, signature, digest, target, write, slot, boot, or health checks. Those remain
+  separate questions, and no updater was run to collapse them into a convenient story.
+- AppSetup also became simpler under exact review. It asks the manager to move to app ID 300; it is not the
+  descriptor parser previously assigned to it by the public operating model. Finding the actual owner of
+  `.lge.upgrade.xml` is the next update task.

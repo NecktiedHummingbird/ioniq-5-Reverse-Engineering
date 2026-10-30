@@ -6,6 +6,32 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## AppUpgrade routing and trust checkpoint — 2026-11-01
+
+- Recovered `AppUpgrade` is an outer Qt wrapper with exact embedded SCOMO and
+  FUMO ELF extents. `tools/uk_fw/embedded_elf.py` now extracts only structural
+  extents and keeps outer offsets, embedded offsets, and child VAs separate.
+- Exact case-sensitive `-un:1` selects SCOMO; `-un:0` or no `-un:1` selects
+  FUMO. The wrapper forwards all arguments except `argv[0]`, starts the child
+  asynchronously, ignores setup/child status, and normally returns `1`.
+- AppLauncher's dynamic app-ID-300 path is not argumentless: it invokes the
+  normal vehicle/model option builder and passes the resulting list to
+  `QProcess::start`. The recovered embedded NE/EUR row contains `-un:0`.
+  Exact `-un:1` plus app ID 311 conditionally substitutes AppScomoDM for
+  AppDMClient.
+- FUMO's encryption-mode byte starts at `1`; marker existence at startup changes
+  it to `0` and logs `Unencryption Update`. Recovered SCOMO
+  MASS_PRODUCT/PENETRATION startup explicitly ignores the marker. This closes
+  route selection, not package acceptance: version/model, signature/digest,
+  payload write, slot selection, boot trust, health, and mark-good remain
+  separate unresolved boundaries.
+- Exact AppSetup is only an app-ID-300 initiator, not the reviewed owner of USB
+  discovery, `.lge.upgrade.xml` decryption/version parsing, authentication, or
+  marker selection. See `evidence/appupgrade-update-trust.md` and
+  `docs/agent-work/appupgrade-update-trust/CHECKPOINT.md`.
+- No recovered updater/helper was run; no package, marker, partition, slot, or VM
+  filesystem was modified.
+
 ## Disconnected-bench tooling checkpoint — 2026-11-01
 
 - Added `tools/uk_fw/bench_state_bundle.py`, which emits a reviewable POSIX-shell

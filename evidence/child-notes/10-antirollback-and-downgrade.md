@@ -1,5 +1,15 @@
 # Anti-rollback and downgrade feasibility — Standard Gen5W (`S5W_L`, x86-64 Linux)
 
+> **Superseded attribution warning (2026-11-01):** this child note summarizes
+> public claims and overstates several of them as exact findings. Exact recovered
+> AppSetup initiates app ID 300 but is not the reviewed descriptor decryptor or
+> version parser. The recovered outer wrapper selects FUMO unless exact `-un:1`
+> selects SCOMO; only FUMO maps `/update/disableEncryptionUpdate` to its startup
+> mode byte, while SCOMO production/penetration startup ignores the marker.
+> Package version/model checks, cryptographic binding, inactive-slot writing,
+> boot selection, and health/mark-good remain unresolved. Use
+> `evidence/appupgrade-update-trust.md` for current conclusions.
+
 - Task: anti-rollback / downgrade investigation
 - Subject unit: Hyundai/Kia Standard Gen5W, Linux x86-64, build `NE_E.EUR.S5W_L.001.001.260128` (2026-01-28)
 - Method: public GitLab/GitHub issue trackers, wikis and READMEs of the
