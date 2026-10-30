@@ -312,6 +312,9 @@ bring-up defect. That question is open.
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.
 - **Where:** `usr/bin/weston` in `NE_E.EUR.S5W_L.001.001.260128`, 1,052,408 bytes.
+- **Scope:** confirmed on `usr/bin/weston` and also present in `usr/lib/weston/ias-shell.so` and
+  `usr/lib/weston/ias_plugin_framework.so` (7 debug sections each), i.e. the components that decide what the
+  vehicle display shows.
 - **What:** the binary retains `.debug_info` (360,666 bytes), `.debug_loc` (286,264), `.debug_abbrev`,
   `.debug_str`, `.debug_aranges`, `.debug_ranges`, plus `.symtab` and `.strtab`. Full type definitions,
   struct member names and source line information are present in a production infotainment image.

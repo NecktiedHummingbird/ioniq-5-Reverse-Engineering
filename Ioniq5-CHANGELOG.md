@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.25.0 - the app speaks only IAS, and the plugin ABI is fully recoverable
+
+- `fullscreen-shell` does not help: with it the app stays alive but the compositor still logs **zero
+  repaints**, because `AppHomeScreen` uses the IAS protocol exclusively (`ias_` calls, no `wl_shell`).
+  Only the IAS shell can place its surfaces, so a shim must go through the IAS plugin path.
+- The plugin ABI is now mapped from the binaries rather than guessed. `ias-shell.so` references
+  `ias_layout_switchto_fn`, `ias_layout_switchfrom_fn`, `plugin_redraw_always` and `ias_input_plugin_info`,
+  and `ias_plugin_framework.so` exports the helpers a layout plugin uses: `fetch_ias_surface`,
+  `ias_assign_surface_to_scanout`, `ias_assign_surface_to_sprite`, `ias_assign_zorder_to_sprite`,
+  `ias_assign_constant_alpha_to_sprite`, `ias_activate_plugin`, `ias_deactivate_plugin` and
+  `ias_frame_events_enabled`.
+- A minimal layout plugin is therefore well defined in shape: on switch-to, fetch each IAS surface and
+  assign it to scanout. That is the whole shim.
+- **Both `ias-shell.so` and `ias_plugin_framework.so` carry full DWARF** (7 debug sections each), so the
+  exact struct layouts for the plugin interface — including the callback signature order that
+  `ias_layout_switchto_fn` implies — can be extracted the same way the vendor `weston_output` layout was.
+  No header is needed and none shipped in the image.
+- V-012 is extended: the unstripped-debug condition is not limited to `/usr/bin/weston`. The IAS shell and
+  its plugin framework — the components that decide what appears on the vehicle's display — carry full type
+  and line information in the shipped image as well.
+
 ## 1.24.0 - the compositor never repaints, so nothing is ever drawn
 
 - Instrumented the backend's repaint path to log view count and dump the framebuffer. Result with a

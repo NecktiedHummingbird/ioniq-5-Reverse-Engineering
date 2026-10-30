@@ -2201,3 +2201,16 @@ and are superseded by corrections rather than silently rewritten.
 - What this means for the goal is worth stating: every piece of emulation built over this session is
   working. The remaining gap is one vendor plugin that was never in the package we have, and a research
   shim can stand in for it.
+
+## 2026-10-31 — the app only speaks one language
+
+- Swapping the shell for one that maps clients automatically changed nothing, which was informative: the
+  application never asks the shell for placement. It speaks the IAS protocol and nothing else, so the only
+  component that can put it on screen is the one whose layout plugin is missing.
+- That reframes the remaining work as writing that plugin rather than fighting the compositor. The
+  framework exports everything a plugin needs, including the call that assigns a surface to a scanout.
+- The vendor again ships its debug information, this time in the shell and the plugin framework. The exact
+  interface can be recovered instead of inferred, which turns a speculative shim into a precise one.
+- Worth naming the pattern across this session: where vendors ship DWARF, reverse engineering becomes
+  reading; where they strip, it becomes inference. The expensive mistakes here have all come from inferring
+  something that was actually written down.
