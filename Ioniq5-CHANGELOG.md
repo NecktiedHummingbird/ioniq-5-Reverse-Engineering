@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.11.0 - the MICOM daemon's exit was the missing device, and the gate is now the compositor
+
+- **`micommanager` starts successfully** on the authentic multi-user boot once `/dev/ttyS1` exists:
+  `Starting System service for micommanager`, the daemon logging its own banner
+  (`micommanager_userspace release data : 2015.10.19`), then `Started System service for micommanager`.
+- That corrects the previous reading. The `status=1/FAILURE` that appeared to block
+  `ApplicationLauncher`'s hard `Requires=` was simply the absent serial device: the earlier multi-user
+  run was booted without `--micom-serial`. No protocol work was needed to satisfy the dependency, and
+  the reply/frame simulator is therefore not on the critical path for the HMI.
+- With the daemon up, `Reached target Multi-User System` stands and the next failure is upwards of it:
+  `nua.service` restarts three times from 64.4 s and then hits `start-limit`. The daemon exits 1 each
+  time, and the earlier standalone repro gives the reason: `XDG_RUNTIME_DIR not set in the environment`
+  and `Failed to create display (No such file or directory)`.
+- So the operative blocker is now the one the display decision predicted: **nothing creates a Wayland
+  compositor, a runtime directory, or a socket**. There is no `weston.service` in the image at all,
+  only `weston-crash.path`, and esinit's own weston launch is still gated off by `/tmp/spi_validation_NOK`.
+- Both workers dispatched for this round returned no result and wrote nothing to disk; the finding above
+  came from re-reading an existing run rather than from new work. Recorded plainly rather than presented
+  as progress by delegation.
+
 ## 1.19.0 - Confirm synthetic udev activation and map the thumbnail ASF route
 
 - Added `tools/uk_fw/udev_systemd_probe.py` and focused tests for matched

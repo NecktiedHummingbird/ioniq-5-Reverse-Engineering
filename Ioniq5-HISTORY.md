@@ -1827,3 +1827,18 @@ and are superseded by corrections rather than silently rewritten.
   boundary: automatic USB/UI invocation and thumbnail-process corruption remain
   unproven; manual uid-0 PlayerEngine remains the only dynamically confirmed
   production-service V-012 route.
+
+## 2026-10-29 — the dependency was never a dependency
+
+- The launcher's hard requirement on the MICOM daemon looked like the central problem: satisfy a serial
+  protocol correctly enough to keep a vendor daemon alive. It turned out that the daemon starts perfectly
+  well when the device node it opens exists. The failure had been the environment, not the contract, and
+  the whole reply-simulator effort was set aside as unnecessary for this gate.
+- That is the third time in this project that a blocker attributed to a service was really the harness
+  failing to provide something. The pattern is consistent enough to be a rule now: before believing a
+  vendor component is broken, check whether it was ever given the thing it opens.
+- What is left is honest and specific. The UI process needs a compositor, and nothing in this image
+  starts one, because the vendor starts weston from its own init branch behind an SPI validation that
+  emulation fails. The remaining work is to create that runtime environment deliberately.
+- Two workers were dispatched and neither returned anything. Rather than dress that up, the records note
+  it, and the round's actual finding came from an existing log.
