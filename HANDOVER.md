@@ -6,6 +6,33 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Disconnected-bench tooling checkpoint — 2026-11-01
+
+- Added `tools/uk_fw/bench_state_bundle.py`, which emits a reviewable POSIX-shell
+  probe that writes only to stdout and parses its serial/console transcript
+  offline. It does not mount, start services, alter radios, contact peers,
+  signal processes, or write target storage.
+- The capture closes the first-evidence gaps shared by V-015 through V-019 and
+  the inert Dropbear review: installed hashes, process uid/gid and effective
+  SMACK labels, unit state/markers, listeners/interfaces, passive Wi-Fi/P2P
+  state, oFono devices, local Bluetooth SDP/profile state, Dropbear-chain files,
+  and A/B/update flags. Missing commands/files and truncated sections remain
+  explicit in deterministic JSON.
+- The generated script is audited for target-write/active-operation commands and
+  checked with `sh -n` before emission. Synthetic tests cover timestamps,
+  duplicate/incomplete sections, fact derivation, adversarial transcript text,
+  CLI mode, and the safety audit. No device, network, radio, modem, or recovered
+  target binary was used.
+- Hardened `tools/uk_fw/rootfs_patch.py`: archive extraction now rejects absolute
+  and parent-traversal paths, duplicates, links, FIFOs/device nodes, unsafe
+  injection destinations, and in-place package/manifest overwrite. This protects
+  the offline custom-firmware build path but does not solve update acceptance.
+- Fable delegation remains unavailable: its catalog entry is not advertised for
+  native subagents. The DeepSeek Flash doctor is static-ready only; no route was
+  substituted and no private target details were delegated. Two generic,
+  read-only child investigations cover public update-system evidence and passive
+  bench-collector design.
+
 ## Filesystem/parser and kernel checkpoint — 2026-11-01
 
 - Added `tools/uk_fw/tuxera_fs_probe.py`, an offline, snapshot-backed, read-only

@@ -53,16 +53,180 @@ import sys
 import tarfile
 import tempfile
 import zlib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Dict, List, Optional
 
 DROPBEAR_KEYS = "etc/dropbear/authorized_keys"
 
 
-def _member_name(path: str) -> str:
-    """tar members are stored as ./relative paths, matching the vendor archive."""
+class ArchiveSafetyError(ValueError):
+    """Raised when an input archive or injection destination can escape staging."""
 
-    return "./" + path.lstrip("./")
+
+def _safe_relative_path(name: str, *, allow_root: bool = False) -> Path:
+    """Convert one archive-style path to a bounded host-relative path."""
+
+    if not name or "\\" in name or "\x00" in name:
+        raise ArchiveSafetyError(f"unsafe path: {name!r}")
+    pure = PurePosixPath(name)
+    if pure.is_absolute():
+        raise ArchiveSafetyError(f"absolute path rejected: {name!r}")
+    parts = tuple(part for part in pure.parts if part not in ("", "."))
+    if any(part == ".." for part in parts):
+        raise ArchiveSafetyError(f"parent traversal rejected: {name!r}")
+    if parts and parts[0].endswith(":"):
+        raise ArchiveSafetyError(f"drive-qualified path rejected: {name!r}")
+    if not parts:
+        if allow_root:
+            return Path()
+        raise ArchiveSafetyError(f"empty destination rejected: {name!r}")
+    return Path(*parts)
+
+
+def _safe_extract(tf: tarfile.TarFile, stage: Path) -> Dict[Path, Dict[str, object]]:
+    """Extract regular files/directories only and retain numeric tar metadata."""
+
+    stage_root = stage.resolve()
+    metadata: Dict[Path, Dict[str, object]] = {}
+    for member in tf.getmembers():
+        relative = _safe_relative_path(member.name, allow_root=True)
+        if relative in metadata:
+            raise ArchiveSafetyError(f"duplicate archive member rejected: {member.name!r}")
+        if not member.isdir() and not member.isfile():
+            raise ArchiveSafetyError(
+                f"links and special members are rejected: {member.name!r} type={member.type!r}"
+            )
+        metadata[relative] = {
+            "kind": "dir" if member.isdir() else "file",
+            "mode": member.mode & 0o7777,
+            "uid": member.uid,
+            "gid": member.gid,
+            "mtime": int(member.mtime),
+        }
+        if relative == Path():
+            if not member.isdir():
+                raise ArchiveSafetyError(f"archive root is not a directory: {member.name!r}")
+            continue
+        target = stage / relative
+        try:
+            target.resolve(strict=False).relative_to(stage_root)
+        except ValueError as exc:
+            raise ArchiveSafetyError(f"path escapes staging: {member.name!r}") from exc
+
+        if member.isdir():
+            if target.exists() and not target.is_dir():
+                raise ArchiveSafetyError(f"directory conflicts with file: {member.name!r}")
+            # Keep staging directories writable. The archived mode is restored
+            # from metadata while repacking, after all descendants exist.
+            target.mkdir(parents=True, exist_ok=True, mode=0o700)
+            continue
+        if target.exists():
+            raise ArchiveSafetyError(f"archive member conflicts with existing path: {member.name!r}")
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        for parent in target.parents:
+            if parent == stage.parent:
+                break
+            if parent.is_symlink():
+                raise ArchiveSafetyError(f"symlink parent rejected: {member.name!r}")
+        source = tf.extractfile(member)
+        if source is None:
+            raise ArchiveSafetyError(f"could not read regular member: {member.name!r}")
+        with source, open(target, "xb") as output:
+            shutil.copyfileobj(source, output)
+    return metadata
+
+
+def _default_metadata(kind: str, mode: int) -> Dict[str, object]:
+    return {"kind": kind, "mode": mode, "uid": 0, "gid": 0, "mtime": 0}
+
+
+def _record_parent_directories(metadata: Dict[Path, Dict[str, object]], relative: Path) -> None:
+    parents = [parent for parent in relative.parents if parent != Path()]
+    for parent in reversed(parents):
+        metadata.setdefault(parent, _default_metadata("dir", 0o755))
+
+
+def _write_ustar(stage: Path, metadata: Dict[Path, Dict[str, object]], output: Path) -> None:
+    """Write a numeric-owner USTAR using retained metadata, never host ownership."""
+
+    metadata.setdefault(Path(), _default_metadata("dir", 0o755))
+    for target in stage.rglob("*"):
+        relative = target.relative_to(stage)
+        _record_parent_directories(metadata, relative)
+        if relative not in metadata:
+            if target.is_dir():
+                metadata[relative] = _default_metadata("dir", 0o755)
+            elif target.is_file():
+                metadata[relative] = _default_metadata("file", 0o644)
+            else:
+                raise ArchiveSafetyError(f"unexpected staged object: {relative}")
+
+    indexed = list(enumerate(metadata.items()))
+    ordered = sorted(
+        indexed,
+        key=lambda item: (
+            0 if item[1][0] == Path() else 1,
+            0 if item[1][1]["kind"] == "dir" else 1,
+            len(item[1][0].parts),
+            item[0],
+        ),
+    )
+    with tarfile.open(output, "w", format=tarfile.USTAR_FORMAT) as tf:
+        for _, (relative, meta) in ordered:
+            target = stage if relative == Path() else stage / relative
+            expected_dir = meta["kind"] == "dir"
+            if expected_dir and not target.is_dir():
+                raise ArchiveSafetyError(f"staged directory missing: {relative}")
+            if not expected_dir and not target.is_file():
+                raise ArchiveSafetyError(f"staged regular file missing: {relative}")
+            arcname = "." if relative == Path() else _member_name(relative.as_posix())
+            info = tarfile.TarInfo(arcname)
+            info.mode = int(meta["mode"])
+            info.uid = int(meta["uid"])
+            info.gid = int(meta["gid"])
+            info.uname = ""
+            info.gname = ""
+            info.mtime = int(meta["mtime"])
+            if expected_dir:
+                info.type = tarfile.DIRTYPE
+                tf.addfile(info)
+            else:
+                info.size = target.stat().st_size
+                with open(target, "rb") as source:
+                    tf.addfile(info, source)
+
+
+def _bounded_target(stage: Path, destination: str) -> Path:
+    relative = _safe_relative_path(destination)
+    target = stage / relative
+    stage_root = stage.resolve()
+    try:
+        target.resolve(strict=False).relative_to(stage_root)
+    except ValueError as exc:
+        raise ArchiveSafetyError(f"destination escapes staging: {destination!r}") from exc
+    for parent in target.parents:
+        if parent == stage.parent:
+            break
+        if parent.is_symlink():
+            raise ArchiveSafetyError(f"destination has a symlink parent: {destination!r}")
+    return target
+
+
+def _paths_alias(first: Path, second: Path) -> bool:
+    """Detect same path, symlink aliases, and existing hard-link aliases."""
+
+    if first.resolve() == second.resolve():
+        return True
+    try:
+        return os.path.samefile(first, second)
+    except (FileNotFoundError, OSError):
+        return False
+
+
+def _member_name(path: str) -> str:
+    """Tar members use one literal ``./`` prefix without changing dotfiles."""
+
+    return path if path.startswith("./") else "./" + path
 
 
 def list_package(path: Path, limit: int) -> Dict[str, object]:
@@ -97,6 +261,10 @@ def _add_bytes(tar: tarfile.TarFile, name: str, data: bytes, mode: int, uid: int
 def inject(src: Path, out: Path, additions: List[Path], unit_file: Optional[Path],
            unit_name: Optional[str], ssh_key: Optional[Path],
            dropbear_script: Optional[Path]) -> Dict[str, object]:
+    if _paths_alias(src, out):
+        raise ArchiveSafetyError("output must not overwrite the input package")
+    if out.exists() or out.is_symlink():
+        raise ArchiveSafetyError("output already exists; choose a new path")
     out.parent.mkdir(parents=True, exist_ok=True)
     added: List[str] = []
 
@@ -104,16 +272,17 @@ def inject(src: Path, out: Path, additions: List[Path], unit_file: Optional[Path
         stage = Path(temp) / "stage"
         stage.mkdir()
         with tarfile.open(src, "r:gz") as tf:
-            try:
-                tf.extractall(stage, filter="tar")  # local staging dir only
-            except TypeError:  # Python < 3.12
-                tf.extractall(stage)
+            metadata = _safe_extract(tf, stage)
 
         def put(rel: str, data: bytes, mode: int) -> None:
-            target = stage / rel.lstrip("./")
-            target.parent.mkdir(parents=True, exist_ok=True)
+            target = _bounded_target(stage, rel)
+            if target.exists() and not target.is_file():
+                raise ArchiveSafetyError(f"injection destination is not a regular file: {rel!r}")
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             target.write_bytes(data)
-            os.chmod(target, mode)
+            relative = target.relative_to(stage)
+            _record_parent_directories(metadata, relative)
+            metadata[relative] = _default_metadata("file", mode)
             added.append(rel)
 
         if unit_file:
@@ -135,20 +304,13 @@ def inject(src: Path, out: Path, additions: List[Path], unit_file: Optional[Path
             source, dest = str(spec).split(":", 1)
             put(dest, Path(source).read_bytes(), 0o755)
 
-        # Repack exactly as the vendor tooling expects.
+        # Repack as numeric-owner USTAR without inheriting host uid/gid/modes.
         tmp_tar = Path(temp) / "rootfs.tar"
-        subprocess_tar = shutil.which("tar")
-        if not subprocess_tar:
-            raise SystemExit("the tar binary is required")
-        import subprocess
-        proc = subprocess.run([subprocess_tar, "--format=ustar", "--numeric-owner",
-                               "--exclude=*.DS_Store", "-C", str(stage),
-                               "-cf", str(tmp_tar), "."],
-                              capture_output=True, text=True)
-        if proc.returncode != 0:
-            raise SystemExit(f"tar failed: {proc.stderr.strip()}")
-        with open(tmp_tar, "rb") as fin, gzip.open(out, "wb", compresslevel=6) as fout:
-            shutil.copyfileobj(fin, fout)
+        _write_ustar(stage, metadata, tmp_tar)
+        with open(tmp_tar, "rb") as source, open(out, "xb") as carrier:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=carrier,
+                               compresslevel=6, mtime=0) as compressed:
+                shutil.copyfileobj(source, compressed)
 
     crc = 0
     total = 0
@@ -171,6 +333,13 @@ def inject(src: Path, out: Path, additions: List[Path], unit_file: Optional[Path
 
 def update_manifest(manifest: Path, rebuilt: Path, write: Optional[Path],
                     filename: str) -> Dict[str, object]:
+    if write is not None:
+        if _paths_alias(manifest, write) or _paths_alias(rebuilt, write):
+            raise ArchiveSafetyError(
+                "manifest output must not overwrite the input manifest or rebuilt package"
+            )
+        if write.exists() or write.is_symlink():
+            raise ArchiveSafetyError("manifest output already exists; choose a new path")
     data = rebuilt.read_bytes()
     crc = zlib.crc32(data) & 0xFFFFFFFF
     signed = crc - (1 << 32) if crc & 0x80000000 else crc
@@ -186,7 +355,8 @@ def update_manifest(manifest: Path, rebuilt: Path, write: Optional[Path],
             line = "|".join(fields)
         result.append(line)
     if write:
-        write.write_text("\n".join(result) + "\n", encoding="utf-8")
+        with open(write, "x", encoding="utf-8") as output:
+            output.write("\n".join(result) + "\n")
     return {
         "manifest": str(manifest),
         "filename": filename,

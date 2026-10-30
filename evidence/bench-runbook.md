@@ -31,6 +31,35 @@ anything.
 
 Evidence to keep: `boot.log`, a note of the exact `oemkm=` value observed.
 
+### Phase 1A — one passive state bundle before active testing
+
+Generate the probe on the analyst host and review it before use:
+
+```sh
+PY="${PYTHON:-/opt/homebrew/bin/python3.13}"
+"$PY" tools/uk_fw/bench_state_bundle.py emit -o work/bench/state-probe.sh
+"$PY" tools/uk_fw/bench_state_bundle.py audit work/bench/state-probe.sh
+```
+
+The emitted POSIX-shell program writes only to stdout. It does not mount,
+remount, create target files, start/stop services, change radio state, contact a
+network peer, signal processes, or capture credentials. Run it only after a
+console is already available, retain stdout as `state.log`, then parse on the
+host:
+
+```sh
+"$PY" tools/uk_fw/bench_state_bundle.py parse work/bench/state.log \
+  --json work/bench/state.json
+```
+
+This single capture records installed hashes, process uid/gid and effective
+SMACK labels, unit activation, listeners, interfaces, passive Wi-Fi/P2P state,
+oFono device/unit state, local Bluetooth SDP/profile state, Dropbear chain
+completeness, and A/B/update flags. Missing commands/files remain explicit
+records. An incomplete terminal marker makes the JSON incomplete rather than
+silently treating a truncated serial capture as authoritative. Do not replace
+this generated probe with an arbitrary script under the same filename.
+
 ## Phase 2 — network surface (only if the unit reaches a network)
 
 ```

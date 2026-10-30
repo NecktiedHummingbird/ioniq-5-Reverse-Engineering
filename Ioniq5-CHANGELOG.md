@@ -3,6 +3,30 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.27.0 - Build a passive disconnected-bench state bundle and harden rootfs repacking
+
+- Added `tools/uk_fw/bench_state_bundle.py`. It emits a versioned POSIX-shell
+  probe that writes only to stdout, performs no mount/service/radio/network/
+  process-control action, and parses the captured console transcript offline.
+- The bundle records exact hashes, process uid/gid and effective SMACK labels,
+  systemd state and activation markers, listeners/interfaces, passive Wi-Fi/P2P
+  evidence, oFono device state, local Bluetooth SDP/profile state, Dropbear-chain
+  completeness, and A/B/update flags. Missing commands and truncated sections
+  are retained rather than interpreted as absence.
+- Added fourteen synthetic tests for the safety audit, shell syntax, serial timestamp
+  handling, hex-framing integrity, size limits, deterministic facts,
+  incomplete/duplicate sections, adversarial transcript text, and CLI operation.
+  No target, network, radio, modem, or
+  recovered executable was used.
+- Hardened `rootfs_patch.py` so archive staging rejects path escapes, duplicate
+  regular files, links and special nodes. Injection destinations are bounded,
+  and package/manifest operations refuse to overwrite their original inputs.
+  Eight new tests cover those boundaries, including hard-link aliases, duplicate
+  directories, and metadata preservation through read-only directories.
+- Updated the bench and custom-firmware runbooks. The tool improves evidence and
+  build safety; it does not establish root access, an accepted custom package,
+  or applicability to the owner's unknown installed firmware.
+
 ## 1.22.0 - software rasteriser fixes EGL, and the Qt segfault disappears
 
 - **The `AppHomeScreen` segfault was a symptom of failed EGL, not a QML bug.** With a software

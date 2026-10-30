@@ -2155,3 +2155,23 @@ and are superseded by corrections rather than silently rewritten.
 - Worth noting the materials were already in the repository from earlier work on software EGL. The answer
   was sitting in work/software-egl the whole time, which is an argument for keeping these extractions
   around.
+
+## 2026-11-01 — collect state once before touching a disconnected bench
+
+- The remaining network, cellular, Bluetooth and SSH questions shared the same
+  weakness: recovered configuration described intent, while installed hashes,
+  active units, effective SMACK labels and profile registration remained
+  unobserved. A single passive console capture now has a defined format for all
+  of them.
+- The generated probe is deliberately less capable than an ordinary diagnostic
+  shell script. It prints to stdout but cannot mount, change radio state, start a
+  unit, contact a peer, signal a process, install software or create a target
+  file. Truncation and missing tools are first-class records rather than
+  negative findings.
+- The custom-rootfs builder received the same fail-closed treatment. Archive
+  paths, links, special nodes and injection destinations are checked before
+  staging, and original packages/manifests cannot be overwritten in place. This
+  removes build-host hazards without pretending the target will accept the
+  resulting package.
+- No bench, network, radio, modem, firmware update or target executable was used.
+  Root access and custom-update acceptance remain evidence questions, not claims.

@@ -34,7 +34,9 @@ Two details matter and both are easy to get wrong:
 - **`--numeric-owner`** — ownership must be numeric, not name-resolved.
 
 `tools/uk_fw/rootfs_patch.py` enforces both, stages the tree in a temporary
-directory, and never modifies the input package.
+directory, emits numeric-owner USTAR directly, preserves each retained member's
+uid/gid/mode/mtime independently of host ownership, and never modifies the input
+package.
 
 ## What the tool does
 
@@ -57,8 +59,20 @@ python3 tools/uk_fw/rootfs_patch.py meta   out/mango-rootfs.tar.gz \
 - `meta` computes the rebuilt file's size and **signed CRC-32** and rewrites the
   matching `.ver` record.
 
-Verified end to end on synthetic packages; four unit tests cover injection,
-key appending with the right mode, manifest rewriting and size reporting.
+The staging boundary is now fail-closed rather than relying on Python's version-
+specific `tarfile.extractall()` behavior. Input archives containing absolute or
+parent-traversal paths, duplicate regular files, symlinks, hardlinks, FIFOs, or
+device nodes are rejected before repacking. Injection destinations receive the
+same path validation. Package and manifest outputs must be new paths; existing
+outputs, symlink/hard-link aliases, and in-place overwrite of any input are
+rejected. This is build-tool safety; it does not make a
+result installable or change the unit's acceptance checks.
+
+Verified end to end on synthetic packages; twelve unit tests cover injection,
+key appending with the right mode, manifest rewriting, size reporting, archive
+traversal/link/duplicate rejection, injection-destination confinement, hard-link
+alias protection, read-only directory handling, numeric ownership/mode/mtime
+preservation, and original-input preservation.
 
 ## What still has to be true for the result to install
 
