@@ -1532,3 +1532,20 @@ and are superseded by corrections rather than silently rewritten.
   chain, so the missing `/tmp` state that keeps breaking services is a symptom of the harness rather
   than a series of unrelated faults. The display is the hard blocker: the vendor compositor wants an
   Intel i915 CRTC that nothing in the VM provides.
+
+## 2026-10-29 — display architecture decided, and the analysis corrected by it
+
+- The gap analysis proposed that a generic DRM node with software rasterisation would satisfy the
+  vendor compositor. Reviewing it against the kernel tree and the backend binary rejected that: the
+  backend carries Intel-specific paths, so a plain card node is not the device it wants. The decision
+  is to replace only the backend's output path with a software implementation, keeping stock weston,
+  the IVI modules and the IAS protocol intact.
+- The value of asking for a decision rather than a menu showed here. The cheap option, a virtual KMS
+  module, looked attractive on paper and would have consumed weeks before revealing that GBM, scanout,
+  planes and vblank are the actual work, not device registration.
+- What this buys is a path that can plausibly be called the infotainment system running in a VM,
+  rather than a headless compositor standing in for it. The distinction matters because the IAS control
+  path is part of what is being studied.
+- Recorded risk, for cheap falsification next: that the IVI modules depend only on the Weston backend
+  ABI and the `ias_crtc` interface. One run with the software backend and a `wrandr --crtc=1` call will
+  settle it.

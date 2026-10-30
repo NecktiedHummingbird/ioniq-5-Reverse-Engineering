@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.06.0 - display architecture decided: software IAS backend, stock weston
+
+- Decision recorded after reviewing the gap analysis against the actual kernel tree: patch only
+  `ias-backend.so`'s DRM output path into a software IAS backend at 1920x720 named `HDMI1`, and keep
+  stock `/usr/bin/weston`, the IVI modules and the IAS protocol. Reason: it preserves the vendor
+  compositor architecture instead of permanently substituting it.
+- Rejected, with reasons: a vkms-style kernel module is not the critical path, because 4.1.27 has the
+  DRM/KMS helpers but no in-tree vkms, and `work/kbuild/drmkms/drmkms10.c` demonstrates only
+  card/connector/mode registration — not GBM allocation, scanout, planes, flips, vblank or an
+  1920x720 HDMI CRTC. An LD_PRELOAD/libdrm emulation is the wrong seam, needing broad DRM/GBM/EGL and
+  likely Intel private ioctl behaviour. A permanent weston-headless baseline excludes the IAS
+  compositor and control path, so it is a demo rather than the goal.
+- This **corrects the gap analysis**, which was optimistic that a generic libdrm/GBM node plus
+  `kms_swrast` would satisfy the compositor. `ias-backend.so` carries i915/intel-specific paths and
+  both atomic and legacy KMS and plane APIs, so a plain card node is not a compatible device.
+- Riskiest assumption, stated for falsification in one run: that the stock IVI modules need only the
+  Weston backend ABI plus the `ias_crtc` interface, and no hidden i915 semantics. Estimate 2-3 weeks to
+  bring up, 4-6 weeks to sustained HMI fidelity.
+
 ## 1.05.0 - MTP branch proven reachable, and its injection is blocked by udev
 
 - The V-006 sink is now confirmed reachable at runtime: an emulated `usb-mtp` device yields
