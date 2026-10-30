@@ -14,7 +14,23 @@ unknown installed firmware.
 
 ## Ranked routes
 
-### 1. USB storage via AppNavi replacement — highest yield
+### 1. CVE-2026-40225 udev hardware-property injection — strongest stock static path
+
+- Exact shipped `v4l_id` and `scsi_id` binaries contain the
+  direct, pre-fix prints of kernel-provided product/serial fields without the
+  control-character checks added upstream in 2026.
+- Installed rules import both helpers. Block devices are tagged for systemd and
+  the image contains `debug-shell.service`, configured to start `/bin/sh` as
+  root on `/dev/tty9` if `ConditionPathExists=/dev/tty9` passes. The upstream
+  SCSI route can inject `SYSTEMD_WANTS`, so no new unit file is required.
+- This is independent of V-006's blocked shell interpolation: it uses different
+  helpers and property boundaries, not sanitized `usb_id` `ID_SERIAL_SHORT`.
+- Gate: malicious supported hardware plus authentic hotplug behavior and a
+  practical production VT9/display/input route. No head-unit event, root
+  transition, or physical console access has been observed.
+- Evidence: `evidence/systemd-udev-cve-2026-40225.md`.
+
+### 2. USB storage via AppNavi replacement — published but installation-gated
 
 - Mechanism: `navi_extended` replaces `AppNavi`; on launch it runs
   `main_loop.sh` from the root of an exFAT USB.
@@ -27,7 +43,7 @@ unknown installed firmware.
 - Unknown: whether `260128` still accepts the replacement, and whether the SOP
   gate can be cleared without already having execution.
 
-### 2. Wi-Fi remote — component CVEs, version-gated
+### 3. Wi-Fi remote — component CVEs, version-gated
 
 No public Wi-Fi-to-root exists for Gen5W_L. The realistic classes are old
 daemons whose exact versions are encrypted. Survey totals (2015–2020):
@@ -44,16 +60,17 @@ OpenSSL 95.
 
 Triage requires version strings; `tools/uk_fw/net_surface.py` captures them.
 
-### 3. USB gadget / iAP2 / CarPlay — needs plaintext
+### 4. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
 
 Kernel config enables `USB_F_IAP2`, `USB_U_IAP2`, `USB_G_SERIAL`,
-`GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules, so the
-code is in the encrypted rootfs. iAP2 is a bounded, length-prefixed protocol
-parser — a classic memory-safety target, but auditable only after decryption.
+`GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules and the
+userspace has now been recovered. iAP2 is a bounded, length-prefixed protocol
+parser and remains an exact-code review target; no
+finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 4. Kernel — analysed; conditional post-execution candidates remain
+### 5. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -84,7 +101,7 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.
 
-### 5. MICOM / CAN — post-exploitation
+### 6. MICOM / CAN — post-exploitation
 
 `micom_*` (24 symbols) includes a user-writable sysfs handler
 (`micom_sys_spidump_store`). CVE-2020-8539 (`micomd`) is a **local** issue:
@@ -104,16 +121,20 @@ the public KOFFEE report confirms it needs code execution first, then reaches
 
 ## Decisive next evidence, in order
 
-1. Trace post-index V-012 reachability through media-manager/browser selection,
+1. Validate V-014's property-import and unit-request behavior in a disconnected,
+   disposable environment using a benign marker unit—not `debug-shell.service`—
+   while preserving the exact helper/udev binaries. Do not treat this as a
+   physical-unit reproduction.
+2. Trace post-index V-012 reachability through media-manager/browser selection,
    thumbnail extraction, and playback handoff. LightMediaScanner startup indexing
    is now confirmed to use a separate non-GStreamer ASF plugin; manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
    or RCE is established.
-2. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
+3. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
-3. Measure production interface features before treating CVE-2017-1000112 as a
+4. Measure production interface features before treating CVE-2017-1000112 as a
    reachable path; keep the current VM NIC-free.
-4. If physical bench access later becomes available, capture UART and installed
+5. If physical bench access later becomes available, capture UART and installed
    version state before any write or engineering-mode experiment.
 
 ## Sources

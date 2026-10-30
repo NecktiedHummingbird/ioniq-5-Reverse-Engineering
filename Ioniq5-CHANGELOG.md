@@ -3,6 +3,36 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.17.0 - Exact udev helper injection reaches a shipped root-shell unit
+
+- Added `tools/uk_fw/privilege_surface.py`, a deterministic standard-library
+  scanner for extracted Linux root filesystems, with focused tests and explicit
+  limits for host-visible modes, xattrs, systemd parsing, loader paths, and udev
+  rules. The bounded ignored report walked 236,552 entries and 102 services.
+- Confirmed no setuid/setgid entries in the extracted metadata or reviewed
+  source archives. The 129 writable-executable-mode results are mostly `/navi`
+  files whose original archive modes are `0777`, while normal fstab policy
+  mounts `/navi` read-only; this is not promoted to a write or root path.
+- Added V-014 for CVE-2026-40225. Exact shipped `v4l_id` and `scsi_id`
+  instructions directly print kernel-provided fields without the upstream
+  control-character checks. Installed rules invoke both helpers, execute
+  injected `REMOVE_CMD`, and expose block-device `SYSTEMD_WANTS` to systemd.
+- Identified the decisive installed target: `debug-shell.service` is configured
+  to start `/bin/sh` as root on `/dev/tty9` when its path condition passes. This
+  yields a high-confidence static malicious-SCSI-device-to-root-console path
+  without requiring an attacker-
+  written unit file.
+- Preserved the runtime boundary: no malicious hardware, authentic injected
+  udev event, physical service activation, VT9 interaction, root command, or
+  installed-head-unit applicability was demonstrated.
+- Recorded mixed component provenance rather than trusting one banner: PID 1
+  and pkg-config report `225`, while embedded build paths say
+  `systemd/1_249.3-r0`. Exact binary instructions and installed rules—not either
+  version string—establish the finding.
+- Kept V-006 rejected as USB-to-root. Its sanitized `usb_id`
+  `ID_SERIAL_SHORT` path is distinct from V-014's unsanitized `v4l_id` and
+  `scsi_id` helper output.
+
 ## 1.16.0 - LightMediaScanner indexing is not the V-012 GStreamer route
 
 - Confirmed authentic `startup-scan=true` handling of a 33-stream ASF/WMA under

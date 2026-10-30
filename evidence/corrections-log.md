@@ -351,6 +351,29 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C25 — V-006's sanitizer does not sanitize every udev hardware helper
+
+- **Was:** after V-006's `ID_SERIAL_SHORT` route was rejected, it was tempting to
+  treat systemd-udev descriptor/property injection as generally blocked on this
+  build.
+- **Now:** CVE-2026-40225 crosses different helpers. Exact shipped `v4l_id` and
+  `scsi_id` instructions print kernel-provided product/serial fields directly as
+  line-oriented properties, without the control-character checks added by the
+  2026 fix. Installed rules consume those properties, and an installed
+  `debug-shell.service` makes the SCSI `SYSTEMD_WANTS` route security-relevant.
+- **Why:** sanitization must be traced per property producer and consumer.
+  `usb_id`'s restricted `ID_SERIAL_SHORT` does not transform `v4l_id` or
+  `scsi_id` output.
+- **Version boundary:** PID 1's compiled banner/pkg-config report systemd `225`,
+  while embedded OpenEmbedded build paths say `systemd/1_249.3-r0`. The finding
+  relies on exact helper instructions and rules, not either version string.
+- **Evidence boundary:** no malicious-device event or physical root transition
+  has been observed. V-014 is a high-confidence static path in recovered
+  `260128`, not proof about the owner's unknown installed build.
+- **Evidence:** `evidence/systemd-udev-cve-2026-40225.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

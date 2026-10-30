@@ -55,6 +55,26 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## Security checkpoint — 2026-11-01
 
+- **V-014 added — strongest static physical root path:** exact shipped
+  `v4l_id` and `scsi_id` instructions contain CVE-2026-40225's pre-fix direct
+  property prints. Installed rules import both helpers, tag block devices for
+  systemd, and retain generic `REMOVE_CMD` execution. The image also ships
+  `debug-shell.service`, configured to start `/bin/sh` as root on `/dev/tty9`
+  when `ConditionPathExists=/dev/tty9` passes; the upstream SCSI route can
+  inject `SYSTEMD_WANTS` to request that existing unit.
+  No malicious-device event, physical root transition, VT9 interaction, or
+  applicability to the owner's unknown installed build is claimed. PID 1's
+  banner reports `225`, while embedded build paths say `1_249.3-r0`; exact
+  instructions, not either version string, establish pre-fix code. See
+  `evidence/systemd-udev-cve-2026-40225.md`.
+- Added `tools/uk_fw/privilege_surface.py`, a deterministic read-only extracted-
+  rootfs audit tool. Its ignored `260128` report walked 236,552 entries and 102
+  service files, finding no host-visible setuid/setgid files, 129 executable
+  files with writable extracted metadata (mostly `/navi`, normally mounted
+  read-only), zero writable directories, and 46 permissive/non-root udev rule
+  assignments. Host file-capability coverage is unavailable and explicitly
+  reported, not treated as absence. See
+  `evidence/privilege-surface-static-audit.md`.
 - **V-006 corrected:** QEMU `usb-mtp` exercised the authentic udev → root
   `usb-automount` → `system()` chain. `ID_SERIAL_SHORT` is reduced to
   `[A-Za-z0-9#+\-.:=@_]`; the old `${IFS}`/separator payload became underscores
@@ -90,10 +110,12 @@ followed by stateful service/CAN/persistence reconstruction.
   GStreamer dependency, and a full session-bus capture showed no PlayerEngine or
   thumbnail call. This is a route-specific negative result, not broad media
   safety evidence.
-- Next security work: trace post-index media-manager/browser selection,
-  thumbnail, and playback handoff into a consumer; analyze allocation/lifetime
-  behavior without developing a payload; keep physical bench tests crash-only
-  until recovery and service restart behavior are validated.
+- Next security work: validate V-014's property-import/unit-request semantics in
+  a disconnected disposable environment with a benign marker unit rather than
+  the root shell; trace post-index media-manager/browser selection, thumbnail,
+  and playback handoff into a consumer; analyze allocation/lifetime behavior
+  without developing a payload. Keep physical bench tests non-destructive until
+  recovery and service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 

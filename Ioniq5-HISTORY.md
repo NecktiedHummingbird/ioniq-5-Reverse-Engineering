@@ -1733,3 +1733,35 @@ and are superseded by corrections rather than silently rewritten.
 - This is negative evidence for one route, not a safety claim for removable
   media. The exact file still kills PlayerEngine when sent manually under the
   established service contract.
+
+## 2026-11-01 — a different udev helper boundary restores a static physical root path
+
+- A deterministic privilege-surface scanner first reduced the recovered tree to
+  reviewable facts: no host-visible or archive setuid/setgid entries, 102
+  service files (101 using default root identity), 129 writable-executable-mode
+  files mostly on normally read-only `/navi`, and 46 permissive/non-root udev
+  rule assignments. The scanner records extraction and xattr limitations rather
+  than treating host metadata as production truth.
+- Online CVE triage tied to the exact shipped helpers identified
+  CVE-2026-40225. Vendor `v4l_id` prints `v2cap.card` directly as
+  `ID_V4L_PRODUCT`; vendor `scsi_id` prints `unit_serial_number` directly as
+  `ID_SCSI_SERIAL`. Exact disassembly shows neither control-character guard
+  added by the upstream 2026 fixes.
+- The installed rules complete the static chain: hardware events invoke those
+  helpers, block devices receive the systemd tag, and the generic removal rule
+  executes `REMOVE_CMD`. More importantly, the image ships
+  `debug-shell.service`, configured as an unauthenticated `/bin/sh` on
+  `/dev/tty9` under the system-service default root identity, conditional on
+  that device path existing. The advisory's SCSI
+  `SYSTEMD_WANTS` route can therefore request an existing root unit rather than
+  install one.
+- Version evidence is intentionally not simplified. The PID 1 banner/pkg-config
+  say `225`; embedded OpenEmbedded paths say `systemd/1_249.3-r0`. The finding
+  rests on exact instructions and installed rules, not either version label.
+- This became V-014, the strongest static physical root path in recovered EU
+  `260128`. It is not a head-unit reproduction: no malicious device, injected
+  authentic udev event, VT9 interaction, root command, persistence, or
+  applicability to the owner's unknown installed firmware was demonstrated.
+- V-006 remains rejected as originally claimed. Its `usb_id`
+  `ID_SERIAL_SHORT` allowlist does not protect the separate `v4l_id`/`scsi_id`
+  line-oriented property boundary, so the two findings are not contradictory.

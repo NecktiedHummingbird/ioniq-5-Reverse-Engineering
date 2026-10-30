@@ -1,6 +1,6 @@
 # Bench root-path test plan — corrected after V-006 dynamic validation
 
-Date: 2026-10-30
+Date: 2026-11-01
 Target family: Gen5W Linux/x86-64
 Safety: owner-authorized, disconnected bench unit only; preserve recovery access
 
@@ -105,10 +105,27 @@ No alternate USB-descriptor property was found flowing into the two shell sinks.
 A local privileged udev rule could overwrite the property, but that assumes the
 privilege V-006 was meant to obtain.
 
+## Separate udev helper path: V-014 / CVE-2026-40225
+
+V-006's rejection is narrow. Exact shipped `v4l_id` and `scsi_id` instructions
+contain CVE-2026-40225's separate pre-fix line-oriented property prints. Installed
+rules import their output, block devices are tagged for systemd, and the image
+ships `debug-shell.service`, configured to run `/bin/sh` as root on `/dev/tty9`
+if that device exists. The upstream SCSI route can inject `SYSTEMD_WANTS` and
+therefore request this existing unit.
+
+This is now the strongest **static** physical-device root path, but it is not a
+bench reproduction. Do not test it by starting the root-shell unit. If a future
+disconnected bench validation is authorized and recovery is proven, use a
+benign marker unit and inert property observation to test only whether the
+production helper output is split into an additional property. Stop before
+shell activation or commands. See
+`evidence/systemd-udev-cve-2026-40225.md`.
+
 ## Higher-value removable-media validation
 
-The current evidence-based path is parser reachability, not descriptor shell
-injection.
+For file-only media, the current evidence-based path remains parser reachability,
+not V-006 descriptor shell injection.
 
 ### ASF stream-count crash (V-012)
 
@@ -247,6 +264,9 @@ the disconnected bench setup can interact with vehicle networks.
 ## Claims that are not permitted from current evidence
 
 - V-006 provides USB-to-root on `260128`.
+- V-014 has been dynamically reproduced on a head unit, or that VT9 is
+  physically accessible; current evidence is exact static code/rule/service
+  chaining only.
 - `${IFS}` or shell separators survive `ID_SERIAL_SHORT`.
 - The V-012 ASF crash is arbitrary code execution.
 - VM behavior proves the owner's installed build or physical hardware behavior.

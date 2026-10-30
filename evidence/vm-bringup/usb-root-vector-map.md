@@ -12,6 +12,15 @@ Mode: **static analysis only.** No VM boot, no QEMU, no execution of target bina
 > opener, useful device, access mode and SMACK/path permission remain required.
 > See `evidence/corrections-log.md` C17/C21 and the current vulnerability
 > register. The body below remains the original static analysis.
+>
+> **2026-11-01 V-014 correction:** the broader statements below that nothing
+> sets `REMOVE_CMD` and that `scsi_id` has no security-sensitive consumer are
+> superseded. Exact shipped `v4l_id` and `scsi_id` contain CVE-2026-40225's
+> pre-fix direct property prints. The former can introduce `REMOVE_CMD`; the
+> latter can introduce `SYSTEMD_WANTS`, and block devices are tagged for
+> systemd. The image ships `debug-shell.service`, conditional on `/dev/tty9`,
+> configured to run `/bin/sh` as root. This is separate from V-006's blocked
+> `usb_id` path. See `evidence/systemd-udev-cve-2026-40225.md` and C25.
 
 Tagging: **[V]** = verified by disassembly/byte inspection of the named file at the named offset.
 **[I]** = inferred from code structure, standard library/kernel semantics, or one verified fact extended by
@@ -102,13 +111,15 @@ All vendor/custom rules, with the attacker-controlled-value question answered �
 | `etc/udev/rules.d/98-QHSUSB__BULK.rules` | 1 | `RUN+="/usr/bin/naddump.sh"` on `ATTR{product}=="QHSUSB__BULK"`, `idProduct!=9008` | none (literal match); `/usr/bin/naddump.sh` **absent** | dangling |
 | `lib/udev/rules.d/10-mirrorlink_rename.rules` | 6,10 | `RUN+="/etc/mirrorlink_setup.sh %k ncmF %p"` | `%k`, `%p` = kernel ifname/devpath | script exists, unquoted, but args are kernel-generated |
 | `lib/udev/rules.d/99-static-ip.rules` | 6 | `RUN+="/home/root/ip_setup.sh %k"` | IDs are match predicates only; target **absent** | dangling |
-| `lib/udev/rules.d/50-udev-default.rules` | 4 | `RUN+="$env{REMOVE_CMD}"` | nothing ever sets `REMOVE_CMD` | unreachable |
+| `lib/udev/rules.d/50-udev-default.rules` | 4 | `RUN+="$env{REMOVE_CMD}"` | **superseded by V-014:** pre-fix `v4l_id` can inject this property from a control-character-bearing product field | security-sensitive static path; physical event untested |
 | `lib/udev/rules.d/78-sound-card.rules` | 45–47 | `ENV{ID_SERIAL}="$attr{guid}"`, **`ENV{ID_SERIAL_SHORT}="$attr{guid}"`**, `ENV{ID_MODEL}="$attr{model_name}"` | raw sysfs attrs, **no sanitiser** | gated `SUBSYSTEMS=="firewire"` and preceded by `SUBSYSTEMS=="usb", GOTO="skip_pci"` (40–41) → **unreachable for a USB device** |
 | `lib/udev/rules.d/60-persistent-storage.rules` | 18,19,45,50 | `ENV{ID_SERIAL}="$attr{serial}"` / `"$attr{name}"` | raw, unsanitised | only virtio / mmcblk / memstick; and the automounter never reads `ID_SERIAL` → inert here |
-| `lib/udev/rules.d/60-persistent-storage.rules` | 22,25,28,31,34,35,66 | `IMPORT{program}="ata_id …"`, `scsi_id …`, `IMPORT{builtin}="usb_id"`, `blkid` | execve, no shell; `$devnode` kernel-owned | no shell |
+| `lib/udev/rules.d/60-persistent-storage.rules` | 22,25,28,31,34,35,66 | `IMPORT{program}="ata_id …"`, `scsi_id …`, `IMPORT{builtin}="usb_id"`, `blkid` | execve, no shell; **but pre-fix `scsi_id` line output can inject `SYSTEMD_WANTS`** | V-014 systemd unit-request path; physical event untested |
 
-`usb_id` itself is the *producer* of every `ID_*` value above and the only place the allow-list is applied to
-them — [V].
+`usb_id` is the producer for the automounter properties analyzed in V-006, and
+its allowlist protects that specific path. It is not a global sanitizer for
+properties printed by separate helpers such as `v4l_id` and `scsi_id` — [V],
+corrected by V-014/C25.
 
 ### 1.4 D-Bus: the cross-process consumer chain
 
