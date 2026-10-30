@@ -1,7 +1,7 @@
 # Bounded udev import probe checkpoint
 
-Status: implementation, bounded VM run, review corrections, and final acceptance
-complete; ready for commit/push.
+Status: implementation, bounded VM run, review corrections, final acceptance,
+and repository integration complete.
 
 Baseline:
 
@@ -93,5 +93,6 @@ Review outcome:
 
 Resume action:
 
-- commit/push reviewed tracked files only. The next experimental step remains a
-  separate authentic udevd-to-systemd benign-marker control.
+- the next experimental step is a separate authentic udevd-to-systemd benign-
+  marker control; do not extend this parser-only diagnostic into service
+  activation.
