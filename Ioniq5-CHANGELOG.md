@@ -3,6 +3,48 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.19.0 - our own backend runs the vendor IAS shell
+
+- `ias-backend-soft` now exists as an actual backend: derived from the vendored `compositor-headless.c`
+  with the output model set to `HDMI1` and the default mode to 1920x720, it builds to 40,560 bytes and
+  **loads in the guest**, running the vendor `/usr/bin/weston` with `ias-shell.so` loaded on top of it.
+  The compositor logs its capabilities and stays up.
+- The one linkage gap was informative: the first load failed with
+  `undefined symbol: parse_options`. Upstream backends link `shared/option-parser.c` **into the module**
+  rather than importing it from the executable, so the build now compiles that file in as well and the
+  symbol is resolved internally.
+- With our backend in place the registry exposes `ias_shell`, **`ias_hmi`** (previously unrecorded),
+  `wl_shell` and **`weston_screenshooter`**. The last is notable: it is a frame-capture path, so a
+  visible image may be obtainable through the protocol without any scanout device.
+- **The falsification criteria are only partly met, and this entry does not overstate it.** Backend loads:
+  yes. Output exists: yes. `wrandr` driving a CRTC: **no**, because the `ias_crtc` and `ias_mode`
+  tables are not published yet — those are the next step, and the extraction for them is already done.
+- Two smaller observations recorded rather than glossed: `wl_output` reports `make: '(null)', model:
+  '(null)'`, so the vendor geometry path does not read the fields this backend sets, and no mode event
+  was observed in `weston-info` output.
+
+## 1.23.0 - Expand oFono directionality and confirm QMI list corruption
+
+- Confirmed exact missing destination checks for CVE-2023-4232 through
+  CVE-2023-4235 and CVE-2024-7547 in addition to the previously accepted
+  CVE-2023-4233/CVE-2023-2794 paths.
+- Reconstructed `sms_decode` directionality: incoming vendor-QMI calls complete
+  deliver, submit-report, or status-report decoding before the handler's late
+  DELIVER check; deliver-report and command are outgoing-only.
+- Identified exact `outgoing=TRUE` callers in local transmit-queue
+  deserialization and SIM-Toolkit Send SMS parsing. Kept these distinct from
+  ordinary incoming SMS and did not claim direct over-the-air reachability.
+- Expanded the message-free arithmetic model and exhaustive tests across
+  status, submit-report, deliver-report, and command destinations.
+- Added V-018 for exact CVE-2024-7537 behavior in the vendor QMI WMS message-list
+  callback. Its missing count/length equality check combines with a wrapped
+  32-bit product diagnostic and original-count copy loop. The overflow branch
+  falls through to a four-byte allocation; every count above 13,107
+  under-allocates.
+- Preserved the modem trust boundary: V-018 is not evidence of direct SMS or
+  base-station control. Neither V-017 nor V-018 establishes a dynamic crash,
+  RCE, SMACK escape, unrestricted root, or owner-vehicle applicability.
+
 ## 1.18.0 - the backend cross-builds; first successful plugin
 
 - **A Weston backend plugin now builds for the guest from this host.** `zig cc -target

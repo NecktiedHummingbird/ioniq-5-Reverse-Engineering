@@ -2008,3 +2008,38 @@ and are superseded by corrections rather than silently rewritten.
   looked fine at 8 KB and silently corrupted at 23 KB; the socket capture looked authoritative and ate
   bytes. Both would have produced a header that compiled and then behaved strangely, which is the worst
   kind of wrong.
+
+## 2026-11-01 — oFono directionality changes what “reachable” means
+
+- `sms_decode` does not defer work until its caller accepts the decoded type.
+  Incoming TP-MTI selects deliver, submit-report, or status-report decoding and
+  completes the selected copy first. The QMI delivery handler's later DELIVER
+  check therefore cannot protect CVE-2023-4232 or CVE-2023-4234.
+- The reverse distinction matters equally. Deliver-report and command decoders
+  are selected only for `outgoing=TRUE`, so they do not belong to the ordinary
+  incoming SMS route. Exact callers were found in transmit-queue deserialization
+  and SIM-Toolkit Send SMS parsing. That establishes shipped routes without
+  pretending they are unauthenticated radio paths.
+- Exact instructions retain all six reviewed TPDU decoder bounds. The expanded
+  arithmetic model quantifies each destination and confirms no modeled maximum
+  directly reaches the reviewed delivery caller's canary. That narrows impact;
+  it does not erase corruption.
+- The QMI WMS list callback proved to be a separate boundary. It reads the TLV
+  length but does not validate it. A vendor overflow diagnostic uses a wrapping
+  32-bit product and then falls through to a four-byte allocation, while
+  iteration follows the original count. This confirms V-018, but the controlling
+  metadata comes from the modem, not directly from an SMS TPDU.
+- Both results remain static and conditional: no modem input, QMI message, PDU,
+  target execution, crash, payload, SMACK escape, or root transition occurred.
+
+## 2026-10-29 — our backend, the vendor shell on top of it
+
+- The compositor that came up is ours. The vendor's own weston loaded our module, the vendor's IAS shell
+  layered onto it, and the registry filled with vendor interfaces. That is the architecture the display
+  decision was aiming at, running.
+- The build gap was a useful one: option parsing belongs inside the module, not in the executable. One
+  undefined symbol, one file added to the compile.
+- Worth noting what turned up unasked: a screenshooter interface. If the vendor stack can hand out frames
+  over the protocol, then "nothing is visible" is no longer true in principle, only unimplemented.
+- The honest limit is that wrandr cannot yet drive a CRTC, because the interface tables are still only in
+  the extraction document. Written down as the next step rather than folded into a claim of success.
