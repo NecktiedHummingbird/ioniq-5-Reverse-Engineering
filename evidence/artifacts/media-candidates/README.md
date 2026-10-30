@@ -22,3 +22,14 @@ The evidence establishes parser memory corruption and PlayerEngine process
 death in the isolated VM. It does not establish instruction-pointer control,
 arbitrary code execution, automatic removable-media invocation, persistence,
 or behavior on the owner's installed head unit.
+
+## LightMediaScanner route
+
+`lightmediascanner-asf-evidence.txt` records the separate automatic indexing
+route. Authentic startup scanning processed the 33-stream file under
+`/media/usb` with LightMediaScanner's own direct-I/O `asf.so` metadata plugin.
+That plugin has no GStreamer dependency; the scan completed with zero errors,
+the daemon survived, and a full session-bus capture contained no PlayerEngine or
+thumbnail call. This excludes LightMediaScanner's indexing step as the observed
+V-012 trigger, but not later browser, playback, thumbnail, or media-manager
+handoffs.

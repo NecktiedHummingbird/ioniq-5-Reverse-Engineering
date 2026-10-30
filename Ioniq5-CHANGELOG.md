@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.16.0 - LightMediaScanner indexing is not the V-012 GStreamer route
+
+- Confirmed authentic `startup-scan=true` handling of a 33-stream ASF/WMA under
+  `/media/usb/probe`. LightMediaScanner discovered the USB path, processed one
+  file, committed it with zero reported errors, and remained alive.
+- Identified the exact scanner parser:
+  `/app/lib/lightmediascanner/plugins/asf.so`, SHA-256
+  `f4b42a8eacb73990d35439e27513c28f1d31257488d0c130e6e1a936cb9bb219`.
+  It imports direct `open`/`read`/`lseek` and LightMediaScanner database APIs;
+  it has no GStreamer dependency or `gst_*` import.
+- Captured an unfiltered bounded session-bus interaction. It contains scanner
+  registration, properties, `Scanner1.Scan`, and progress signals, but no
+  PlayerEngine or thumbnail-service call.
+- Classified this as a route-specific negative result for V-012: automatic
+  LightMediaScanner indexing is real, but it does not invoke vulnerable
+  `asfdemux` in this path. Post-index media-manager/browser selection, thumbnail,
+  and playback handoff remain open.
+- Added a minimally sufficient tracked excerpt under
+  `evidence/artifacts/media-candidates/lightmediascanner-asf-evidence.txt` and
+  updated the primary V-012 report, register, inventory, handover, and priorities.
+
 ## 1.15.0 - PlayerEngine reaches the ASF corruption and vendor offsets are exact
 
 - Corrected the PlayerEngine contract: accepted audio options are nested JSON,

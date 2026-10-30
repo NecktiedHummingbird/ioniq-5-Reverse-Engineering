@@ -1,0 +1,80 @@
+LIGHTMEDIASCANNER ASF ROUTE — MINIMAL REVIEWED EVIDENCE
+Date: 2026-11-01
+Target: recovered EU 260128 userspace in an offline, snapshot-backed QEMU VM
+
+STATIC CONFIGURATION
+/app/bin/lightmediascanner.conf contains:
+  startup-scan=true
+  parser=audio:all-category
+  directory=audio:/usr_data/media/;audio:/media/usb/;audio:/media/mtp/
+
+AUTHENTIC ASF PLUGIN
+Path: /app/lib/lightmediascanner/plugins/asf.so
+SHA-256: f4b42a8eacb73990d35439e27513c28f1d31257488d0c130e6e1a936cb9bb219
+Build ID: 4333b836074c3882a51c4fd3dc343e5522448347
+
+The plugin has no GStreamer dependency or imported gst_* symbol. Its relevant
+imports include direct file and LightMediaScanner operations:
+  open@GLIBC_2.2.5
+  read@GLIBC_2.2.5
+  lseek@GLIBC_2.2.5
+  lms_db_audio_add
+  lightmediascanner_apic_save
+
+Its NEEDED list includes liblightmediascanner, libmagic, sqlite3, DLT, GLib/GIO,
+ICU, and libc, but not libgstreamer or libgstasf.
+
+DYNAMIC PROBE
+Input: the same 33-stream ASF/WMA used for V-012
+Input SHA-256:
+9c5aaa1f7ad2a4e8526066f6f22e2b3737b912de93f94ab1aa858e3a9ec32518
+Path in disposable guest: /media/usb/probe/input.wma
+
+The authentic daemon registered `asf.so` in category audio and honored its
+startup scan of /media/usb:
+  parser: /app/lib/lightmediascanner/plugins/asf.so
+  scan category audio, path /media/usb/
+  add scan path: /media/usb/probe/
+  processing /media/usb/probe/ (1)
+  scan completed category audio, path /media/usb/probe/
+  finished scanner thread
+
+The emitted startup ScanProgress signal for /media/usb/probe/ reported:
+  commit=1
+  uptodate=0
+  processed=1
+  deleted=0
+  skipped=0
+  errors=0
+  last=true
+
+A second explicit `lightmediascannerctl scan audio:/media/usb/probe` reported the
+same item as up to date:
+  commit=1
+  uptodate=1
+  processed=0
+  errors=0
+
+The daemon survived (`kill -0` shell status `LMS_ALIVE=0`) and created a 155648-
+byte SQLite database. A full session-bus monitor captured D-Bus daemon traffic,
+the Scanner1 property query, the explicit Scanner1.Scan call, and ScanProgress
+signals. It captured no call to `com.lge.PlayerEngine` and no thumbnail-service
+call during this bounded run.
+
+FULL LOG / RUNNER HASHES (ignored work artifacts)
+33-stream full-D-Bus host log:
+c10edac9f24ed1f36969d20d652d2a4d08402209c808ec8ba1a428d36a9851e9
+exploratory runner:
+ed00a45c267652450b967405b92cb8e87022c25bf4aa0d7bbedb38578d36d1f1
+
+CONCLUSION BOUNDARY
+Automatic LightMediaScanner startup processing of a file under /media/usb is
+confirmed. That scanner uses its own direct-I/O ASF metadata plugin, not
+GStreamer's vulnerable asfdemux, and this 33-stream input completed without a
+scanner fault. No PlayerEngine or thumbnail handoff occurred in the captured
+session-bus run.
+
+This is a route-specific negative result for V-012, not proof that all removable-
+media workflows are safe. A separate media-manager, browser selection, playback,
+or thumbnail action could still invoke PlayerEngine or another GStreamer
+consumer after indexing.

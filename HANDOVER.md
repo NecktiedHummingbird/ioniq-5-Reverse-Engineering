@@ -83,10 +83,17 @@ followed by stateful service/CAN/persistence reconstruction.
   `tests/test_asf_stream_probe.py`. Primary write-up and minimal reviewed
   excerpt: `evidence/gstreamer-cve-2026-2920.md` and
   `evidence/artifacts/media-candidates/playerengine-asf-service-evidence.txt`.
-- Next security work: trace LightMediaScanner, thumbnail, and removable-media
-  automation into a consumer; analyze allocation/lifetime behavior without
-  developing a payload; keep physical bench tests crash-only until recovery and
-  service restart behavior are validated.
+- LightMediaScanner's automatic startup route is now separated from V-012. With
+  the 33-stream file under `/media/usb/probe`, authentic startup scanning loaded
+  its own direct-I/O `asf.so` metadata plugin, reported `processed=1` and
+  `errors=0`, wrote its database, and remained alive. The plugin has no
+  GStreamer dependency, and a full session-bus capture showed no PlayerEngine or
+  thumbnail call. This is a route-specific negative result, not broad media
+  safety evidence.
+- Next security work: trace post-index media-manager/browser selection,
+  thumbnail, and playback handoff into a consumer; analyze allocation/lifetime
+  behavior without developing a payload; keep physical bench tests crash-only
+  until recovery and service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 

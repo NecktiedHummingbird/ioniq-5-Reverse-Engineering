@@ -104,10 +104,11 @@ the public KOFFEE report confirms it needs code execution first, then reaches
 
 ## Decisive next evidence, in order
 
-1. Trace automatic V-012 reachability through LightMediaScanner, thumbnail
-   extraction, and removable-media handoff. Manual authentic PlayerEngine D-Bus
-   reachability is now proven; it still does not establish an automatic
-   media-to-root path or RCE.
+1. Trace post-index V-012 reachability through media-manager/browser selection,
+   thumbnail extraction, and playback handoff. LightMediaScanner startup indexing
+   is now confirmed to use a separate non-GStreamer ASF plugin; manual authentic
+   PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
+   or RCE is established.
 2. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
 3. Measure production interface features before treating CVE-2017-1000112 as a

@@ -1716,3 +1716,20 @@ and are superseded by corrections rather than silently rewritten.
 - Nothing in this run demonstrates instruction-pointer control or RCE. Manual
   D-Bus service reachability is now closed; automatic USB indexing,
   LightMediaScanner, thumbnail handoff, and physical-unit behavior remain open.
+
+## 2026-11-01 — the automatic scanner takes a different ASF path
+
+- Putting the 33-stream file under `/media/usb/probe` answered the next routing
+  question. LightMediaScanner's configured startup scan found the USB directory,
+  processed one file with zero reported errors, committed it, and stayed alive.
+- The parser identity explains why. The registered `asf.so` is a separate
+  LightMediaScanner metadata parser that reads with `open`/`read`/`lseek` and
+  writes to SQLite through scanner APIs. It neither links GStreamer nor imports
+  a `gst_*` function, so accepting this file does not reach V-012's `asfdemux`.
+- A full session-bus capture showed only the scanner's D-Bus lifecycle,
+  properties, explicit scan, and progress traffic; no PlayerEngine or thumbnail
+  call appeared. That narrows the remaining automatic route to post-index
+  media-manager/browser, playback, or thumbnail behavior.
+- This is negative evidence for one route, not a safety claim for removable
+  media. The exact file still kills PlayerEngine when sent manually under the
+  established service contract.
