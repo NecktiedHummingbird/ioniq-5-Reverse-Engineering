@@ -107,6 +107,15 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 - **Acceptance / regression:** shell metacharacters, separators, `${IFS}`-style expansion, over-long serials, comma and non-ASCII serials, and a missing helper must all produce no shell interpretation; legitimate PTP and mass-storage mount and unmount must still work; no privileged child of the automounter should exist.
 - **Not yet done:** isolated-VM dynamic confirmation (see below). Do not describe this as "USB-to-root demonstrated".
 
+**Reproduction harness status (2026-10-29).** The emulated-device half of the harness now works: a
+QEMU USB device presenting `0403:6001` with an arbitrary serial string enumerates on UHCI with that
+string read back verbatim, so the attacker-controlled input to this vulnerability is reproducible in
+the VM. Two blockers remain before an end-to-end demonstration: the image carries no `ftdi_sio`-family
+driver, and `usb-automount` refuses to run without a system D-Bus, exiting on a `QDBusConnection`
+assertion. Neither affects the static confirmation above. A plain serial adapter is the wrong device
+class for this entry in any case; the MTP branch requires an MTP device. Evidence: runs
+`1793332245651259000` and `1793332361615248000`.
+
 ## V-007 — Media parsing runs as an unprivileged-separation gap (CONFIRMED configuration, not a demonstrated exploit)
 
 - **Status:** **confirmed configuration, informational.** Not a vulnerability on its own: no parser defect has been identified, and root execution of a parser is a risk amplifier rather than an exploitable condition. Triaged 2026-10-28; reclassified from "unverified actor report" and from the earlier "SUPPORTED vulnerability" framing.

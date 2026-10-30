@@ -1479,3 +1479,20 @@ and are superseded by corrections rather than silently rewritten.
   was inferred from apparent size rather than allocated blocks.
 - Further VM work remains blocked until about fifty gigabytes is freed elsewhere, since more backup
   pruning cannot release anything.
+
+## 2026-10-29 — the USB harness enumerates, and two of my own assumptions were wrong
+
+- Worked through why the emulated serial adapter never appeared. Three distinct causes had been
+  collapsed into one: a null chardev stops QEMU presenting the device at all, an EHCI bus is rejected
+  outright for a full-speed device, and QEMU's xHCI oopses in the vendor's own driver. UHCI, a file
+  chardev and a real wait are enough to get a stable enumeration with the serial string under control.
+- The keyboard enumerating beside the adapter mattered: it proved the bus, the port reset and the
+  enumeration path all worked, which shifted suspicion from the guest kernel to the device
+  configuration. Without that control the oops would have looked like the whole story.
+- Two corrections to my own reasoning from earlier the same day. First, the serial string does not
+  reach a shell: `usb-automount` is a Qt and D-Bus service, and the documented V-006 mechanism is the
+  MTP branch. Second, a null chardev is not an inert detail, it is the specific reason nothing
+  enumerated, so the earlier observations of a device that never appeared were an artefact of the
+  harness rather than of the guest.
+- Practical consequence: reproducing V-006 needs an emulated MTP device with a crafted serial, plus a
+  running system bus so the service stays alive long enough to act.

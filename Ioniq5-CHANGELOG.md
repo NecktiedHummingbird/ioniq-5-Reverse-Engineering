@@ -3,6 +3,31 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.03.0 - USB injection harness enumerates; V-006 reproduction path corrected
+
+- The three earlier USB attempts failed for one reason each, now identified. `-chardev null` prevents
+  QEMU's `usb-serial` from presenting on the bus at all: no connect, no `new full-speed USB device`
+  line, nothing in the device list. A file or socket chardev fixes it, and the device then enumerates
+  as `0403:6001` with the crafted serial string read back verbatim
+  (`SerialNumber: ;id>/dev/kmsg;#`).
+- Controller choice is constrained by this kernel. `qemu-xhci` registers a bus but oopses in the
+  vendor's `xhci_toggle_dis_perr_det` during root-hub device creation, so no device can attach.
+  `ich9-usb-ehci1` is rejected by QEMU itself, because `usb-serial` is full-speed and QEMU treats the
+  high-speed bus mismatch as fatal, exiting before boot. `ich9-usb-uhci1` works: a keyboard
+  enumerated as `1-2` and the serial adapter as `1-1` in the same run.
+- The image carries no `ftdi_sio`, `pl2303` or `cp210x`, so the emulated FTDI adapter produces no
+  `/dev/ttyUSB` node. That is expected and is unrelated to V-006.
+- `usb-automount` is a Qt5 and dbus-glib service exposing `com.lge.car.automount.request`, not a
+  shell script. Started without a system bus it dies at once on a `QDBusConnection` assertion and
+  never reaches any mount logic. `/usr/bin/dbus-daemon` is present in the image, so the next run
+  starts it first.
+- **Correction to this session's earlier reasoning.** Passing a shell payload in the serial string was
+  framed as exercising a generic injection path in `usb-automount`. That framing is wrong: the
+  documented V-006 mechanism is the MTP branch, and `usb-automount` has no shell interpolation to
+  reach. Reproduction therefore needs an emulated MTP device, not a serial adapter.
+- No injection fired in any run. `uid=` never appears in the guest log except in the echoed command
+  text, which is why the harness must match on structured output rather than a grep of the transcript.
+
 ## 1.02.0 - disk investigation: the backups were clones and cost nothing
 
 - Pruned 15 of the 70 `rootfs-pre-*.img` backups, the earliest superseded control chains whose
