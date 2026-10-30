@@ -2214,3 +2214,15 @@ and are superseded by corrections rather than silently rewritten.
 - Worth naming the pattern across this session: where vendors ship DWARF, reverse engineering becomes
   reading; where they strip, it becomes inference. The expensive mistakes here have all come from inferring
   something that was actually written down.
+
+## 2026-10-31 — the last missing component, written down
+
+- The plugin interface is no longer a guess. Every field of the registration record and the callback table
+  has an offset and a signature, taken from the vendor's own debug information, and the discovery symbol is
+  named.
+- Two details explain things that had been puzzling: the union at 0x18 is why one struct serves both layout
+  and input plugins, and init_mode is why the config says defer. Reading the structure answered questions
+  that experimentation had been circling.
+- What remains is small and enumerated rather than vague: two ID types and one function signature. Recording
+  the gap explicitly, rather than implying the picture is complete, is the difference between a specification
+  someone can build from and a summary that flatters the work.

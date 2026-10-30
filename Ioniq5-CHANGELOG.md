@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.26.0 - the IAS plugin ABI is extracted in full
+
+- The layout-plugin contract is now written down from vendor DWARF rather than inferred, in
+  `evidence/vm-bringup/ias-plugin-abi.md`. Plugins are discovered by exporting a data symbol named
+  **`ias_plugin_info`** (layout) or `ias_input_plugin_info` (input).
+- `struct ias_plugin_info`: `switch_to` @0x00 as `void (*)(const spug_output_id)`, `switch_from` @0x08,
+  three input grab tables @0x10/0x20/0x30, `inforec_version` @0x40, `id` @0x44, `draw` @0x48 as
+  `void (*)(spug_view_list)`.
+- `struct ias_plugin` (size 0x90, `src/ias-common.h:265`): `version` @0x00, `libname` @0x08, `name` @0x10,
+  an anonymous union at 0x18 selecting `ias_plugin_info` or `ias_input_plugin_info`, `link` @0x68,
+  `init_mode` @0x78 with `INIT_NORMAL`/`INIT_DEFERRED`, `init` @0x7c, `activate_on` @0x80.
+- `init_mode` explains `defer="1"` in the shipped `ias.conf`: a deferred plugin is not activated at start.
+- The minimal replacement is now one sentence: on `switch_to`, fetch each IAS surface and assign it to that
+  output's scanout. Grabs can be empty and `draw` a no-op.
+- **Stated gap, not glossed over:** `spug_output_id` and `spug_view_list` are ID-based lookups into framework
+  tables (`spug_ids`, `spug_output_ids`, `spug_surface_ids`, `spug_view_ids`, `spug_plane_ids`,
+  `spug_seat_ids`, `spug_hashtables`), and the exact `fetch_ias_surface` signature is not yet extracted.
+  Each is one DWARF query away; none is a blocker of principle.
+
 ## 1.25.0 - the app speaks only IAS, and the plugin ABI is fully recoverable
 
 - `fullscreen-shell` does not help: with it the app stays alive but the compositor still logs **zero
