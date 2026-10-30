@@ -78,18 +78,28 @@ followed by stateful service/CAN/persistence reconstruction.
   stack overwrite, RCE, or root path for recovered `260128`; no packet or
   dynamic abort occurred. See `evidence/connman-cve-2023-28488.md` and
   `tools/uk_fw/connman_length_model.py`.
-- **V-017 added — exact conditional cellular SMS memory corruption:** exact
-  `ofonod` instructions retain CVE-2023-4233's missing address destination
-  bounds and CVE-2023-2794's missing 140-byte deliver-data bound. Two compiled
-  vendor `lgeqmimodem` callbacks pass QMI direct indications and stored/raw-read
-  messages to `ofono_sms_deliver_notify` and the affected decoder. A packet-free
-  model exhausts all address lengths and 65,536 `(UDL,DCS)` pairs; both writes
-  can leave the `0x128`-byte `sms` object, but neither reviewed maximum directly
-  reaches this caller's canary. The conditional service defaults to uid 0 with
-  SMACK `App::tms`. Unit/marker state, modem/QMI state, cellular delivery,
-  dynamic corruption, RCE, SMACK escape, unrestricted root, and owner-device
-  applicability remain unproven. See `evidence/ofono-sms-decoder-cves.md` and
-  `tools/uk_fw/ofono_sms_bounds_model.py`.
+- **V-017 expanded — exact directional oFono TPDU corruption:** exact
+  `ofonod` instructions retain the destination checks fixed by CVE-2023-4232
+  through CVE-2023-4235, CVE-2023-2794, and CVE-2024-7547. Incoming vendor-QMI
+  calls use `sms_decode(..., FALSE, ...)`; deliver, submit-report, and
+  status-report copies complete before the handler's late DELIVER check.
+  Deliver-report and command are outgoing-only, but exact local transmit-queue
+  and SIM-Toolkit callers use `sms_decode(..., TRUE, ...)`. The expanded
+  message-free model exhausts each one-byte length domain and confirms writes
+  beyond the `0x128`-byte `sms` object without directly reaching the reviewed
+  caller canary. The conditional service defaults to uid 0 with SMACK
+  `App::tms`. Activation, byte provenance, dynamic corruption, RCE, SMACK
+  escape, unrestricted root, and owner applicability remain unproven. See
+  `evidence/ofono-sms-decoder-cves.md`.
+- **V-018 added — exact CVE-2024-7537 modem-QMI list bounds:** the exact WMS
+  list callback obtains a 16-bit TLV length but never validates it against
+  `4 + count*5`. A vendor diagnostic computes the product modulo `2^32`; its
+  overflow branch falls through to a four-byte allocation while the loop uses
+  the original count. The message-free model proves every count above 13,107
+  under-allocates. This is a conditional modem-originated TLV-overread/heap-write
+  path, not evidence of direct SMS/base-station control, RCE, or unrestricted
+  root. See `evidence/ofono-qmi-message-list-cve-2024-7537.md` and
+  `tools/uk_fw/ofono_qmi_list_bounds_model.py`.
 - Added `tools/uk_fw/rpm_nvra_inventory.py`, a strict read-only parser for
   printable Berkeley DB dumps. A compatible project-local Berkeley DB 18.1.40
   dump of the exact `Nvra` index produced 1,679 records; the dump and complete
@@ -180,9 +190,11 @@ followed by stateful service/CAN/persistence reconstruction.
   restart/recovery behavior. For V-016, record installed `connmand` and libc
   hashes plus ordinary IPv4/ConnMan ownership before considering a crash-only
   control; exact fortification already closes the reviewed stack-write claim.
-  For V-017, first record installed `ofonod`, unit/marker state, uid/SMACK label,
-  modem devices, QMI services, and benign SMS reception; keep any later fault
-  control crash-only and disconnected. Continue identifying an authentic caller
+  For V-017/V-018, first record installed `ofonod`, unit/marker state,
+  uid/SMACK label, modem devices, QMI services, benign SMS reception,
+  SIM-Toolkit state, and benign stored-message enumeration; keep any later fault
+  control crash-only and disconnected, and do not collapse modem-originated QMI
+  metadata into direct radio reachability. Continue identifying an authentic caller
   of V-012 `requestThumbnails` outside
   the now-reviewed scan/property paths—especially QML-facing ownership and
   indirect virtual/callback dispatch—or playback after indexing, and repair the

@@ -128,26 +128,32 @@ read check fit the destination. The exact-build result is therefore conditional
 ConnMan process termination/availability. No packet or dynamic abort was
 produced. See `evidence/connman-cve-2023-28488.md`.
 
-## Separate cellular candidate: oFono SMS decoding
+## Separate cellular/modem candidates: oFono TPDU and QMI decoding
 
-V-017 is not a Wi-Fi listener or an IP-service result. The recovered RPM
-inventory identifies `ofono-0.6.8+5w.master.199-r1.corei7_64`, and exact shipped
-instructions retain both CVE-2023-4233's missing destination bound in SMS
-address decoding and CVE-2023-2794's missing 140-byte destination bound before
-the deliver-data `memcpy`.
+V-017 is not a Wi-Fi listener or an IP-service result. Exact shipped
+instructions retain destination checks fixed by CVE-2023-4232 through
+CVE-2023-4235, CVE-2023-2794, and CVE-2024-7547. Compiled `lgeqmimodem`
+callbacks pass QMI direct indications and stored/raw-read TPDUs to
+`sms_decode(..., FALSE, ...)`; deliver, submit-report, and status-report copies
+complete before the handler's late DELIVER type check. Deliver-report and
+command are outgoing-only but have exact local transmit-queue and SIM-Toolkit
+callers. Message-free arithmetic permits writes beyond the local `0x128`-byte
+`sms` object; no dynamic corruption or execution was attempted.
 
-Two callbacks in the compiled vendor `lgeqmimodem` driver pass QMI direct
-indications and stored/raw-read SMS PDUs into `ofono_sms_deliver_notify`, which
-invokes the affected decoder. Exact arithmetic permits writes beyond the local
-`0x128`-byte `sms` object. The maximum reviewed writes do not directly reach the
-caller canary, and no dynamic corruption or execution was attempted.
+V-018 is a distinct modem trust-boundary result. The QMI WMS message-list
+callback retains CVE-2024-7537's missing count/length equality check. Its vendor
+32-bit overflow diagnostic falls through to a four-byte allocation while the
+original-count copy loop continues, admitting selected-TLV overreads, possible
+backing-result OOB reads, and heap writes. This QMI result is
+supplied by the modem; direct SMS/base-station control is not established.
 
 The conditional service would run as uid 0 but receives SMACK label `App::tms`.
 It requires a telematics marker, and the recovered `ofono.path` also watches a
 `no_isa` marker; no enable symlink for that path was identified. Production
-activation, modem/QMI state, carrier attachment, SMS byte preservation, the
-owner's installed hash, RCE, and unrestricted root are unproven. See
-`evidence/ofono-sms-decoder-cves.md`.
+activation, modem/QMI state, carrier attachment, byte preservation, SIM-Toolkit
+state, the owner's installed hash, RCE, and unrestricted root are unproven. See
+`evidence/ofono-sms-decoder-cves.md` and
+`evidence/ofono-qmi-message-list-cve-2024-7537.md`.
 
 The package database also identifies older network components, including
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,

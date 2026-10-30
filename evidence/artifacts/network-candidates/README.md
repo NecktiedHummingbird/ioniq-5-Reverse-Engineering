@@ -14,6 +14,13 @@ access, or applicability to the owner's installed firmware.
 - `connman-cve-2023-28488-fortify-evidence.txt`: exact DHCPv4 pre-fix ordering,
   ordinary L2 activation, and recovered `__memcpy_chk`/libc fail-closed outcome
   for V-016. It contains no packet material.
-- `ofono-sms-decoder-evidence.txt`: exact CVE-2023-4233/CVE-2023-2794 missing
-  bounds, vendor QMI callbacks, arithmetic, service identity, and SMACK/claim
-  boundary for V-017. It contains no PDU, modem message, or packet material.
+- `ofono-sms-decoder-evidence.txt`: exact CVE-2023-4232 through CVE-2023-4235,
+  CVE-2023-2794, and CVE-2024-7547 decoder bounds, incoming/outgoing
+  directionality, vendor QMI and SIM-Toolkit/local callers, arithmetic, service
+  identity, and SMACK/claim boundary for V-017. It contains no PDU, modem
+  message, or packet material.
+- `ofono-qmi-list-evidence.txt`: exact CVE-2024-7537 missing QMI list
+  count/length validation, overflow-diagnostic four-byte fallback,
+  allocation/copy-loop arithmetic, and modem trust boundary for V-018. It
+  contains no QMI message,
+  PDU, modem input, or packet material.

@@ -3,9 +3,11 @@
 ## Objective
 
 Determine whether the recovered EU Gen5W `260128` oFono daemon contains the
-published SMS-decoder defects CVE-2023-4233 and CVE-2023-2794, whether an
-authentic modem-to-parser route exists, and what the exact recovered build's
-memory and privilege boundaries are.
+published TPDU-decoder defects CVE-2023-4232 through CVE-2023-4235,
+CVE-2023-2794, and CVE-2024-7547; whether authentic incoming, outgoing,
+SIM-Toolkit, or local routes exist; whether the separate CVE-2024-7537 QMI WMS
+list defect is present; and what the exact build's memory, trust, and privilege
+boundaries are.
 
 ## Baseline and identities
 
@@ -28,9 +30,13 @@ addresses.
   - stored/raw-read callback call at `0x4a9e7` derives total length from the
     TPDU length plus the first-octet SMSC length.
 - `ofono_sms_deliver_notify` calls the internal `sms_decode` implementation at
-  `0xae8a0` from `0xa55ee` and requires decoded type `SMS_TYPE_DELIVER` before
-  normal handling continues.
-- `sms_decode` dispatches deliver decoding to `0xadca0`.
+  `0xae8a0` from `0xa55ee` with `outgoing=FALSE`. Deliver, submit-report, or
+  status-report decoding completes before its later `SMS_TYPE_DELIVER` check.
+- The exact incoming dispatcher targets are `0xae980`, `0xaeb30`, and
+  `0xae998`; outgoing targets include deliver-report `0xaeea8` and command
+  `0xaeda0`.
+- Exact outgoing callers at `0xb1953` and `0xd8cbb` correspond to local
+  transmit-queue deserialization and SIM-Toolkit Send SMS parsing.
 - Address decoding is at `0xada70`. The exact binary checks remaining input
   bytes but has no `addr_len > 20` or `byte_len > 10` rejection before the
   non-alphanumeric BCD loop at `0xadb48..0xadb78`. The destination is the
@@ -48,8 +54,13 @@ addresses.
   deliver-data writes do not directly reach that canary in this exact caller;
   do not turn generic CVE wording into a demonstrated control-flow overwrite.
 - The ELF is PIE, NX, full RELRO/BIND_NOW, and stack-canary protected. It
-  imports both `memcpy` and `__memcpy_chk`; the vulnerable deliver copy is the
-  unfortified `memcpy` call above.
+  imports both `memcpy` and `__memcpy_chk`; the vulnerable decoder copies use
+  plain `memcpy` or `rep movsb`.
+- The QMI WMS list callback around `0x48d00` obtains a 16-bit TLV length but
+  omits CVE-2024-7537's count/length equality check. Its 32-bit product
+  diagnostic falls through to a four-byte allocation on overflow, while its
+  copy loop retains the original count; this is the separate modem
+  trust-boundary finding V-018.
 
 ## Activation and privilege boundaries
 
@@ -73,13 +84,17 @@ addresses.
    PDUs, modem messages, network traffic, or exploit material.
 2. `tests/test_ofono_sms_bounds_model.py`: unit and exhaustive-partition tests
    for the model.
-3. `evidence/artifacts/network-candidates/ofono-sms-decoder-evidence.txt`:
+3. `tools/uk_fw/ofono_qmi_list_bounds_model.py` and its tests: deterministic,
+   message-free modeling of V-018's count, length, allocation, and loop math.
+4. `evidence/artifacts/network-candidates/ofono-sms-decoder-evidence.txt`:
    concise reviewed exact-instruction, service, policy, identity, and upstream
    patch evidence. Do not commit generated full disassemblies or downloaded
    pages from `work/`.
-4. `evidence/ofono-sms-decoder-cves.md`: V-017 report with exact reachability,
+5. `evidence/ofono-sms-decoder-cves.md`: V-017 report with exact reachability,
    arithmetic, mitigations, and explicit limits.
-5. Update the existing vulnerability inventory, CVE survey, network surface,
+6. `evidence/ofono-qmi-message-list-cve-2024-7537.md` and reviewed excerpt for
+   V-018.
+7. Update the existing vulnerability inventory, CVE survey, network surface,
    prioritisation, handover, history/changelog, artifact index, and a compact
    `CHECKPOINT.md` consistently.
 

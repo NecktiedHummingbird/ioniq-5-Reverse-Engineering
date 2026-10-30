@@ -1,9 +1,13 @@
 # oFono SMS decoder CVEs in recovered EU `260128`
 
-Status: **exact pre-fix CVE-2023-4233 and CVE-2023-2794 writes plus a
-conditional vendor-QMI receive route are statically confirmed; service
-activation, cellular delivery, controlled execution, and root access are
-unproven.**
+Status: **exact pre-fix CVE-2023-4232, CVE-2023-4233, CVE-2023-4234,
+CVE-2023-4235, CVE-2023-2794, and CVE-2024-7547 writes are statically
+confirmed. The vendor-QMI incoming route reaches CVE-2023-4233,
+CVE-2023-2794, CVE-2023-4234, and CVE-2023-4232 before its late type check;
+CVE-2023-4235 and CVE-2024-7547 require outgoing/local or SIM-Toolkit decode
+routes.
+Service activation, cellular delivery, controlled execution, and root access
+are unproven.**
 
 Target: recovered European Gen5W Linux
 `NE_E.EUR.S5W_L.001.001.260128`. The owner's installed firmware is unknown. No
@@ -11,19 +15,31 @@ physical unit, modem, target-binary execution, or network-enabled VM was used.
 
 ## Executive conclusion
 
-The exact shipped `/usr/sbin/ofonod` retains two published missing destination
-bounds in the SMS deliver decoder:
+The exact shipped `/usr/sbin/ofonod` retains six published missing destination
+bounds in its TPDU decoders:
 
 1. **CVE-2023-4233:** a one-byte address length can make the non-alphanumeric
    BCD loop write as many as 257 bytes into a 23-byte address array;
-2. **CVE-2023-2794:** the deliver path derives as many as 255 user-data bytes
-   and passes that length to unfortified `memcpy` with a 140-byte destination.
+2. **CVE-2023-2794:** deliver user data can pass as many as 255 bytes to
+   unfortified `memcpy` with a 140-byte destination;
+3. **CVE-2023-4232:** status-report user data can copy as many as 255 bytes to a
+   143-byte destination;
+4. **CVE-2023-4234:** submit-report user data can copy as many as 255 bytes to
+   152-byte ACK or 151-byte ERROR destinations;
+5. **CVE-2023-4235:** outgoing-direction deliver reports retain equivalent
+   missing bounds for 159-/158-byte destinations;
+6. **CVE-2024-7547:** outgoing-direction command data can copy as many as 255
+   bytes into a 156-byte destination.
 
 This is not inferred from the old RPM version. Exact instructions in the
-recovered binary were compared with the upstream fixes. The vendor's compiled
+recovered binary were compared with each upstream fix. The vendor's compiled
 `lgeqmimodem` callbacks pass both direct QMI indications and stored/raw-read
-messages to `ofono_sms_deliver_notify`, which invokes this exact decoder and
-accepts decoded SMS deliver records.
+messages to `ofono_sms_deliver_notify`. Its `sms_decode(..., FALSE, ...)` call
+completes the TP-MTI-selected decoder before checking that the returned type is
+DELIVER. Consequently status and submit-report copies occur before the late
+type rejection. Outgoing-only deliver-report and command decoders cannot be
+selected by this incoming call; exact local transmit-queue and SIM-Toolkit
+callers use `sms_decode(..., TRUE, ...)` instead.
 
 If started, the unit runs as uid 0 because it has no `User=` directive. The
 executable receives the `App::tms` SMACK label, so uid 0 is not equivalent to
@@ -60,7 +76,15 @@ The relevant upstream corrections are:
 - `a90421d8e45d63b304dc010baba24633e7869682`, which additionally rejects
   address fields whose encoded value exceeds ten bytes;
 - `5209fd65ff41653d7725e407ccc359c54bb3121f`, which addresses
-  CVE-2023-2794 by rejecting deliver user data larger than the internal array.
+  CVE-2023-2794 by rejecting deliver user data larger than the internal array;
+- `2ff2da7ac374a790f8b2a0216bcb4e3126498225`, which addresses
+  CVE-2023-4232 in `decode_status_report()`;
+- `8d74bc66146ea78620d140640a0a57af86fc8936`, which addresses
+  CVE-2023-4234 in `decode_submit_report()`;
+- `02aa0f9bad3d9e47a152fc045d0f51874d901d7e`, which addresses
+  CVE-2023-4235 in `decode_deliver_report()`;
+- `305df050d02aea8532f7625d6642685aa530f9b0`, which addresses
+  CVE-2024-7547 in `decode_command()`.
 
 The recovered instructions have the source-availability checks that precede
 those patches, but not the added destination bounds.
@@ -82,13 +106,25 @@ Nearby embedded function and diagnostic strings identify these regions as
 and PDU-length handling.
 
 At `0xa55ee`, `ofono_sms_deliver_notify` calls the internal `sms_decode`
-implementation at `0xae8a0`. Its output object is a `0x128`-byte `struct sms`
-at caller `rsp+0x30`. The caller then checks `sms+0x20` and proceeds only for
-`SMS_TYPE_DELIVER`. The corresponding decoder starts at `0xadca0`.
+implementation at `0xae8a0` with `outgoing=FALSE`. Its output object is a
+`0x128`-byte `struct sms` at caller `rsp+0x30`. Only after `sms_decode` returns
+does `0xa55fb..0xa5601` check `sms+0x20` and proceed solely for
+`SMS_TYPE_DELIVER`.
 
-This proves a real vendor modem-to-parser route in the binary. It does not prove
-that a remote sender, carrier, base station, or compromised modem can preserve
-all required bytes through the owner's production modem and QMI stack.
+The exact dispatcher selects the incoming decoder from TP-MTI before returning:
+
+| Incoming TP-MTI | Exact decoder entry | Relevant finding |
+|---:|---:|---|
+| `0` | `0xae980` / deliver body `0xadca0` | CVE-2023-4233, CVE-2023-2794 |
+| `1` | `0xaeb30` | CVE-2023-4234 submit report |
+| `2` | `0xae998` | CVE-2023-4232 status report |
+| `3` reserved | `0xae980` | interpreted as deliver |
+
+The decoder-specific copy therefore finishes before the QMI delivery handler's
+late type rejection. This proves real vendor modem-to-parser routes for the
+four incoming-direction findings. It does not prove that a remote sender,
+carrier, or base station can make the production modem preserve and forward a
+malformed, generally non-conforming TPDU.
 
 ## CVE-2023-4233 exact write
 
@@ -123,13 +159,66 @@ The packet-free deterministic model exhausts all 65,536 `(UDL,DCS)` byte pairs:
 
 | Exact result when source bytes are present | Pairs |
 |---|---:|
-| Copy `0..140` bytes | 46,416 |
-| Overwrite the array but remain inside the `sms` union | 9,368 |
-| Write beyond the `0x128`-byte `sms` object | 9,752 |
+| Copy `0..140` bytes | 44,461 |
+| Overwrite the array but remain inside the `sms` union | 10,235 |
+| Write beyond the `0x128`-byte `sms` object | 10,840 |
 | **Total** | **65,536** |
 
 The maximum copy is 255 bytes: 115 beyond the user-data array and 64 beyond the
 `sms` object.
+
+## CVE-2023-4232 and CVE-2023-4234 exact writes
+
+The incoming status-report decoder at `0xae998` stores its UDL/DCS fields, calls
+`sms_udl_in_bytes` at `0xaeafd`, checks only source availability at
+`0xaeb02..0xaeb05`, and calls plain `memcpy@plt` at `0xaeb1d`. The destination
+is the 143-byte array at `sms+0x7c`; no comparison with 143 precedes the copy.
+A 255-byte copy ends 83 bytes beyond the `0x128`-byte object.
+
+The incoming submit-report decoder at `0xaeb30` handles both ACK and ERROR
+forms. It calls `sms_udl_in_bytes` at `0xaec29`, checks only source availability
+at `0xaec2e..0xaec31`, and calls plain `memcpy@plt` at `0xaec48`. Both forms use
+a destination beginning at `sms+0x3f`; the corresponding capacities are 152
+and 151 bytes. A 255-byte copy ends 22 bytes beyond the `sms` object.
+
+Exhausting all 65,536 `(UDL,DCS)` pairs for each exact destination gives:
+
+| Decoder destination | Bounded | Array overflow within `sms` | Beyond `sms` | Maximum beyond `sms` |
+|---|---:|---:|---:|---:|
+| Status report, 143 bytes | 45,040 | 5,821 | 14,675 | 83 bytes |
+| Submit ACK report, 152 bytes | 46,833 | 15,689 | 3,014 | 22 bytes |
+| Submit ERROR report, 151 bytes | 46,640 | 15,882 | 3,014 | 22 bytes |
+
+The status and submit-report types are not accepted as DELIVER by the QMI
+handler, but rejection occurs after these copies and is therefore not a memory
+safety guard.
+
+## Outgoing-only CVE-2023-4235 and CVE-2024-7547
+
+For `outgoing=TRUE`, the dispatcher selects different decoders. The recovered
+binary retains both missing destination checks:
+
+- `decode_deliver_report()` begins at `0xaeea8`; after source availability at
+  `0xaef53..0xaef56`, it copies through `memcpy@plt` at `0xaec48` or `0xaf026`
+  into 159-byte ACK (`sms+0x2c`) or 158-byte ERROR (`sms+0x2d`) arrays. Maximum
+  255-byte copies end three or four bytes beyond `sms`, respectively.
+- `decode_command()` begins at `0xaeda0`; `0xaee83..0xaee86` checks only source
+  availability, then `rep movsb` at `0xaee9e` copies the one-byte command-data
+  length into a 156-byte array at `sms+0x59`. The maximum ends 48 bytes beyond
+  `sms`.
+
+These two decoders cannot be selected by the reviewed incoming QMI
+`sms_decode(..., FALSE, ...)` call. Exact outgoing callers do exist:
+
+- `0xb1953` uses `outgoing=TRUE` while loading serialized transmit-queue records
+  from local storage and then duplicates the `0x128`-byte decoded object;
+- `0xd8cbb` uses `outgoing=TRUE` in the SIM-Toolkit Send SMS parser and checks
+  for SUBMIT or COMMAND only after decoding.
+
+Thus CVE-2023-4235 and CVE-2024-7547 are exact shipped-code findings, but their
+defensible entry conditions are local transmit-queue data or a modem/SIM
+Toolkit proactive-command path—not the ordinary incoming SMS callback. Direct
+unauthenticated over-the-air reachability is unproven.
 
 ## Exact caller and mitigations
 
@@ -139,12 +228,19 @@ In the reviewed `ofono_sms_deliver_notify` frame:
 - later scratch begins at `rsp+0x160`, or `sms+0x130`;
 - the canary is at `rsp+0x1f8`, or `sms+0x1c8`.
 
-The maximum address write reaches the later scratch area. The maximum deliver
-copy also reaches it for 8,288 `(UDL,DCS)` pairs. Later code initializes that
-scratch on the reviewed path, but the decoder and handler can use object state
-before and after that point. Neither maximum write directly reaches the caller
-canary. This exact layout is more constrained than generic advisory language,
-but it does not make the out-of-bounds stores safe.
+In the incoming `ofono_sms_deliver_notify` frame, the maximum address write
+reaches the later scratch area. Deliver copies reach it for 9,240 `(UDL,DCS)`
+pairs; status reports for 13,075 pairs; and each submit-report form for 1,918
+pairs. None of those incoming maxima directly reaches this caller's canary.
+Later code initializes some scratch on reviewed paths, but the decoders and
+handler can use object state before and after that point.
+
+The outgoing-only deliver-report and command decoders run in different callers.
+Their object-relative overrun sizes are exact, but this delivery-frame
+scratch/canary layout must not be applied to them; their caller-frame overwrite
+boundaries remain to be reconstructed. The exact incoming layout is more
+constrained than generic advisory language, but it does not make the
+out-of-bounds stores safe.
 
 The ELF has:
 
@@ -192,10 +288,13 @@ unresolved.
 
 - exact recovered RPM, binary, service, policy, and SMACK identities;
 - exact vendor QMI direct-indication and raw-read calls into SMS delivery;
-- exact deliver-decoder dispatch;
+- exact incoming and outgoing decoder dispatch;
+- late QMI-handler type rejection after incoming decoder completion;
 - absence of both upstream address destination checks;
-- absence of the upstream deliver user-data destination check;
-- exact out-of-bounds arithmetic and unfortified deliver copy;
+- absence of the deliver, status-report, submit-report, deliver-report, and
+  command-data destination checks added by the cited fixes;
+- exact out-of-bounds arithmetic and unfortified copies;
+- local transmit-queue and SIM-Toolkit outgoing decode callers;
 - conditional uid-0 service configuration and `App::tms` execution label;
 - PIE, NX, full RELRO, and stack-canary mitigations.
 
@@ -205,17 +304,20 @@ unresolved.
 - telematics/no-ISA marker state or `ofono` unit activation on that vehicle;
 - modem presence, QMI service registration, SIM/carrier attachment, or SMS
   receive state;
-- preservation and delivery of the required bytes from any cellular sender;
+- preservation and delivery of the required incoming bytes from any cellular
+  sender;
+- malicious local transmit-queue data or a malformed SIM-Toolkit command;
+- direct over-the-air reachability of the outgoing-only decoders;
 - a dynamic crash in this exact service;
 - instruction-pointer control, arbitrary code execution, SMACK escape,
   unrestricted root, persistence, CAN access, or safety impact.
 
 ## Remediation
 
-1. Backport all three fixes above, retaining both the semantic address limit and
-   the encoded-byte limit.
-2. Reject every decoded user-data length larger than the exact destination
-   before copying; retain independent source-availability checks.
+1. Backport all cited fixes, retaining both the semantic address limit and the
+   encoded-byte limit.
+2. Reject every decoded user-data or command-data length larger than the exact
+   destination before copying; retain independent source-availability checks.
 3. Add malformed and boundary SMS decoder tests under ASan/UBSan, including
    every DCS family and both direct-indication and stored-message callbacks.
 4. Isolate modem-controlled parsing from uid 0. Use a least-privileged parser
@@ -243,11 +345,13 @@ The current VM remains NIC-free and has no emulated modem.
 
 - Reviewed excerpt:
   `evidence/artifacts/network-candidates/ofono-sms-decoder-evidence.txt`,
-  SHA-256 `8278be703ee739c9a0f17eeb83d69e59c6a1b367fe163e133bfc6d935f07e4f3`
+  SHA-256 `5e081effe76b4f118d8f6008a6c29a15451e173cc928d20a642c288d00505ae5`
 - Arithmetic model:
   `tools/uk_fw/ofono_sms_bounds_model.py`
 - Tests:
   `tests/test_ofono_sms_bounds_model.py`
+- Extended generated arithmetic report SHA-256:
+  `c1676c7b5f5689c5ae568011206738a561a36d1158d2e364131bb0641fd02c45`
 - Planning/checkpoint:
   `docs/agent-work/ofono-sms-decoder/`
 - Full downloads, source history, disassemblies, and generated reports remain

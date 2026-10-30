@@ -56,6 +56,18 @@ Upstream commits and locally preserved patch hashes:
   Patch SHA-256
     c2bace42fa324781a1565c16b87437516549d3348b3ee0c85872f650f644b9ab
 
+* 2ff2da7ac374a790f8b2a0216bcb4e3126498225 fixes CVE-2023-4232
+  status-report destination bounds.
+* 8d74bc66146ea78620d140640a0a57af86fc8936 fixes CVE-2023-4234
+  submit-report destination bounds.
+* 02aa0f9bad3d9e47a152fc045d0f51874d901d7e fixes CVE-2023-4235
+  deliver-report destination bounds.
+* 305df050d02aea8532f7625d6642685aa530f9b0 fixes CVE-2024-7547
+  command-data destination bounds.
+
+Combined additional-fix patch SHA-256
+  b17fb40f2dec87b706a1b269635b275f21632df91bba048d4fce93ef33065055
+
 NVD oFono query snapshot SHA-256
   7414c62054a8799389ffd89669d62d98388526d45359b17d2be64f0067f4d1f7
 
@@ -95,8 +107,16 @@ and calls the internal decoder:
   a55ee: call 0xae8a0               # sms_decode
 
 The handler then checks the decoded type at `sms+0x20` and continues normal
-handling only for type 0 (`SMS_TYPE_DELIVER`). The decoder's type-0 dispatch
-calls deliver decoding at 0xadca0.
+handling only for type 0 (`SMS_TYPE_DELIVER`). This check occurs after
+`sms_decode` has completed. For `outgoing=FALSE`, its exact TP-MTI dispatch is:
+
+  MTI 0 -> 0xae980 / deliver body 0xadca0
+  MTI 1 -> 0xaeb30 / submit report
+  MTI 2 -> 0xae998 / status report
+  MTI 3 -> 0xae980 / treated as deliver
+
+Thus status- and submit-report decoder writes precede the later type rejection.
+The incoming route cannot select deliver-report or command decoding.
 
 CVE-2023-4233: exact missing address bound
 ------------------------------------------
@@ -140,14 +160,14 @@ at 0xad1c0:
 There is no comparison with 140 before the copy. Exhausting all 65,536
 `(UDL,DCS)` octet pairs in the exact arithmetic gives:
 
-  bounded copy (0..140 bytes):              46,416
-  overwrite within remaining sms union:      9,368
-  write beyond 0x128-byte sms object:         9,752
+  bounded copy (0..140 bytes):              44,461
+  overwrite within remaining sms union:     10,235
+  write beyond 0x128-byte sms object:        10,840
   total:                                    65,536
   maximum copy: 255 bytes
   maximum overrun of 140-byte array: 115 bytes
   maximum beyond sms object: 64 bytes
-  pairs reaching later caller scratch at sms+0x130: 8,288
+  pairs reaching later caller scratch at sms+0x130: 9,240
   pairs reaching caller canary at sms+0x1c8: 0
 
 Deterministic model report SHA-256
@@ -197,14 +217,59 @@ recovered `multi-user.target.wants`. `mof.service` is enabled and has
 the named service. A unit and conditional path therefore prove available
 activation machinery, not observed owner-vehicle activation.
 
+Additional exact decoder writes and directionality
+--------------------------------------------------
+The exact binary also retains these source-only checks followed by unfortified
+copies without the cited destination bounds:
+
+  CVE-2023-4232 status report
+    0xaeafd calls sms_udl_in_bytes
+    0xaeb02..0xaeb05 checks only source availability
+    0xaeb1d calls memcpy to sms+0x7c (143-byte destination)
+    maximum 255-byte copy ends 83 bytes beyond sms
+
+  CVE-2023-4234 submit ACK/ERROR report
+    0xaec29 calls sms_udl_in_bytes
+    0xaec2e..0xaec31 checks only source availability
+    0xaec48 calls memcpy to sms+0x3f (152-/151-byte destinations)
+    maximum 255-byte copy ends 22 bytes beyond sms
+
+  CVE-2023-4235 deliver ACK/ERROR report, outgoing direction only
+    decoder entry 0xaeea8
+    0xaef53..0xaef56 checks only source availability
+    memcpy at 0xaec48 or 0xaf026 to sms+0x2c / sms+0x2d
+    159-/158-byte destinations; maxima end 3/4 bytes beyond sms
+
+  CVE-2024-7547 command, outgoing direction only
+    decoder entry 0xaeda0
+    0xaee83..0xaee86 checks only source availability
+    0xaee9e rep movsb to sms+0x59 (156-byte destination)
+    maximum 255-byte copy ends 48 bytes beyond sms
+
+The exact outgoing callers reviewed are:
+
+  0xb1953: serialized local transmit-queue load, outgoing=TRUE
+  0xd8cbb: SIM-Toolkit Send SMS parser, outgoing=TRUE; its SUBMIT/COMMAND type
+            check occurs after decoder completion
+
+Extended deterministic arithmetic report SHA-256
+  c1676c7b5f5689c5ae568011206738a561a36d1158d2e364131bb0641fd02c45
+
+The scratch/canary counts above apply to the incoming delivery caller. The
+outgoing-only deliver-report and command decoders have different caller frames;
+only their object-relative destination bounds are established here.
+
 Claim boundary
 --------------
-The exact recovered binary retains both published pre-fix conditions, has an
-authentic vendor QMI SMS-to-deliver-decoder route, and performs the reviewed
-out-of-bounds writes when all parser conditions and source-availability checks
-are met. If this service starts, it is uid 0 with the `App::tms` SMACK label.
+The exact recovered binary retains all six reviewed pre-fix decoder conditions.
+The authentic vendor QMI incoming route can select deliver, submit-report, and
+status-report decoding before its late type check. Deliver-report and command
+require outgoing/local transmit-queue or SIM-Toolkit decode routes. If this
+service starts, it is uid 0 with the `App::tms` SMACK label.
 
 Not established: the owner's installed binary, telematics/no-ISA marker state,
 unit activation, modem attachment, QMI service state, carrier/base-station/SMS
-delivery of the required bytes, dynamic process corruption or termination,
-controlled execution, SMACK escape, persistence, or a root transition.
+preservation and delivery of malformed incoming TPDUs, malicious local queue
+content, malformed SIM-Toolkit input, direct radio reachability of outgoing-only
+decoders, dynamic process corruption or termination, controlled execution,
+SMACK escape, persistence, or a root transition.

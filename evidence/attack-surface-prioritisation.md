@@ -64,23 +64,29 @@ classification is conditional adjacent-network service termination/availability,
 not memory corruption or code execution. See
 `evidence/connman-cve-2023-28488.md`.
 
-### 3. oFono SMS decoder overflows — strongest static cellular candidate
+### 3. oFono TPDU and QMI bounds — strongest static cellular/modem candidates
 
-- Exact shipped `ofonod` instructions retain CVE-2023-4233's missing address
-  destination bound and CVE-2023-2794's missing 140-byte deliver-data bound.
-  This is exact-code evidence, not an inference from
-  `ofono-0.6.8+5w.master.199-r1`.
-- Two callbacks in the compiled vendor `lgeqmimodem` SMS driver pass direct QMI
-  indications and stored/raw-read messages to the affected deliver decoder.
-- A packet-free exhaustive model confirms that both writes can leave the
-  `0x128`-byte `sms` object. In this exact caller neither reviewed maximum
-  directly reaches the stack canary; no dynamic crash or control-flow result is
-  claimed.
+- V-017 exact shipped instructions retain the destination checks fixed by
+  CVE-2023-4232 through CVE-2023-4235, CVE-2023-2794, and CVE-2024-7547. This
+  is exact-code evidence, not an inference from the old package label.
+- Compiled `lgeqmimodem` callbacks pass direct indications and stored/raw-read
+  TPDUs into incoming decoding. Deliver, submit-report, and status-report writes
+  complete before the handler's late DELIVER type check. Deliver-report and
+  command are outgoing-only, with exact local transmit-queue and SIM-Toolkit
+  callers rather than the ordinary incoming SMS callback.
+- V-018 separately retains CVE-2024-7537 in the QMI WMS message-list callback.
+  Its 32-bit overflow diagnostic falls through to a four-byte allocation while
+  a copy loop uses the original count. That input is modem-originated metadata,
+  not a TPDU and not
+  proven directly controllable by an SMS sender or base station.
+- Message-free exhaustive models confirm writes beyond the relevant objects.
+  No dynamic crash or control-flow result is claimed.
 - The conditional service defaults to uid 0 and is assigned SMACK `App::tms`.
-  Telematics/no-ISA markers, unit enablement, modem/QMI state, cellular delivery,
-  owner-device applicability, RCE, SMACK escape, and unrestricted root remain
-  unknown.
-- Evidence: `evidence/ofono-sms-decoder-cves.md`.
+  Telematics/no-ISA markers, unit enablement, modem/QMI state, byte preservation,
+  SIM-Toolkit state, owner-device applicability, RCE, SMACK escape, and
+  unrestricted root remain unknown.
+- Evidence: `evidence/ofono-sms-decoder-cves.md` and
+  `evidence/ofono-qmi-message-list-cve-2024-7537.md`.
 
 ### 4. USB storage via AppNavi replacement — published but installation-gated
 

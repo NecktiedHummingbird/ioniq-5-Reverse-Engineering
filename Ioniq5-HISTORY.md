@@ -2021,9 +2021,10 @@ and are superseded by corrections rather than silently rewritten.
   and SIM-Toolkit Send SMS parsing. That establishes shipped routes without
   pretending they are unauthenticated radio paths.
 - Exact instructions retain all six reviewed TPDU decoder bounds. The expanded
-  arithmetic model quantifies each destination and confirms no modeled maximum
-  directly reaches the reviewed delivery caller's canary. That narrows impact;
-  it does not erase corruption.
+  arithmetic model quantifies each destination. Incoming-decoder maxima do not
+  directly reach the reviewed delivery caller's canary; outgoing-only caller
+  frames remain separate and unresolved. That narrows impact without erasing
+  corruption.
 - The QMI WMS list callback proved to be a separate boundary. It reads the TLV
   length but does not validate it. A vendor overflow diagnostic uses a wrapping
   32-bit product and then falls through to a four-byte allocation, while

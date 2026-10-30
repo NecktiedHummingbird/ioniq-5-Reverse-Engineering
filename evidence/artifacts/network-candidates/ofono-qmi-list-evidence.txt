@@ -1,0 +1,85 @@
+V-018 exact recovered oFono QMI message-list evidence
+=====================================================
+
+Scope
+-----
+Recovered EU Gen5W 260128 userspace only. Static instruction review and a
+message-free arithmetic model were used. No recovered target binary was run;
+no QMI message, modem input, SMS PDU, or network traffic was generated.
+
+Exact identity
+--------------
+/usr/sbin/ofonod
+  SHA-256 3f6daee7c2ccd4b4e222c73d3d22478a997ec336e8a9d65042805625d987ac32
+  ELF x86-64 PIE, Build ID f596c565c77e4abb24d6b5b516ffb2bd6110b1ee
+  RPM ofono-0.6.8+5w.master.199-r1.corei7_64
+  embedded drivers/lgeqmimodem/sms.c
+
+Upstream fix
+------------
+e6d8d526d5077c0b6ab459efeb6b882c28e0fdeb, CVE-2024-7537, changes
+`get_msg_list_cb` to retrieve the QMI TLV length and require:
+
+  length == sizeof(list->cnt) + count * sizeof(list->msg[0])
+
+The count field is four bytes and each list entry is five bytes (four-byte
+index and one-byte type).
+
+Exact callback instructions
+---------------------------
+All addresses are file virtual addresses in the PIE.
+
+  48d47: lea 0xe(%rsp), %rdx         # 16-bit TLV-length output pointer
+  48d4f: mov $1, %esi                # QMI result type
+  48d54: call 0x30540                # QMI result accessor
+  48d61: mov (%rax), %eax            # original little-endian 32-bit count
+  48d63: lea (%rax,%rax,4), %edx     # 32-bit count*5, modulo 2^32
+  48d66: cmp $0xffff, %edx
+  48d6c: ja 0x48e40                 # overflow diagnostic branch
+  48d72: lea (%rax,%rax,4), %eax     # small-product path
+  48d75: movzwl %ax, %eax
+  48d78: lea 0x4(%rax), %rdi         # allocation = 4 + wrapped product
+  48d7c: call g_try_malloc0@plt
+  ...
+  48d85: mov %esi,(%rax)             # preserve original count
+  48da0..48db6                       # original-count five-byte copy loop
+  48dd7: call *%rbp                  # stored completion callback
+
+The overflow branch logs, sets `%edi=4` at `0x48e55`, and jumps back to the
+allocation call at `0x48d7c`; it does not reject. The returned TLV length at
+`rsp+0xe` is not read after the accessor. No instruction compares it with
+`4 + count*5` before the allocation or loop.
+
+Exact arithmetic result
+-----------------------
+Multiplication by five is a bijection modulo 2^32. The complete count-space
+partition is:
+
+  exact loop-sized allocations (count 0..13107):        13,108
+  with representable exact 16-bit TLV length:            13,107
+  exact allocation without representable exact length:       1
+  wrapped-small-product underallocations:                52,428
+  overflow-diagnostic four-byte allocations:      4,294,901,760
+  all heap-underallocation count values:           4,294,954,188
+  full 32-bit count domain:                        4,294,967,296
+
+At the smallest underallocated count, 13,108, the diagnostic path allocates
+four bytes. With one complete source entry present, the first loop iteration
+writes all five entry bytes beyond that allocation. This is a static arithmetic
+conclusion, not a dynamic trigger or code-execution demonstration.
+
+Generated message-free arithmetic report SHA-256
+  3333224f40632e2e1cadf9dffd10079966db720f484d4d0b92a5d80bc835f9f8
+
+Trust and activation boundary
+-----------------------------
+The result originates from the modem-facing QMI WMS service. It is not the
+ordinary incoming TPDU decoder. A defective or compromised modem is the
+established trust boundary; direct SMS/base-station control is not established.
+
+`ofono.service` requires `/tmp/telematics_code_TELEMATICS`, runs without
+`User=` (uid 0), and executes under SMACK label `App::tms`. No recovered enable
+symlink for the conditional `ofono.path` was found. Owner-vehicle binary,
+activation, modem state, malformed result delivery, dynamic corruption,
+controlled execution, SMACK escape, unrestricted root, and persistence remain
+unproven.
