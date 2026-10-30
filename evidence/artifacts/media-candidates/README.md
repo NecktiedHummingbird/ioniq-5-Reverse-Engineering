@@ -42,8 +42,19 @@ contract, MediaBrowser's public `requestThumbnails(as)` forwarding path,
 `uridecodebin ... appsink` pipeline in `libthumbnailextractor.so`. Its custom
 autoplug callback does not exclude `asfdemux`.
 
-This establishes a static, explicit client-request route to the vulnerable
-plugin. Reviewed scan callbacks do not call it, and bounded VM attempts did not
-observe name acquisition, a delivered `Start`, `libgstasf` mapping, or a natural
-crash. It is not evidence of automatic insertion/indexing, UI behavior, RCE, or
-physical-unit reachability.
+`appmediaplayer-thumbnail-caller-evidence.txt` records the client-side follow-up:
+exact generated sync/async method signatures, implementation and thunk offsets,
+vtable placement, the `BrowserInterface -> MediaModeController` scan-event
+chain, and the connection from `VideoPlaybackModel`'s inherited
+`BasePlaybackModel::thumbnailChanged` signal to `VideoPlaybackController`. The
+reviewed application bodies contain no direct `requestThumbnails` dispatch;
+generated capability and a downstream thumbnail-property signal are not caller
+evidence.
+
+Together these establish a static, explicit client-request route to the
+vulnerable plugin. The reviewed scan-handler and property-slot bodies contain no
+direct call to it, and bounded VM attempts did not observe name acquisition, a
+delivered `Start`, `libgstasf` mapping, or a natural crash. This is not an
+exhaustive exclusion of indirect/QML dispatch and is not evidence of automatic
+insertion/indexing, UI
+behavior, RCE, or physical-unit reachability.

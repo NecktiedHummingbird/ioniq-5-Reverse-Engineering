@@ -24,6 +24,16 @@ Status: static route complete; bounded VM delivery remains unresolved.
 - The only reviewed direct caller of the thumbnail request path is the explicit
   public request handler. Scan-completed and media-file-found callbacks forward
   events without requesting extraction.
+- Exact AppMediaPlayer review recovers both generated client signatures:
+  synchronous `requestThumbnails(paths, status, info)` and asynchronous
+  `requestThumbnailsAsync(paths, callback, info)`. Their implementations,
+  thunks, and vtable slots prove capability, not invocation.
+- AppMediaPlayer's reviewed `BrowserInterface -> MediaModeController` scan-event
+  handlers do not directly dispatch that method family.
+- `VideoPlaybackModel` emits its inherited
+  `BasePlaybackModel::thumbnailChanged(QString)` signal to
+  `VideoPlaybackController::onThumbnailChanged(QString)`. This is a downstream
+  model notification; the slot contains no direct request dispatch.
 
 ## Bounded VM result
 
@@ -51,13 +61,21 @@ confirmed production-service V-012 route.
 ## Verification
 
 - SHA-256 identities independently recomputed.
-- Exported symbol offsets and direct call sites checked with `objdump`.
+- Exported symbol offsets, generated method bodies, relocations, Qt connections,
+  and direct call sites checked with `objdump` and `llvm-readelf`.
+- AppMediaPlayer caller evidence is retained in
+  `evidence/artifacts/media-candidates/appmediaplayer-thumbnail-caller-evidence.txt`
+  (SHA-256
+  `24b3929df85c19603df337654a592a8b9cb6cb164ccda5b148b06b45e7c7e967`).
 - D-Bus and pipeline literals checked with terminated static strings.
 - Independent read-only review agreed with the narrow static route and rejected
   the exploratory logs as dynamic delivery/crash evidence.
 
 ## Resume action
 
-Identify an authentic caller of MediaBrowser `requestThumbnails(as)` or playback
-after indexing. Separately diagnose the VM-only service-name acquisition boundary
-with matched benign controls before re-running 32/33 thumbnail requests.
+Continue outside the now-reviewed scan-event and thumbnail-property paths:
+trace `BrowserDBusProxy` ownership into QML-facing objects and look for indirect
+virtual, callback, or metadata dispatch of `requestThumbnails(as)`, or playback
+after indexing. Separately diagnose the VM-only service-name acquisition
+boundary with matched benign controls before re-running 32/33 thumbnail
+requests.

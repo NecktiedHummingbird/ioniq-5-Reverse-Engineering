@@ -151,10 +151,16 @@ followed by stateful service/CAN/persistence reconstruction.
   `com.lge.thumbnailextractor.service.Start(as)`, then
   `VideoContext → uridecodebin → eligible asfdemux`. The earlier assumption that
   `.wma` `Start` followed the audio/TagLib path was wrong; the audio context is
-  for cover art. The route is explicit but request-driven: reviewed scan
-  callbacks do not call it, and bounded VM attempts observed neither a delivered
-  `Start` nor `libgstasf` in the thumbnail process. This is not automatic USB/UI
-  reachability or a thumbnail crash.
+  for cover art. The route is explicit but request-driven. Exact AppMediaPlayer
+  review recovers the generated sync/async methods and vtable slots, but its
+  reviewed `BrowserInterface -> MediaModeController` scan-handler bodies do not
+  directly dispatch them. `VideoPlaybackModel` emits its inherited
+  `BasePlaybackModel::thumbnailChanged` signal to `VideoPlaybackController`; the
+  connected slot contains no direct thumbnail request. Bounded VM attempts
+  observed neither a delivered `Start` nor `libgstasf` in the thumbnail process.
+  This is not automatic USB/UI reachability or a thumbnail crash. Reviewed client
+  evidence:
+  `evidence/artifacts/media-candidates/appmediaplayer-thumbnail-caller-evidence.txt`.
 - Next security work: preserve V-014's remaining physical-helper/port/VT gates
   for a disconnected bench rather than starting the root shell. For V-015, keep
   the current VM NIC-free and defer even benign RA/DHCPv6 controls until the
@@ -162,11 +168,12 @@ followed by stateful service/CAN/persistence reconstruction.
   restart/recovery behavior. For V-016, record installed `connmand` and libc
   hashes plus ordinary IPv4/ConnMan ownership before considering a crash-only
   control; exact fortification already closes the reviewed stack-write claim.
-  Continue identifying an authentic caller of V-012
-  `requestThumbnails` or playback after indexing and repair the VM-only thumbnail
-  service-registration boundary; analyze allocation/lifetime behavior without
-  developing a payload. Keep physical bench tests non-destructive until recovery
-  and service restart behavior are validated.
+  Continue identifying an authentic caller of V-012 `requestThumbnails` outside
+  the now-reviewed scan/property paths—especially QML-facing ownership and
+  indirect virtual/callback dispatch—or playback after indexing, and repair the
+  VM-only thumbnail service-registration boundary; analyze allocation/lifetime
+  behavior without developing a payload. Keep physical bench tests
+  non-destructive until recovery and service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 

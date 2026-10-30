@@ -1,0 +1,139 @@
+AppMediaPlayer thumbnail caller review
+======================================
+
+Scope
+-----
+Exact recovered EU 260128 binary:
+  /app/bin/AppMediaPlayer
+  SHA-256 53ca3d15231d1da8790e699fc19218f0b5d151b304886900fa82e804bdb06ec2
+
+This is offline static analysis. The target binary was not executed. Addresses
+below are ELF/file virtual addresses. Ghidra loaded the PIE at image base
+0x100000, so its analysis addresses are file virtual address + 0x100000.
+
+Generated CommonAPI request method
+----------------------------------
+The exact binary contains a generated BrowserDBusProxy method family for
+requestThumbnails. The embedded async closure type identifies this signature:
+
+  v1::org::genivi::mediamanager::BrowserDBusProxy::requestThumbnailsAsync(
+      const std::vector<std::string>& paths,
+      std::function<void(const CommonAPI::CallStatus&)> callback,
+      const CommonAPI::CallInfo* info)
+    -> std::future<CommonAPI::CallStatus>
+
+Its implementation starts at file virtual 0xc64f0 (Ghidra 0x1c64f0). The SysV
+ABI register shape is consistent with the hidden future return pointer followed
+by this, paths, callback, and info. The body constructs method metadata
+"requestThumbnails", input signature "as", and an empty output signature before
+using CommonAPI DBusProxyHelper asynchronous machinery.
+
+The synchronous overload starts at file virtual 0xc6fd0 (Ghidra 0x1c6fd0):
+
+  BrowserDBusProxy::requestThumbnails(
+      const std::vector<std::string>& paths,
+      CommonAPI::CallStatus& status,
+      const CommonAPI::CallInfo* info)
+    -> void
+
+Its register use is this in RDI, paths in RSI, status in RDX, and info in RCX.
+It writes CommonAPI status value 2 when the proxy is unavailable and otherwise
+constructs the same method name and signatures.
+
+Adjustment thunks:
+  0xc6fc0 loads the vptr through RSI, adds the qword stored at [vptr-0x268]
+           to RSI, and tail-jumps to 0xc64f0;
+  0xc7330 loads the vptr through RDI, adds the qword stored at [vptr-0x260]
+           to RDI, and tail-jumps to 0xc6fd0.
+
+The negative constants are vptr displacements to dynamic vcall-adjustment
+entries; they are not literal adjustments applied to this.
+
+Exact dynamic relocations place the implementations in BrowserDBusProxy vtable
+slots:
+  0x920998 -> 0xc6fd0  synchronous requestThumbnails
+  0x9209a0 -> 0xc64f0  asynchronous requestThumbnailsAsync
+
+This establishes compiled client capability. Generated methods, helper layers,
+thunks, and vtable placement are not evidence that application logic invokes
+the request.
+
+Scan-event path in AppMediaPlayer
+---------------------------------
+BrowserInterface receives and re-emits MediaBrowser events:
+
+  BrowserInterface::onScanCompletedEvent       0x20ae70
+    -> Qt signal emitter                       0x4b1e20
+    -> notifyScanCompleted(QString,bool)
+
+  BrowserInterface::onMediaFileFoundEvent      0x20b050
+    -> Qt signal emitter                       0x4b1e80
+    -> notifyMediaFileFound(QString,quint32,quint32)
+
+The old-style Qt connection setup loads the signal strings at 0x2dcffc and
+0x2dd028; the corresponding QObject::connect calls at 0x2dd003 and 0x2dd02f
+route those signals to:
+
+  MediaModeController::onReceivedScanCompleted(QString,bool)
+    implementation 0x2e54f0
+
+  MediaModeController::onReceivedMediaFileFound(QString,quint32,quint32)
+    implementation 0x2e2850
+
+Review of both complete handler bodies found no direct call to 0xc64f0,
+0xc6fd0, their adjustment thunks, or generated requestThumbnails forwarders.
+The handlers perform scan/media-state and list/controller work. This extends the
+existing MediaBrowser-side result: the reviewed AppMediaPlayer scan-event path
+also does not directly dispatch requestThumbnails.
+
+Thumbnail Qt signal is a downstream model notification
+-------------------------------------------------------
+The two incoming references to the slot string observed in Ghidra resolve, after
+subtracting the 0x100000 image base, to:
+
+  0x3295e7  connect slot-string setup; QObject::connect call at 0x3295f5
+  0x3299be  disconnect slot-string setup; QObject::disconnect call at 0x3299cc
+
+At the connect call, QObject::connect receives:
+  sender:   the VideoPlaybackModel pointer at VideoPlaybackController + 0xb8
+  signal:   2thumbnailChanged(QString)
+  receiver: the VideoPlaybackController object
+  slot:     1onThumbnailChanged(QString)
+
+VideoPlaybackController construction at 0x337550 allocates the +0xb8 object at
+0x337657, constructs it through 0x39c440, and stores it at 0x337669. RTTI for the
+installed vtable identifies the exact object as VideoPlaybackModel, derived from
+BasePlaybackModel. The signal is declared in the BasePlaybackModel Qt metadata.
+Thus the recovered connection is:
+
+  VideoPlaybackModel (inherited BasePlaybackModel signal)
+      thumbnailChanged(QString)
+    -> VideoPlaybackController::onThumbnailChanged(QString)
+
+This is a thumbnail property notification, not a request.
+
+VideoPlaybackController::onThumbnailChanged(QString) starts at 0x333310. It
+logs the new value, checks current media-mode state through the
+MediaModeController singleton, and updates controller/model state. It contains
+no direct call to requestThumbnails or a thumbnail-extractor D-Bus method.
+
+Claim boundary
+--------------
+Established:
+  - exact sync and async generated requestThumbnails signatures and bodies;
+  - exact vtable placement and this-adjustment thunks;
+  - exact AppMediaPlayer scan-event signal/slot chain;
+  - exact VideoPlaybackModel-to-controller thumbnailChanged connection and slot
+    body;
+  - no direct requestThumbnails dispatch in those reviewed application bodies.
+
+Not established:
+  - absence of every possible virtual, callback, QML, metadata, or generated
+    dispatch elsewhere in AppMediaPlayer;
+  - an authentic UI/post-index caller of requestThumbnails;
+  - runtime D-Bus delivery to the thumbnail service;
+  - libgstasf selection or a natural thumbnail-service crash.
+
+The correct conclusion remains that requestThumbnails capability is compiled in,
+but automatic invocation by insertion, indexing, or the reviewed thumbnail
+property update is not proven.
