@@ -55,6 +55,23 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## Security checkpoint — 2026-11-01
 
+- **V-015 added — strongest static adjacent-network memory-safety candidate:**
+  the recovered RPM Btree identifies `connman-1.29+5w.master.38-r1`, and exact
+  shipped instructions confirm CVE-2026-115863 rather than relying on that
+  version. `connmand+0x1f150` performs the fixed 1,025-byte DOMAIN_LIST copy and
+  unbounded DNS-label cursor/store; exact option-24 dispatch and the connected-
+  network RA Managed/Other path are present. The information-request routine
+  explicitly requests option 24. The installed service defaults to uid 0,
+  intends non-excluded `wlan0`, and restarts on failure. A valid reply still
+  needs live transaction/client/server/state agreement. PIE, NX stack, canary,
+  and full RELRO are present. No packet, crash, RCE, root transition, or
+  installed-device reachability is claimed. See
+  `evidence/connman-cve-2026-115863.md`.
+- Added `tools/uk_fw/rpm_nvra_inventory.py`, a strict read-only parser for
+  printable Berkeley DB dumps. A compatible project-local Berkeley DB 18.1.40
+  dump of the exact `Nvra` index produced 1,679 records; the dump and complete
+  inventory remain under ignored `work/`. Package metadata is identity/triage
+  evidence, not a vulnerability verdict.
 - **V-014 added — strongest static physical root path; benign synthetic activation confirmed:** exact shipped
   `v4l_id` and `scsi_id` instructions contain CVE-2026-40225's pre-fix direct
   property prints. Installed rules import both helpers, tag block devices for
@@ -128,11 +145,14 @@ followed by stateful service/CAN/persistence reconstruction.
   `Start` nor `libgstasf` in the thumbnail process. This is not automatic USB/UI
   reachability or a thumbnail crash.
 - Next security work: preserve V-014's remaining physical-helper/port/VT gates
-  for a disconnected bench rather than starting the root shell; identify an
-  authentic caller of V-012 `requestThumbnails` or playback after indexing and
-  repair the VM-only thumbnail service-registration boundary; analyze
-  allocation/lifetime behavior without developing a payload. Keep physical bench
-  tests non-destructive until recovery and service restart behavior are validated.
+  for a disconnected bench rather than starting the root shell. For V-015, keep
+  the current VM NIC-free and defer even benign RA/DHCPv6 controls until the
+  disconnected bench can record the installed binary, interface/IPv6 state, and
+  restart/recovery behavior. Continue identifying an authentic caller of V-012
+  `requestThumbnails` or playback after indexing and repair the VM-only thumbnail
+  service-registration boundary; analyze allocation/lifetime behavior without
+  developing a payload. Keep physical bench tests non-destructive until recovery
+  and service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 

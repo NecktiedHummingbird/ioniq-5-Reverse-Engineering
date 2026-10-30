@@ -1884,3 +1884,22 @@ and are superseded by corrections rather than silently rewritten.
   experiments could have circled for hours, and it retired an option that looked cheap.
 - The boundary is now precise: the system runs, its interfaces are live, and the only thing missing is
   a device that can present pixels. That is a well-posed problem rather than a vague one.
+
+## 2026-11-01 — exact package recovery exposes a conditional DHCPv6 parser path
+
+- Recovered the firmware's RPM package inventory from its Berkeley DB rather than
+  inferring component age from strings. The preserved index contains 1,679
+  records, including the exact vendor ConnMan package identity.
+- Version matching produced a lead, not a conclusion. Exact `connmand`
+  instructions then confirmed CVE-2026-115863's fixed-size DOMAIN_LIST copy,
+  unbounded label walk/store, and option-24 dispatch.
+- The main reachability question narrowed from generic Wi-Fi speculation to a
+  specific conditional path: a connected ConnMan network accepts RA flag state,
+  starts the DHCPv6 information request, and asks for the affected option. Live
+  transaction and client/server identifiers remain required.
+- The service is configured for uid 0, but the binary also carries PIE, NX stack,
+  a stack canary, and full RELRO. No traffic was generated and no process was
+  crashed. The result is a static adjacent-network candidate, not root access.
+- Added deterministic dump tooling and kept the database, source, downloads,
+  disassembly, and decompiler output in ignored `work/`. Physical and dynamic
+  validation remains deferred until a disconnected bench exists.

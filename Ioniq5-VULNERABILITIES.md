@@ -6,7 +6,7 @@ Updated: 2026-11-01. Internal defensive research; no disclosure or vendor contac
 
 Target: official European Gen5W **Linux** `NE_E.EUR.S5W_L.001.001.260128`, vendor kernel `4.1.27-abl`. The owner's installed head-unit build is unknown. No physical or network head-unit access is available. VM observations do not establish hardware exploitability.
 
-This is a backfill from existing research, **not a new vulnerability discovery pass**. Entries distinguish verified behavior, static observations, unvalidated candidates, rejected hypotheses, and modification-created hazards. No numeric severity is assigned without reachability and impact evidence. Never infer missing security fixes from the kernel version alone. See `evidence/corrections-log.md` before relying on historical reports.
+This register began as a backfill and now also records continuing exact-build review. Entries distinguish verified behavior, static observations, unvalidated candidates, rejected hypotheses, and modification-created hazards. No numeric severity is assigned without reachability and impact evidence. Never infer missing security fixes from a package or kernel version alone. See `evidence/corrections-log.md` before relying on historical reports.
 
 **Validation status of the 2026-10-28 advisor report.** The three claims supplied as a third-party summary were tested offline against the recovered rootfs on 2026-10-28. None was accepted as stated:
 
@@ -256,6 +256,16 @@ bring-up defect. That question is open.
 - **Impact boundary:** a VM-only synthetic add event and benign transient unit request were demonstrated. No malicious USB device, hardware-controlled helper output, physical port, installed shell-unit request, observed root transition, interactive command, persistence, network path, CAN access, or safety impact was demonstrated. The V4L route also depends on choosing a useful existing executable and was not validated dynamically.
 - **Remediation:** backport both upstream control-character validation fixes; remove `debug-shell.service` from production rather than merely leaving it disabled; allowlist hardware-originated `SYSTEMD_WANTS`; remove generic `REMOVE_CMD` execution; disable unnecessary V4L/SCSI/USB classes.
 - **Evidence:** `evidence/systemd-udev-cve-2026-40225.md`; reviewed excerpts under `evidence/artifacts/udev-candidates/`.
+
+## V-015 — ConnMan DHCPv6 DOMAIN_LIST stack overwrite (EXACT PRE-FIX CODE; CONDITIONAL ON-LINK ROUTE STATICALLY CONFIRMED)
+
+- **Status:** the exact shipped `connmand` contains CVE-2026-115863's affected `get_domains` implementation, exact DHCPv6 option-24 dispatch, and the conditional Router Advertisement Managed/Other path that starts DHCPv6 on a connected managed network. No packet was sent, no dynamic crash occurred, and code execution/root access are not claimed.
+- **Component:** `/usr/sbin/connmand`, SHA-256 `d82d4018bfa9d8f8d67407453bd783a3c896f6764f147dcf23cf06b978024c28`; recovered package-index record `connman-1.29+5w.master.38-r1.corei7_64`. The installed unit has no `User=` directive, so it uses the uid-0 system-service default, and has `Restart=on-failure`.
+- **Mechanism:** `connmand+0x1f150` calls `strncpy` with fixed length `0x401`, then replaces each DNS-label byte with `'.'` and advances by that byte plus one without comparing the cursor to the option or local-buffer end. The caller beginning at `+0x1f211` tests bit 24 (`0x1000000`) and dispatches DOMAIN_LIST data to this function.
+- **Static route:** the exact callback at `+0x574e0` requires a connected network, then routes RA Managed and Other flags to stateful DHCPv6 (`+0x856f0`) or information-request (`+0x855a0`). The latter's routine at `+0x84770` explicitly registers option 24. The service excludes many interfaces but not intended `wlan0`. A reply must still match the live transaction ID, CLIENTID/DUID, SERVERID, message type, and state.
+- **Mitigations/impact boundary:** the exact ELF is PIE with a non-executable stack, stack canaries, and full RELRO. Those protections constrain straightforward execution but do not prevent the parser's out-of-bounds accesses. At present, a conditional root-daemon crash is the defensible impact; no stable disclosure/write primitive, instruction-pointer control, shell, persistence, or safety impact was demonstrated. Production Wi-Fi/IPv6 state and the owner's installed build remain unknown.
+- **Remediation:** replace the parser with a strictly length-aware DNS-label decoder; reject cursor/label/expanded-name overflow and missing termination; update ConnMan when the upstream fix is available; disable unneeded DHCPv6; reduce daemon privilege; retain restart-rate and crash diagnostics.
+- **Evidence:** `evidence/connman-cve-2026-115863.md`; reviewed excerpt `evidence/artifacts/network-candidates/connman-cve-2026-115863-static-evidence.txt`; deterministic RPM dump parser `tools/uk_fw/rpm_nvra_inventory.py`.
 
 ## Rejected / out-of-scope items
 

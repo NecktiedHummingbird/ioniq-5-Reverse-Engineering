@@ -88,6 +88,32 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   came from re-reading an existing run rather than from new work. Recorded plainly rather than presented
   as progress by delegation.
 
+## 1.20.0 - Recover exact package inventory and confirm the ConnMan DHCPv6 candidate
+
+- Recovered 1,679 exact installed-package records from the RPM Berkeley DB
+  `Nvra` index using a read-only project-local Berkeley DB 18.1.40 `db_dump`.
+  Added `tools/uk_fw/rpm_nvra_inventory.py` and focused tests for strict,
+  deterministic parsing of printable dump records, exact package selection,
+  symlink rejection, malformed-input failure, and atomic output replacement.
+- Identified `connman-1.29+5w.master.38-r1.corei7_64`, then confirmed
+  CVE-2026-115863 from exact shipped instructions rather than the version label.
+  `connmand+0x1f150` makes the fixed 1,025-byte DOMAIN_LIST copy and performs the
+  unbounded label-pointer `'.'` stores; option-24 dispatch calls it directly.
+- Mapped the exact conditional route: the connected-network RA callback handles
+  Managed/Other flags, the Other path starts a DHCPv6 information request, and
+  that routine explicitly requests option 24. The installed uid-0 service does
+  not exclude intended `wlan0` and uses `Restart=on-failure`.
+- Recorded trigger gates and mitigations: a reply still must match live DHCPv6
+  transaction/client/server/state checks, while the ELF has PIE, NX stack,
+  stack canaries, and full RELRO. No packet was sent and no crash, RCE, root
+  access, or physical-device applicability is claimed.
+- Kept the full database dump, source, disassembly, decompiler output, and online
+  responses under ignored `work/`; tracked only the parser, tests, conservative
+  report, and sanitized evidence excerpt.
+- Fable remained unavailable for native delegation, and the previously checked
+  DeepSeek Flash route remained rejected by the native dispatcher; no silent
+  substitute or failed worker output was used.
+
 ## 1.19.0 - Confirm synthetic udev activation and map the thumbnail ASF route
 
 - Added `tools/uk_fw/udev_systemd_probe.py` and focused tests for matched

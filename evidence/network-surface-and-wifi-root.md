@@ -1,9 +1,10 @@
 # Wi-Fi network surface and remote-root feasibility
 
-Status: research plan for the owner's Gen5W AVN on an isolated bench network.
-Scope is a single owned unit. No vehicle is connected. This document records
-what a network route to root would require; it is not an exploit and contains no
-payload, credential attack, or procedure against a third-party network.
+Status: offline exact-build review plus a future isolated-bench plan for the
+owner's Gen5W AVN. Scope is a single owned unit. No vehicle is connected. This
+document records what a network route to root would require; it is not an exploit
+and contains no payload, credential attack, or procedure against a third-party
+network.
 
 ## Why network root is a separate path
 
@@ -90,13 +91,45 @@ From `evidence/eu-custom-firmware-feasibility.md` and
 - the update trust chain is asymmetric and kernel-side, so a network route does
   **not** by itself permit custom firmware — it permits a shell.
 
+## Exact offline candidate: ConnMan CVE-2026-115863
+
+The recovered RPM Btree identifies
+`connman-1.29+5w.master.38-r1.corei7_64`, and exact binary analysis—not that
+version label—confirms CVE-2026-115863's affected DHCPv6 DOMAIN_LIST parser.
+`connmand+0x1f150` copies a fixed 1,025 bytes into a local stack area, then walks
+DNS labels and writes `'.'` without checking the cursor against the local-buffer
+end. Exact option dispatch calls it for DHCPv6 option 24.
+
+The static activation path is also present. On a connected ConnMan-managed
+network, the exact Router Advertisement callback routes Managed/Other flags to
+stateful DHCPv6 or an information request. The information-request routine
+explicitly asks for option 24. The installed service defaults to uid 0 and does
+not exclude the intended `wlan0` interface. A reply must nevertheless match the
+live transaction ID, client/server identifiers, message type, and client state.
+
+No packet was sent. Production Wi-Fi association, interface ownership, IPv6
+policy, RA acceptance, and DHCPv6 reachability remain unknown. The binary has
+PIE, a non-executable stack, stack canaries, and full RELRO; a conditional daemon
+crash is the only currently defensible impact. Do not call this Wi-Fi-to-root.
+See `evidence/connman-cve-2026-115863.md`.
+
+The package database also identifies older network components, including
+`wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
+`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are triage leads,
+not findings: exact file identity, vendor backports, installed activation, and
+runtime listeners still control applicability. ConnMan's installed
+`--nodnsproxy` argument, for example, removes the older DNS-proxy listener route.
+
 ## What I need from you to make this concrete
 
 1. Is the unit's Wi-Fi in AP/hotspot mode, client mode, or dealer mode?
 2. The IP the unit hands out or receives, and the subnet.
-3. Output of `net_surface.py --target <ip> --authorised`.
-4. Whether any dealer/engineering Wi-Fi menu is reachable on the unit UI.
-5. The installed build shown on the version screen.
+3. Output of `net_surface.py --target <ip> --authorised` only after an isolated,
+   owner-controlled bench network is available.
+4. Passive interface/IPv6/ConnMan state and benign RA/DHCPv6 capture before any
+   malformed input is considered.
+5. Whether any dealer/engineering Wi-Fi menu is reachable on the unit UI.
+6. The installed build and, if acquired read-only, the installed `connmand` hash.
 
 ## Safety
 

@@ -36,7 +36,27 @@ unknown installed firmware.
   No head-unit event, root transition, or physical console access was observed.
 - Evidence: `evidence/systemd-udev-cve-2026-40225.md`.
 
-### 2. USB storage via AppNavi replacement — published but installation-gated
+### 2. ConnMan DHCPv6 DOMAIN_LIST overwrite — strongest static adjacent-network candidate
+
+- Exact RPM metadata identifies `connman-1.29+5w.master.38-r1`, but the finding
+  does not rely on that version. Exact shipped instructions at `connmand+0x1f150`
+  implement CVE-2026-115863's fixed 1,025-byte copy and unbounded DNS-label
+  cursor/store; option-24 dispatch is exact at `+0x1f211`.
+- Exact control flow also closes the main static activation question: on a
+  connected managed network, RA Managed/Other flags reach stateful DHCPv6 or
+  information-request startup, and the information path explicitly requests
+  DOMAIN_LIST option 24.
+- The installed service defaults to uid 0 and does not exclude intended `wlan0`.
+  A reply must still match live transaction, client/server identity, message
+  type, and state. Production IPv6/interface state and physical on-link delivery
+  are unknown.
+- PIE, NX stack, stack canary, full RELRO, and `Restart=on-failure` constrain the
+  practical result. No packet, crash, controlled execution, or root transition
+  has been demonstrated. Treat this as a disconnected-bench validation target,
+  not network-to-root.
+- Evidence: `evidence/connman-cve-2026-115863.md`.
+
+### 3. USB storage via AppNavi replacement — published but installation-gated
 
 - Mechanism: `navi_extended` replaces `AppNavi`; on launch it runs
   `main_loop.sh` from the root of an exFAT USB.
@@ -49,24 +69,22 @@ unknown installed firmware.
 - Unknown: whether `260128` still accepts the replacement, and whether the SOP
   gate can be cleared without already having execution.
 
-### 3. Wi-Fi remote — component CVEs, version-gated
+### 4. Other Wi-Fi/network daemon candidates — exact identity now available, reachability still gated
 
-No public Wi-Fi-to-root exists for Gen5W_L. The realistic classes are old
-daemons whose exact versions are encrypted. Survey totals (2015–2020):
-dnsmasq 15, hostapd 26, wpa_supplicant 30, dropbear 12, BusyBox 24, miniupnpd 9,
-OpenSSL 95.
+The recovered RPM Btree contains 1,679 records and identifies, among others,
+`wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
+`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are inventory leads,
+not vulnerability findings. Exact file hashes, vendor backports, service
+arguments, listeners, and packet routes must still be checked. For example,
+ConnMan runs with `--nodnsproxy`, which removes older DNS-proxy CVE routes even
+though the affected code may exist in the package.
 
-| Candidate | Component | Type | Reachable when |
-|---|---|---|---|
-| CVE-2017-14491 | dnsmasq | heap overflow, DNS response | unit runs DHCP/DNS in AP mode |
-| CVE-2017-14493 | dnsmasq | stack overflow, DHCPv6 | same |
-| CVE-2016-2148 | BusyBox `udhcpc` | heap overflow, OPTION_6RD | unit joins a hostile AP as client |
-| CVE-2015-1863 | wpa_supplicant | heap overflow, SSID in P2P frames | radio range |
-| CVE-2016-6309 | OpenSSL 1.1.0 | TLS state-machine UAF | any TLS listener |
+`tools/uk_fw/rpm_nvra_inventory.py` deterministically parses preserved
+`db_dump -p` output. `tools/uk_fw/net_surface.py` remains the physical-bench
+listener and banner capture tool. No public end-to-end Wi-Fi-to-root for this
+Gen5W_L build has been established.
 
-Triage requires version strings; `tools/uk_fw/net_surface.py` captures them.
-
-### 4. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
+### 5. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
 
 Kernel config enables `USB_F_IAP2`, `USB_U_IAP2`, `USB_G_SERIAL`,
 `GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules and the
@@ -76,7 +94,7 @@ finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 5. Kernel — analysed; conditional post-execution candidates remain
+### 6. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -107,7 +125,7 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.
 
-### 6. MICOM / CAN — post-exploitation
+### 7. MICOM / CAN — post-exploitation
 
 `micom_*` (24 symbols) includes a user-writable sysfs handler
 (`micom_sys_spidump_store`). CVE-2020-8539 (`micomd`) is a **local** issue:
@@ -131,18 +149,22 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    display/input gates for a disconnected bench with a benign marker—not the
    installed shell unit. Parser and synthetic udevd-to-systemd semantics are
    complete; do not describe them as physical-device reproduction.
-2. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
+2. For V-015, preserve the current NIC-free VM. On a disconnected bench, first
+   record installed `connmand`, interface ownership, IPv6 state, and benign
+   RA/DHCPv6 behavior. Do not move to a malformed control unless restart and
+   recovery are proven, and do not develop a privilege payload.
+3. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
    explicit `requestThumbnails(as)`, and repair the bounded VM thumbnail
    service-name/delivery boundary. Exact static code maps that request to
    `VideoContext → uridecodebin → eligible asfdemux`, while LightMediaScanner
    startup indexing uses a separate non-GStreamer ASF plugin. Manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
    or RCE is established.
-3. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
+4. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
-4. Measure production interface features before treating CVE-2017-1000112 as a
+5. Measure production interface features before treating CVE-2017-1000112 as a
    reachable path; keep the current VM NIC-free.
-5. If physical bench access later becomes available, capture UART and installed
+6. If physical bench access later becomes available, capture UART and installed
    version state before any write or engineering-mode experiment.
 
 ## Sources
