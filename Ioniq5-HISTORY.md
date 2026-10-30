@@ -2189,3 +2189,15 @@ and are superseded by corrections rather than silently rewritten.
   composer's job. A plain client is mapped automatically; a vendor client waiting to be placed is not.
 - The useful shift is that the failure is now in vendor application logic — shared boot state and surface
   placement — rather than anywhere in the emulation we built.
+
+## 2026-10-31 — the compositor was never drawing
+
+- Instrumenting the repaint path answered the question in one run. There were no repaints at all, which
+  makes the black frame not a rendering bug, not a capture bug and not a mapping-of-our-surface bug: the
+  compositor simply had nothing to draw because no surface was ever placed.
+- The cause is a missing file rather than missing code on our side. The layout engine that would position
+  surfaces lives in the OEM partition, and it is absent from the firmware image entirely — the directory
+  exists and is empty, which is the shape of a mount point rather than a packaging mistake.
+- What this means for the goal is worth stating: every piece of emulation built over this session is
+  working. The remaining gap is one vendor plugin that was never in the package we have, and a research
+  shim can stand in for it.

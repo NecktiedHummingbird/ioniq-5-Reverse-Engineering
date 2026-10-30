@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.24.0 - the compositor never repaints, so nothing is ever drawn
+
+- Instrumented the backend's repaint path to log view count and dump the framebuffer. Result with a
+  client committing surfaces for 18 s: **zero repaint calls**, and therefore zero dumps. Westen itself
+  runs and our module loads (`Loading module '/usr/lib/weston/ias-backend-soft.so'`, capabilities
+  printed), so this is not a load failure.
+- That is the actual explanation of the black frame, and it supersedes the earlier mapping hypothesis with
+  something stronger: the compositor is doing no work because **nothing is ever mapped into an output
+  view**. No views means no damage, no damage means no repaint, and a capture reads a zeroed buffer.
+- The missing piece is now identified at source: **`/usr/lib/ias/` is empty and `grid_layout.so` is not in
+  the firmware at all**. `ias.conf` references it as `defer="1"`, `opt/ias/` is an empty OEM mount point
+  (`bin` and `lib` present and empty), and searching the entire decrypted tree finds no IAS plugin
+  binaries. The shell has no layout engine and no composer, so committed surfaces are never placed.
+- Root cause chain, complete: no IAS layout plugin to place surfaces -> no views -> no damage -> no repaint
+  -> zeroed capture. Every layer we built (backend, CRTC, ias_crtc, capture, EGL) is working and none of
+  them is the fault.
+- Next step is therefore well defined and small in scope: either implement a minimal IAS layout plugin
+  against the ABI in `ias_plugin_framework.so`, or, for the research build only, have our backend place
+  incoming surfaces itself so the scene can be seen. The second is far cheaper and is honest about being a
+  research shim rather than vendor behaviour.
+
 ## 1.23.0 - the home screen runs; the capture is still black, with a named hypothesis
 
 - With a system bus and `micommanager_userspace` running, `AppHomeScreen` **stays alive** (alive at 22 s,

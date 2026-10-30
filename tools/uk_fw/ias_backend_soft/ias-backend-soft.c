@@ -30,6 +30,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "shared/helpers.h"
 #include "compositor.h"
@@ -87,8 +88,34 @@ headless_output_repaint(struct weston_output *output_base,
 {
 	struct headless_output *output = (struct headless_output *) output_base;
 	struct weston_compositor *ec = output->base.compositor;
+	static int repaint_count;
+	static int last_views = -1;
+	int views = wl_list_length(&ec->view_list);
+
+	/* Diagnostic: distinguish "nothing to draw" from "drawn but not captured". */
+	if (views != last_views || repaint_count < 5) {
+		last_views = views;
+		weston_log("ias-soft: repaint views=%d layers=%d\n", views,
+			   wl_list_length(&ec->layer_list));
+	}
+	repaint_count++;
 
 	ec->renderer->repaint_output(&output->base, damage);
+
+	/* Diagnostic: dump the backend framebuffer so the scene can be inspected even
+	 * when the shell provides no screenshooter. */
+	if (output->image_buf && repaint_count < 3) {
+		static char path[64];
+		snprintf(path, sizeof path, "/tmp/fb-%d.raw", repaint_count);
+		FILE *f = fopen(path, "wb");
+		if (f) {
+			size_t n = (size_t) output->base.current_mode->width *
+				   output->base.current_mode->height * 4;
+			fwrite(output->image_buf, 1, n, f);
+			fclose(f);
+			weston_log("ias-soft: dumped %s (%zu bytes)\n", path, n);
+		}
+	}
 
 	pixman_region32_subtract(&ec->primary_plane.damage,
 				 &ec->primary_plane.damage, damage);
