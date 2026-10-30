@@ -1446,3 +1446,22 @@ and are superseded by corrections rather than silently rewritten.
   rewritten to an underscore. The corrected form has no spaces.
 - Caveats were recorded about module autoloading, the device-add timing relative to the automount
   service, and the fact that an open shell blocks the automounter.
+
+## 2026-10-29 — USB test plumbing added, disk exhaustion blocks further runs
+
+- Added an opt-in extra-device argument to the VM harness so research runs can attach additional
+  QEMU devices, keeping flag and value pairs together and rejecting multi-line arguments, with two
+  tests covering it.
+- The reason is that QEMU's usb-serial model accepts a serial property that sets iSerialNumber on a
+  vendor-class device, so the serial-injection path could be exercised without any hardware. The
+  first attempt reached QEMU and failed for an environmental reason: the q35 machine in this
+  configuration exposes no USB bus, so a controller must be added and the kernel USB modules loaded.
+- The volume then proved to be completely full, with roughly five hundred megabytes free. The vendor
+  workspace contains seventy per-experiment pre-run image backups totalling 2.4 terabytes apparent,
+  which is what consumed the space. Deleting my own derived workspaces reclaimed only thirty-three
+  megabytes because they were copy-on-write clones.
+- One suite test now fails with no space left on device; that is the disk rather than the change, and
+  the VM command tests pass in isolation.
+- The backups were deliberately not deleted. They are pre-existing work from earlier sessions and
+  pruning them is the owner's decision, with the recommendation being to retain the canonical image
+  and a few checkpoints and archive the remainder externally.

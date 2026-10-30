@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.01.0 - USB test plumbing added; disk-full blocker recorded
+
+- Added an opt-in `extra_devices` argument to `tools/uk_fw/vm_boot.py` so a research run can
+  attach extra QEMU devices, with `-flag value` pairs kept together and multi-line arguments
+  rejected. Two tests cover it and pass.
+- Purpose: QEMU's `usb-serial` accepts a `serial=` property, which sets `iSerialNumber` on a
+  vendor-class device. That means the V-006 serial-injection path can be exercised **without any
+  hardware**, which was the open question.
+- First attempt reached QEMU and failed correctly but for an environmental reason: `q35` in this
+  configuration exposes **no USB bus**, so the device cannot attach. Booting with a USB controller
+  plus loading the kernel's USB modules (`usb`, `xhci_pci`, `usbserial`) is the next step, and the
+  image carries `usbserial.ko` and `cdc-acm.ko`.
+- **Disk blocker recorded:** the volume is at 100% with ~500 MB free. `work/vm/vendor-userspace-260128`
+  holds **70 `rootfs-pre-*.img` per-experiment backups, 2.4 TB apparent**, which is what consumed the
+  disk. Removing my own derived workspaces freed only 33 MB because they were APFS clones sharing
+  blocks.
+- The full suite currently fails one test (`test_fat_harness`) with `No space left on device`; that is
+  the disk, not the change. `test_vm_boot` passes 24/24 in isolation.
+- **Not deleted:** those 70 backups are pre-existing work from earlier sessions and pruning them is
+  the owner's decision. Recommended: keep the canonical `rootfs.img` (SHA-256 `4953a005…6d036f`) and
+  a small number of retained checkpoints, archive the rest externally, since each is a full copy of
+  the same base image taken before one experiment.
+
 ## 1.00.0 - live ESP design: interactive root over USB, not a blind one-shot
 
 - Reworked the USB plan now that the owner can reprogram the ESP while it is plugged in. That

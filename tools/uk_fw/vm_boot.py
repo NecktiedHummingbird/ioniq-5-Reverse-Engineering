@@ -299,17 +299,36 @@ def qemu_command(workspace: Path, qemu: str, compat: bool,
                  display: str = "none", qmp: bool = False,
                  cpu: str = VM_CPU_CHOICES[0],
                  micom_serial: bool = False,
-                 memory_mib: int = 1024) -> list[str]:
+                 memory_mib: int = 1024,
+                 extra_devices: list[str] | None = None) -> list[str]:
     if display not in ("none", "cocoa"):
         raise ValueError("supported display backends: none, cocoa")
     if cpu not in VM_CPU_CHOICES:
         raise ValueError("unsupported VM CPU feature profile")
     if memory_mib < 256 or memory_mib > 8192:
         raise ValueError("VM memory must be between 256 and 8192 MiB")
+    for device in extra_devices or []:
+        # Research-only USB models, e.g. usb-serial with a crafted iSerialNumber.
+        if not device or "\n" in device:
+            raise ValueError("invalid extra device argument")
     command = [qemu, "-machine", "q35", "-accel", "tcg", "-cpu", cpu,
                "-m", str(memory_mib), "-smp", "2", "-nic", "none",
                "-vga", "none", "-device", "VGA,id=display0,addr=01.0",
                "-kernel", str(workspace / "bzImage")]
+    extra = list(extra_devices or [])
+    index = 0
+    while index < len(extra):
+        entry = extra[index]
+        if entry.startswith("-"):
+            # A flag such as -chardev consumes the following entry as its value.
+            command.append(entry)
+            index += 1
+            if index < len(extra):
+                command.append(extra[index])
+                index += 1
+        else:
+            command += ["-device", entry]
+            index += 1
     for name, address in (("manifest.bin", "0x20000000"), ("seed_dev.bin", "0x21000000"),
                           ("seed_user.bin", "0x21000040")):
         command += ["-device", f"loader,file={workspace / name},addr={address}"]
@@ -358,7 +377,8 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
         interactive: bool = False, display: str = "none",
         graphics_smoke: bool = False,
         cpu: str = VM_CPU_CHOICES[0], micom_serial: bool = False,
-        memory_mib: int = 1024) -> int:
+        memory_mib: int = 1024,
+        extra_devices: list[str] | None = None) -> int:
     workspace = project_output(workspace)
     verify_workspace(workspace)
     qemu = shutil.which("qemu-system-x86_64")
@@ -375,7 +395,7 @@ def run(workspace: Path, compat: bool, command: str, timeout: float,
     run_dir = workspace / "runs" / f"{time.time_ns()}"
     run_dir.mkdir(parents=True)
     argv = qemu_command(workspace, qemu, compat, display, graphics_smoke, cpu,
-                        micom_serial, memory_mib)
+                        micom_serial, memory_mib, extra_devices)
     (run_dir / "command.json").write_text(json.dumps(argv, indent=2) + "\n")
     print(f"Run artifacts: {run_dir}", flush=True)
     token = uuid.uuid4().hex

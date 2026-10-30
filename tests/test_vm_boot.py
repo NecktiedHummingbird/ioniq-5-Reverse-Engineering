@@ -180,6 +180,23 @@ class CommandTests(unittest.TestCase):
         self.assertIn("isa-serial,chardev=micom,index=1", cmd)
         self.assertEqual(cmd[cmd.index("-nic") + 1], "none")
 
+    def test_extra_devices_keep_flags_and_values_together(self):
+        """Research USB models: flags consume their value, other entries are -device."""
+        cmd = VM.qemu_command(
+            VM.PROJECT / "work/vm/example", "qemu", False,
+            extra_devices=["-chardev", "null,id=usbs0",
+                           "usb-serial,chardev=usbs0,serial=;id>/dev/kmsg;#"])
+        self.assertEqual(cmd[cmd.index("-chardev") + 1], "null,id=usbs0")
+        self.assertIn("usb-serial,chardev=usbs0,serial=;id>/dev/kmsg;#", cmd)
+        # The serial string must remain a single argv entry, not be split.
+        for entry in cmd:
+            self.assertNotIn("\n", entry)
+
+    def test_extra_devices_reject_multiline_arguments(self):
+        with self.assertRaisesRegex(ValueError, "invalid extra device"):
+            VM.qemu_command(VM.PROJECT / "work/vm/example", "qemu", False,
+                            extra_devices=["usb-serial,serial=a\nb"])
+
     def test_micom_capture_drains_until_nonblocking_boundary(self):
         class SerialSocket:
             def __init__(self):
