@@ -1903,3 +1903,39 @@ and are superseded by corrections rather than silently rewritten.
 - Added deterministic dump tooling and kept the database, source, downloads,
   disassembly, and decompiler output in ignored `work/`. Physical and dynamic
   validation remains deferred until a disconnected bench exists.
+
+## 2026-11-01 — exact fortification changes an old ConnMan overflow into an abort
+
+- Followed the same package lead into CVE-2023-28488, but stopped at exact code.
+  The shipped DHCPv4 receiver does retain the upstream pre-fix mistake: it checks
+  the real read length for 28 header bytes, replaces that count with untrusted
+  `ip.tot_len`, and subtracts 28 without checking the replacement again.
+- Normal IPv4 acquisition does reach the affected L2 callback. The exact client
+  start enters `INIT_SELECTING`; mode 1 opens and binds an `AF_PACKET` datagram
+  listener and registers the reviewed receive function.
+- The compiler materially changes the consequence. The copy is
+  `__memcpy_chk(..., 0x274)`, and every selected checked-copy implementation in
+  the recovered libc branches to `__chk_fail` before an underflowed size can
+  write the stack object. This exact build therefore supports conditional daemon
+  termination, not the generic stack-overflow/RCE claim.
+- A packet-free model partitioned all possible 16-bit total lengths and read
+  lengths up to the exact 656-byte cap. No socket, frame, target execution, or
+  NIC-enabled VM was used. V-016 records the availability boundary and leaves
+  production interface state and the owner's installed build for a disconnected
+  bench.
+
+## 2026-10-29 — the control protocol, read out of the binary
+
+- The IAS interface had been inferred from wrandr's help text. It is now read directly: five methods and
+  four events on ias_crtc, one method on ias_mode, with signatures. The interesting part is how well
+  they line up with wrandr — brightness, contrast, gamma, mode and transparency all present — which
+  confirms the tool is the intended driver of this protocol rather than something adjacent to it.
+- Getting there took a correction. The first parse produced nonsense because a pointer into the data
+  section coincided with a relocation entry; resolving vaddr to file offset through the program headers
+  fixed it. Worth remembering that a plausible-looking struct at the wrong address is still wrong.
+- The slice is now specified before any code exists, including how it will be refuted: a CRTC in
+  wrandr's listing, a successful enable, and a 1920x720 output seen by weston-info. Writing the
+  falsification first is cheaper than discovering afterwards that a backend "ran" without proving
+  anything.
+- The blocker is unglamorous and immediate: pixman headers are absent, so the first build decision is
+  where that small amount of header surface comes from.

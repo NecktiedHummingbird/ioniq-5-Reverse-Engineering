@@ -3,6 +3,30 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.15.0 - IAS protocol extracted; soft-backend slice scoped
+
+- The IAS control protocol is now known exactly, extracted from `ias-backend.so`'s `.data` by parsing
+  `struct wl_interface` at the exported symbol addresses (`0x220f40`, `0x221060`) with a proper
+  vaddr-to-file-offset mapping through PT_LOAD.
+- **`ias_crtc` v1**: methods `set_mode(u)`, `set_gamma(uuu)`, `set_contrast(uuu)`, `set_brightness(uuu)`,
+  `set_fb_transparency(u)`; events `mode(uuuu)`, `gamma(uuu)`, `contrast(uuu)`, `brightness(uuu)`.
+  **`ias_mode` v1**: one method, `add()`. This maps one-to-one onto `wrandr`'s documented options, which
+  confirms the tool drives exactly this interface and is not an unrelated shim.
+- Backend ABI confirmed for this build: the entrypoint is **`backend_init`**, not
+  `weston_backend_init`, with signature
+  `WL_EXPORT int backend_init(struct weston_compositor *, int *argc, char *argv[])`
+  (`compositor-headless.c:260`), loaded via `dlsym` at `compositor.c:4995`.
+- First slice scoped (`evidence/vm-bringup/ias-backend-soft-scope.md`): derive from
+  `compositor-headless.c`, rename the output `HDMI1` at 1920x720 so the vendor `ias.conf` stays
+  unmodified, and publish the two interface tables so `wrandr` can enumerate and enable a CRTC.
+- **Immediate blocker, stated plainly: there are no pixman headers.** The image ships
+  `libpixman-1.so.0.42.2` as a runtime only, and `compositor-headless.c` includes `pixman.h`. The build
+  therefore needs either the pixman 0.42.2 headers or a hand-written declaration of the small
+  `pixman_image_*` / `pixman_region_*` surface the renderer uses. The bundled zig 0.13.0 handles the
+  `x86_64-linux-gnu` cross build.
+- Falsification defined before any code is written: `wrandr` must list a CRTC, `wrandr --crtc=0
+  --enable=true` must succeed, and `weston-info` must report a 1920x720 `HDMI1` output.
+
 ## 1.14.0 - ias_shell is live on the compositor; scanout is closed off by the kernel config
 
 - The vendor compositor now exposes its own IAS interface and an output. `wrandr` enumerates the
@@ -87,6 +111,28 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Both workers dispatched for this round returned no result and wrote nothing to disk; the finding above
   came from re-reading an existing run rather than from new work. Recorded plainly rather than presented
   as progress by delegation.
+
+## 1.21.0 - Constrain ConnMan CVE-2023-28488 to the exact fortified outcome
+
+- Confirmed CVE-2023-28488's pre-fix IPv4 total-length ordering in exact
+  `connmand` instructions rather than inferring from the recovered package
+  version.
+- Mapped ordinary IPv4 startup through `INIT_SELECTING`, listening mode 1, an
+  `AF_PACKET` datagram socket, and the affected GLib receive callback.
+- Established that this exact build calls `__memcpy_chk` with a 628-byte object
+  size. Every recovered libc checked-copy implementation reviewed reaches
+  `__chk_fail`/`__fortify_fail` before copying an underflowed length.
+- Added a packet-free exhaustive arithmetic model and tests. All 43,057,152
+  combinations of possible 0..656-byte reads and 16-bit IP total lengths divide
+  into short/partial rejects, 17,612 fortified abort cases, and 198,135 bounded
+  copies; the model opens no socket and creates no packet bytes.
+- Recorded V-016 as a conditional adjacent-network ConnMan availability issue,
+  not a stack overwrite, RCE, or root path for recovered `260128`. No packet was
+  generated, the NIC-free VM was unchanged, and the owner's installed build
+  remains unknown.
+- Preserved official responses, decoded upstream fix, full source/disassembly,
+  Ghidra records, and generated JSON under ignored `work/`; tracked only the
+  model, tests, report, planning checkpoint, and sanitized evidence excerpt.
 
 ## 1.20.0 - Recover exact package inventory and confirm the ConnMan DHCPv6 candidate
 
