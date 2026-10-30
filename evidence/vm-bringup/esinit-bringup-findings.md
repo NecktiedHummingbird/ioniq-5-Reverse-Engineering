@@ -271,3 +271,102 @@ systemd-side: the missing eMMC partitions and the emergency-mode fallback, not t
 | `work/vm/esinit-nolge/` | CoW clone + one `modprobe.d` override; `prepare.json` records the change |
 | `work/vm/esinit-nolge/runs/1793337936219669000/` | authentic `init=/lib/systemd/esinit` boot that reaches `systemd[1]`, then `emergency.target` |
 | `work/vm/esinit-nolge/runs/1793338415885041000/` | `/tmp` listing proving `/tmp/{passwd,fstab,weston.ini}` and `spi_validation_NOK` |
+
+## 10. Blocker cleared (2026-10-30, third pass): `local-fs.target` and multi-user are reached
+
+Workspace `work/vm/esinit-fs/` (CoW `cp -c` clone of `esinit-nolge`, canonical image untouched:
+`work/vm/vendor-userspace-260128/rootfs.img` still `4953a005…66d036f`, re-checked after all runs).
+Two image edits, both `debugfs`; clone is `e780513c…6a9fb19` (recorded in its `prepare.json`).
+
+### 10.1 Why `check-mount.sh` gives "Permission denied" — a missing exec bit, nothing else
+
+`/bin/check-mount.sh` is inode 45312 with `Mode: 0644` in the image, and the vendor tarball agrees
+(`tar tvzf …/mango-rootfs.tar.gz | grep check-mount` → `-rw-r--r-- 0 root root 717 … ./bin/check-mount.sh`).
+Guest evidence, `runs/1793342303291237000/serial.log`:
+
+```
+-rw-r--r-- 1 501 dialout 717 Oct 25  2026 /bin/check-mount.sh
+sh: /bin/check-mount.sh: Permission denied
+direct_exec_rc=126
+via_sh_rc=0                      <- /bin/sh /bin/check-mount.sh works
+#!/bin/sh                        <- interpreter present (head -1)
+after_chmod_rc=0                 <- same file after chmod 755
+```
+
+So: exec bit missing (execve → EACCES, shell reports 126, systemd 203/EXEC). Not a missing
+interpreter, not SMACK/seccomp (running it through `/bin/sh` succeeds, and the script itself only
+touches `/tmp`). Fixed with `sif <45312> mode 0100755`. Consequence: `check-mount.service` is a
+`local-fs.target` *Want*, so it never gated the boot — its product `/tmp/check_mount` (consumed at
+least by `/app/bin/AppStandbyClock`) simply did not exist.
+
+### 10.2 Why `systemd-remount-fs` exits 64 — util-linux `mount -a` "some mount succeeded"
+
+`/bin/mount` is util-linux (`/bin/mount -> /bin/mount.util-linux`), whose exit code 64 means "some
+mounts succeeded, some failed". The unit's `ExecStartPre=/bin/mount -a` hits the 11
+`/dev/mmcblk0pN` entries, mounts the `tmpfs /media` entry and fails the rest → 64. The helper itself
+is innocent: on the research shell with `mount -a` already done, `/lib/systemd/systemd-remount-fs`
+returns `remountfs_rc=0`, and it needs no `/` entry (`readlink /etc/fstab` → `/tmp/fstab` →
+`/etc/fstab_emmc`).
+
+### 10.3 Cheapest way to satisfy fstab: self-bind mounts, no invented block devices
+
+Inventing `/dev/mmcblk0pN` nodes was rejected: the projection has one ext4 filesystem as the whole
+card, so a node would point at nothing unless a real partition table (offset 0 → breaks
+`root=/dev/mmcblk0`) or a loop device were fabricated. Instead each vendor mount point becomes a
+bind of its own directory — the same filesystem, no new assumptions, and the vendor flags survive
+(`ro` for vr/navi/navi2/space). `/etc/fstab_emmc` (2017 bytes, mode 0644, 501:20) now reads, in
+place of the 11 `pN` lines:
+
+```
+/vr                  /vr                  none       bind,ro,noatime       0  0
+/log_data            /log_data            none       bind,noatime          0  0
+… (update, voicememo, rw_data, Data/mnt-c, Data/mnt-wt, Data/mnt-backup)
+/navi  /navi  none bind,ro,noatime 0 0     /navi2  /navi2  none bind,ro,noatime 0 0
+/space /space none bind,ro,noatime 0 0
+```
+
+`tmpfs /media`, `tmpfs /var/volatile` and `smackfs /sys/fs/smackfs` are unchanged.
+
+Validation in the research shell (`runs/1793342303291237000`): `mounta_rc=0`, `remountfs_rc=0`, and
+`cat /proc/mounts` shows `/dev/root on /vr ext4 ro,noatime`, `/dev/root on /navi ext4 ro,…` etc.,
+with `checkmount_rc=0` (`/tmp/check_mount` empty = all 11 paths mounted).
+
+### 10.4 Result: `local-fs.target` and multi-user reached (`runs/1793342357856236000`)
+
+```
+[   12.400213] systemd[1]: Reached target Local File Systems.
+[   20.795211] systemd[1]: dbus-com.lge.car.micom.service: Failed with result 'exit-code'.
+[   57.352168] systemd[1]: Reached target Multi-User System.
+[   57.440293] systemd[1]: Startup finished in 10.584s (kernel) + 46.855s (userspace) = 57.440s.
+```
+
+No `emergency.target`, no `dev-mmcblk0p*.device` timeout, no `status=64`, no `203/EXEC` anywhere in
+the log. The guest then idles in multi-user for the remaining ~240 s (last line at 294 s is
+`TimeManager.service` restarting); `dlt-daemon` is actively logging to `/log_data/kernel/*.dlt`
+(SMACK `granted` audit lines at 292 s), which also proves the `/log_data` mount is usable.
+`result.json`: `"timeout": true` only because systemd never exits.
+
+### 10.5 Which HMI-relevant units were attempted, and their first failure
+
+| Unit | Attempted? | First failure / result (verbatim) |
+|---|---|---|
+| `Dbuslaunch` | yes | **succeeded** — `[16.677436] Started HKMC Preminum AVN 2.1 -Launcher.` (same Description as ApplicationLauncher; this one is Dbuslaunch, which runs `/app/bin/Dbuslaunch.sh`) |
+| `micommanager` (`dbus-com.lge.car.micom.service`) | yes | `[20.760943] … Main process exited, code=exited, status=1/FAILURE`, then `Failed to start System service for micommanager.` (retried at 31.139, same). Standalone repro `runs/1793342816106664000`: `/app/bin/micommanager_userspace` → `mm_rc=1` after ~10 s with nothing on stderr (it logs through `/dev/kmsg`/DLT only, and `/tmp/dlt` FIFO is absent). |
+| `ApplicationLauncher` | **no** | `[20.767497] Dependency failed for HKMC Preminum AVN 2.1 -Launcher.` / `Job ApplicationLauncher.service/start failed with result 'dependency'.` — it is `Requires=dbus-com.lge.car.micom.service`, so its `ExecStart=/app/bin/AppLauncher.sh` never ran. |
+| `nua` | yes | `[23.926864] nua.service: Main process exited, code=exited, status=1/FAILURE` ×5 → `[25.393155] Start request repeated too quickly.` … `Failed with result 'start-limit'.` Standalone repro `runs/1793342710177338000`: `/app/bin/NaviUpdateApp` → `error: XDG_RUNTIME_DIR not set in the environment.` then `Failed to create display (No such file or directory)` — it needs a live Wayland compositor. |
+| `weston` | **no** | There is no `weston.service` unit in the image at all (only `weston-crash.path`/`.service`, `PathExists=/tmp/weston.crash`). `Started Weston Process Crash Monitoring` (20.869) is just that path unit arming. esinit still takes the `SPI NOK` branch, so `/usr/bin/weston --tty=1` is still never executed. |
+| `micom` | **no** | No `micom.service` file exists in the image; `Dbuslaunch.service`'s `After=micom.service` dangles (harmless ordering only). |
+
+Remaining blocker for the HMI stack: `dbus-com.lge.car.micom.service` exits 1 in this VM (its only
+output channel is kmsg/DLT, so systemd records no reason), and `ApplicationLauncher` is hard-`Requires`
+on it. Second order: nothing starts `weston`, so `nua`/`AppLauncher` have no Wayland display.
+
+### 10.6 Evidence index (third pass)
+
+| Path | Content |
+|---|---|
+| `work/vm/esinit-fs/` | CoW clone; `prepare.json` lists the fstab rewrite + `check-mount.sh` 0644→0755 |
+| `work/vm/esinit-fs/runs/1793342303291237000/` | research shell: `mount -a` 0, `systemd-remount-fs` 0, per-path mounts, `check-mount.sh` 0 |
+| `work/vm/esinit-fs/runs/1793342357856236000/` | authentic `init=/lib/systemd/esinit`: `Reached target Local File Systems`, `Reached target Multi-User System`, startup 57.44 s |
+| `work/vm/esinit-fs/runs/1793342710177338000/` | standalone `micommanager_userspace`, `NaviUpdateApp`, `Dbuslaunch.sh`/`AppLauncher.sh`/`weston-crash.path` contents |
+| `work/vm/esinit-fs/runs/1793342816106664000/` | standalone `micommanager_userspace` → `mm_rc=1`, no stderr |

@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.09.0 - normal multi-user reached; the blockers are now the two known ones
+
+- **`Reached target Multi-User System`**, startup 10.6 s kernel plus 46.9 s userspace, no emergency
+  mode, `dlt-daemon` writing to `/log_data/kernel/*.dlt`. The authentic vendor boot now completes.
+- Two ordinary defects were in the way rather than anything architectural. `/bin/check-mount.sh` ships
+  **`0644`** — no execute bit — in both the image and the vendor tarball, so a required mount check
+  simply could not run (`direct_exec_rc=126`, `via_sh_rc=0`). And `systemd-remount-fs`'s
+  `ExecStartPre=/bin/mount -a` exited 64, which is util-linux's "some mounts succeeded", because
+  eleven fstab lines wanted `/dev/mmcblk0pN` partitions the projection does not have.
+- Fix applied on a CoW clone: `chmod 0755` on the check script, and the eleven partition lines replaced
+  with self-binds of the same filesystem (`/navi /navi none bind,ro,noatime` and so on), which invents
+  no block devices. Canonical image still hashes `4953a005…66d036f`.
+- `Dbuslaunch` now succeeds: `Started HKMC Preminum AVN 2.1 -Launcher`.
+- What remains is exactly the pair already identified, now with hard evidence:
+  - `micommanager_userspace` exits 1, logging only to kmsg/DLT, and `ApplicationLauncher` carries a
+    hard `Requires=` on it, so the launcher dies by dependency.
+  - Nothing starts a Wayland compositor. **There is no `weston.service` at all** — only
+    `weston-crash.path` — so weston is launched solely by esinit's own branch, which the `SPI NOK`
+    marker still skips. Consequently `nua` fails with `XDG_RUNTIME_DIR not set` and
+    `Failed to create display`.
+- `micom` is not a unit either; `Dbuslaunch`'s `After=micom.service` dangles harmlessly.
+
 ## 1.08.0 - systemd runs for the first time; USB nodev defect found
 
 - **PID 1 is now systemd.** `systemd 225 running in system mode`, hostname `prm-gen-5`, with

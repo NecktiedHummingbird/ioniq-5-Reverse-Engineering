@@ -1605,3 +1605,18 @@ and are superseded by corrections rather than silently rewritten.
   `tntfs`/`texfat`; FAT/exFAT cannot natively store POSIX device inodes, Tuxera's NTFS special-file
   semantics are untested, and a local process must still open the node. V-011 remains a hardening
   defect and post-execution candidate, not a proven first-step USB root path.
+
+## 2026-10-29 — the vendor system boots
+
+- Multi-user, first time. The two things holding it back were both trivial to look at and easy to miss:
+  a mount check script shipped without an execute bit, and a partition layout the projection did not
+  provide. After those, systemd did what systemd does, and the log reads like an ordinary embedded
+  boot rather than a research harness.
+- Worth recording what this changes. Until now every service failure had a plausible excuse, the
+  harness had not prepared the ground. That excuse is gone. What fails now fails for its own reasons,
+  on a system that booted the way the vendor intended.
+- The two survivors are the ones the analysis predicted: no MICOM daemon, and no compositor. Both are
+  now specific engineering tasks with named files rather than open questions.
+- The `Requires=` on `micommanager` is worth noting as a design observation: the launcher cannot come
+  up without the vehicle interface daemon, so the simulator is not a nice-to-have for the HMI path, it
+  is the gate.
