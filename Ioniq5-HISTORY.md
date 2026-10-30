@@ -2140,3 +2140,18 @@ and are superseded by corrections rather than silently rewritten.
 - The honest position is that the display architecture is done and the applications are not. That
   distinction — compositor complete, client software broken — is a much better place to be than it
   sounds, because the remaining fault is in one Qt process rather than in the plumbing.
+
+## 2026-10-31 — one missing library, and the UI stops dying
+
+- The Qt crash that looked like a vendor bug was an environment failure. There is no software rasteriser
+  in this image at all, only Intel drivers, so EGL could never initialise and the application fell over
+  afterwards. Supplying the rasteriser removed both symptoms at once.
+- What made the difference was reading the log line before the crash rather than the crash itself. The
+  fatal message was two lines earlier and completely unambiguous: failed to open swrast. The segfault was
+  downstream noise, and chasing it directly would have been chasing the wrong thing for a long time.
+- The app now runs and asks for its database. That is a far better class of problem: it is asking for
+  data this projection never provided, which is a matter of populating a partition rather than diagnosing
+  a crash.
+- Worth noting the materials were already in the repository from earlier work on software EGL. The answer
+  was sitting in work/software-egl the whole time, which is an argument for keeping these extractions
+  around.

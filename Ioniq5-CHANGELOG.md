@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.22.0 - software rasteriser fixes EGL, and the Qt segfault disappears
+
+- **The `AppHomeScreen` segfault was a symptom of failed EGL, not a QML bug.** With a software
+  rasteriser available the log no longer says `DRI2: failed to open swrast` or
+  `failed to initialize EGL display`, and the process **keeps running** (killed by the harness timeout at
+  SIGTERM, not by SIGSEGV). It now gets as far as opening its database.
+- The image ships **no software rasteriser at all**: `usr/lib/dri` contains only `i965_dri.so` and
+  `iu3d9_drv_video.so`, and `usr/lib/mesadri` only `i915_dri.so` and `i965_dri.so`. Every GL path requires
+  an Intel GPU that emulation does not provide, which is why EGL could never initialise here.
+- Fixed with assets the project already had: the Debian stretch `swrast_dri.so` plus `libLLVM-3.9.so.1`,
+  `libsensors.so.4`, `libedit.so.2` and `libbsd.so.0` from `work/software-egl/`, injected into the clone at
+  `usr/lib/dri/` and `usr/lib/`, with `LIBGL_DRIVERS_PATH=/usr/lib/dri`,
+  `MESA_LOADER_DRIVER_OVERRIDE=swrast` and `GALLIUM_DRIVER=llvmpipe`.
+- Progress after the fix, from the guest log: `Using Wayland-EGL`, `initTimers`,
+  `AppHomeModel::openDBConnection() … true`, then `createLayoutDBTable() … commit Fail` and
+  `getLayoutVersion() … TABLE IS NOT EXIST`.
+- So the next blocker is mundane and specific: the app wants its layout database, which lives on a data
+  partition this projection does not populate. That matches the gap analysis's ranked item for the
+  `/Data` resource table and theme assets.
+- The corrected reading of the earlier black frame: the compositor, backend, CRTC and capture are all
+  fine, and the client stack was failing at EGL before it could ever commit a surface.
+
 ## 1.21.0 - frame capture built; the HMI frame is black, and why
 
 - The capture path works. `ias-shot` binds `weston_screenshooter`, takes a 1920x720 `ARGB8888` shm
