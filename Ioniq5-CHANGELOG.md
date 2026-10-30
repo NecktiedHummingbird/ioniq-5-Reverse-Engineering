@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.04.0 - the mount service runs in the VM, and a passwd symlink surfaces
+
+- `usb-automount` now stays alive in the emulated userspace and owns `com.lge.car.automount` on the
+  system bus. Twelve polls over sixty seconds all saw a live process in state `S`, and `ListNames`
+  confirms the name is owned. The mount request surface is therefore live in the VM for the first
+  time, which is the precondition for any V-006 work.
+- The blocker was not a D-Bus policy problem but a missing password database: `/etc/passwd` in this
+  image is a symlink to `/tmp/passwd`, and that target does not exist in a fresh boot, so the daemon
+  cannot resolve `root` or its own `messagebus` user and refuses to start. Writing the two entries to
+  `/tmp/passwd` is enough, which also shows how the vendor intends this to work: init populates it.
+- Control run to establish causality rather than assume it: with the daemon up but the password file
+  absent, `usb-automount` still dies in about three seconds with the original assertion. So the
+  password database, not the bus policy, was the missing piece.
+- Harness notes carried forward: backgrounding a guest daemon without `</dev/null` wedges the serial
+  shell silently until timeout, and the host's default `python3` is broken for spawning, so runs must
+  use `python3.13`.
+- New register entry V-009 for the `/etc/passwd` to `/tmp/passwd` symlink. Recorded as a candidate:
+  the runtime permission and ownership of `/tmp` on a real unit are unverified here, and without them
+  the impact cannot be stated.
+
 ## 1.03.0 - USB injection harness enumerates; V-006 reproduction path corrected
 
 - The three earlier USB attempts failed for one reason each, now identified. `-chardev null` prevents

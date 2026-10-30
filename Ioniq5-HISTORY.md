@@ -1496,3 +1496,19 @@ and are superseded by corrections rather than silently rewritten.
   harness rather than of the guest.
 - Practical consequence: reproducing V-006 needs an emulated MTP device with a crafted serial, plus a
   running system bus so the service stays alive long enough to act.
+
+## 2026-10-29 — the mount service is alive, and the reason it never was
+
+- Delegated the D-Bus question and got an answer with a control behind it rather than an assertion.
+  The daemon was not blocked by policy; it was blocked by a password database that does not exist at
+  boot, because `/etc/passwd` is a symlink into volatile storage. Supplying the two required entries
+  lets the system bus come up, and `usb-automount` then holds `com.lge.car.automount` indefinitely.
+- The control run is the part worth keeping. With the bus up and the password file absent the client
+  still died in three seconds, which isolates the password database as the cause instead of leaving
+  two plausible explanations stacked on top of each other.
+- This changes the shape of the work. The mount request surface is now reachable in the VM, so the
+  remaining V-006 question is about the MTP branch's processing of the serial string, not about
+  getting a service to run at all.
+- The symlink is interesting on its own account and went into the register as a candidate rather than
+  a finding. What matters is the permission and ownership of `/tmp` on real hardware, which this
+  environment cannot establish.

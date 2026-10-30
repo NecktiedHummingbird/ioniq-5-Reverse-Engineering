@@ -135,6 +135,32 @@ class for this entry in any case; the MTP branch requires an MTP device. Evidenc
 - **Remediation:** identify the real production boot caller and the active account database first. Disable the serial getty by default in production. Replace the inverted temporary-file gate with an explicit authenticated service-mode decision that defaults to disabled on error or missing state, and do not rely solely on deleting a device node. Remove `ttyS2` root-login permission and lock direct root login where unnecessary, using controlled and auditable maintenance access instead. Remove unused authorized-key material and ensure future SSH enablement cannot silently trust it.
 - **Acceptance:** no root login on a production serial line; maintenance access remains auditable; enabling the console requires an explicit authenticated decision that cannot be reached by creating a file; no dormant key material ships.
 
+## V-009 — Password database lives at a volatile, world-facing path (CANDIDATE, unverified)
+
+`/etc/passwd` in `NE_E.EUR.S5W_L.001.001.260128` is a **symlink to `/tmp/passwd`**, confirmed by
+inspecting the recovered rootfs; `/etc/group` is a normal file. A fresh boot therefore has no user
+database at all until init populates it, which is observable: `dbus-daemon --system` refuses to start
+with `Could not get password database information for UID of current process: User "???" unknown`,
+and `usb-automount` dies three seconds later as a consequence.
+
+Two distinct concerns, neither demonstrated:
+
+1. **Availability / fail-open reasoning.** Every NSS consumer in the system depends on a file in
+   volatile storage being created correctly before it is needed. Anything that reads the user database
+   earlier than init's population step sees no users, and services fail in ways their authors did not
+   intend.
+2. **Potential integrity of authorization inputs.** If `/tmp` is world-writable at runtime on a real
+   unit, as is conventional, then an unprivileged process that wins the race to create `/tmp/passwd`
+   supplies the user and group database that NSS subsequently answers from. That would let a local
+   attacker define or alter identity records consulted by authorization checks, including the
+   `messagebus` account this very service relies on.
+
+**Status: candidate.** Not verified: the runtime mode and ownership of `/tmp` on hardware, whether
+init recreates the file with restrictive ownership, whether any consumer caches the database before
+init runs, and whether a local unprivileged context is reachable at all. Stated as a design hazard
+worth checking on real hardware, not as an exploit. Evidence: `work/vm/vendor-userspace-260128/
+dbus-automount-findings.md` and the `dbus-automount-probe.py` driver.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).
