@@ -1,2 +1,5 @@
 headless-probe.so
 *.so
+ias-shot
+ias-shot
+*.ppm

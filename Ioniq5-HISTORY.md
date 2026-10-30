@@ -2125,3 +2125,18 @@ and are superseded by corrections rather than silently rewritten.
   Worth the extra look, because a blind find-and-replace would have corrupted a correct statement.
 - The build products are the quiet risk: they embed the host path in their string tables, and they are
   ignored rather than tracked. That is now noted so nobody "helpfully" commits one.
+
+## 2026-10-31 — we can see the screen now, and it is empty
+
+- The screenshot pipeline works, and I checked it the only way that means anything: a known client
+  renders a known pattern and the capture shows it exactly. With that control in place, a black frame
+  from the vendor stack is information rather than a broken tool.
+- The reason is not mysterious once measured. The apps start, one makes a surface and never commits it,
+  another dies inside Qt's QML engine, and the launcher brings up its manager but no UI. The compositor is
+  doing its job on an empty scene.
+- A pitfall found on the way: the backend's default renderer cannot read pixels back. Without the
+  software renderer flag every capture is black regardless of content, which would have sent this
+  investigation in entirely the wrong direction. The flag is now recorded as mandatory.
+- The honest position is that the display architecture is done and the applications are not. That
+  distinction — compositor complete, client software broken — is a much better place to be than it
+  sounds, because the remaining fault is in one Qt process rather than in the plumbing.

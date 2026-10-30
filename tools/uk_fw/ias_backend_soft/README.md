@@ -158,3 +158,25 @@ resolves its own location and works from any checkout:
 
 Do not reintroduce absolute host paths when adding debug scripts. Build products (`*.so`) are gitignored
 and must stay untracked: they embed the build path in their string tables.
+
+## `ias-shot` — guest-side frame capture over `weston_screenshooter`
+
+`ias-shot.c` is a small wayland client for the guest: it binds `wl_compositor`, `wl_shm`, the first
+`wl_output` and `weston_screenshooter`, creates one 1920x720 `WL_SHM_FORMAT_ARGB8888` buffer, sends
+`shoot`, waits for `done`, and writes the result as binary PPM (`P6`, RGB) to `/tmp/shot.ppm`. PPM
+because neither side then needs an image library; `tools/uk_fw/ppm_to_png.py` converts it host-side.
+
+Build with `build-shot.sh` (same conventions as `build.sh`: bundled zig, `-target
+x86_64-linux-gnu.2.25`, no host wayland development tree). Two details make it link:
+
+- `wayland-client-protocol.h`, `weston-screenshooter-client-protocol.h` and
+  `weston-screenshooter-protocol.c` were generated **in the guest** by the image's own
+  `/usr/bin/wayland-scanner` from `/usr/share/wayland/wayland.xml` and weston's
+  `protocol/weston-screenshooter.xml`, then extracted losslessly (see
+  `evidence/vm-bringup/first-hmi-frame.md`). The `code` output is needed as well as the client
+  header: the `weston_screenshooter_interface` table is not in libwayland-client.
+- `libwayland-client` is linked from the guest's own `/usr/lib/libwayland-client.so.0.3.0`, dumped
+  out of `work/vm/softbackend/rootfs.img`, so symbol versions match the image (glibc 2.25).
+
+Run it under weston with `--use-pixman`: the backend's default renderer is weston's noop renderer,
+whose `read_pixels` does nothing, so the buffer would come back zeroed regardless of the scene.
