@@ -56,8 +56,13 @@ Phase 2 result:
 - installed `debug-shell.service` is configured to start `/bin/sh` as root on
   `/dev/tty9` when its path condition passes;
 - recorded as V-014, a high-confidence static malicious-device-to-root-console
-  path, without claiming a physical event, observed root transition, or owner-
-  vehicle applicability;
+  path;
+- a separate bounded offline VM control confirmed `/dev/tty9` exists as
+  `root:root` mode `0600`, character device `4:9`, under the vendor
+  kernel/userspace and research init; it did not inject a property, start the
+  service, or change privilege;
+- no physical event, observed root transition, or owner-vehicle applicability is
+  claimed;
 - PID 1/pkg-config report systemd `225`, while embedded build paths say
   `systemd/1_249.3-r0`; the finding rests on exact pre-fix instructions, not a
   version inference.
@@ -66,7 +71,8 @@ Tracked reports:
 
 - `evidence/privilege-surface-static-audit.md`;
 - `evidence/systemd-udev-cve-2026-40225.md`;
-- `evidence/artifacts/udev-candidates/cve-2026-40225-static-evidence.txt`.
+- `evidence/artifacts/udev-candidates/cve-2026-40225-static-evidence.txt`;
+- `evidence/artifacts/udev-candidates/cve-2026-40225-tty9-vm-evidence.txt`.
 
 Final validation:
 

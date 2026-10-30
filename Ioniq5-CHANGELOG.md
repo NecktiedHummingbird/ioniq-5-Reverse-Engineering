@@ -22,9 +22,13 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   yields a high-confidence static malicious-SCSI-device-to-root-console path
   without requiring an attacker-
   written unit file.
-- Preserved the runtime boundary: no malicious hardware, authentic injected
-  udev event, physical service activation, VT9 interaction, root command, or
-  installed-head-unit applicability was demonstrated.
+- Closed one narrow runtime condition safely: an offline VM control confirmed
+  `/dev/tty9` exists as `root:root` mode `0600`, character device `4:9`, under
+  the recovered vendor kernel/userspace and research init. It did not start the
+  service or inject a property.
+- Preserved the remaining runtime boundary: no malicious hardware, authentic
+  injected udev event, systemd service activation, VT9 interaction, root
+  command, or installed-head-unit applicability was demonstrated.
 - Recorded mixed component provenance rather than trusting one banner: PID 1
   and pkg-config report `225`, while embedded build paths say
   `systemd/1_249.3-r0`. Exact binary instructions and installed rules—not either

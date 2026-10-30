@@ -115,7 +115,9 @@ if that device exists. The upstream SCSI route can inject `SYSTEMD_WANTS` and
 therefore request this existing unit.
 
 This is now the strongest **static** physical-device root path, but it is not a
-bench reproduction. Do not test it by starting the root-shell unit. If a future
+bench reproduction. An offline VM control found `/dev/tty9` as character device
+`4:9`; it did not start the service or test interactivity. Do not test the path
+by starting the root-shell unit. If a future
 disconnected bench validation is authorized and recovery is proven, use a
 benign marker unit and inert property observation to test only whether the
 production helper output is split into an additional property. Stop before

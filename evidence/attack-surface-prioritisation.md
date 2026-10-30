@@ -25,9 +25,11 @@ unknown installed firmware.
   SCSI route can inject `SYSTEMD_WANTS`, so no new unit file is required.
 - This is independent of V-006's blocked shell interpolation: it uses different
   helpers and property boundaries, not sanitized `usb_id` `ID_SERIAL_SHORT`.
-- Gate: malicious supported hardware plus authentic hotplug behavior and a
-  practical production VT9/display/input route. No head-unit event, root
-  transition, or physical console access has been observed.
+- A bounded offline VM control confirmed `/dev/tty9` exists as character device
+  `4:9` under the vendor kernel/userspace and research init; it did not start the
+  service. Remaining gates are malicious supported hardware, authentic hotplug
+  and systemd activation, and a practical production VT9/display/input route.
+  No head-unit event, root transition, or physical console access was observed.
 - Evidence: `evidence/systemd-udev-cve-2026-40225.md`.
 
 ### 2. USB storage via AppNavi replacement — published but installation-gated

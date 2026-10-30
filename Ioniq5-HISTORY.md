@@ -1758,10 +1758,15 @@ and are superseded by corrections rather than silently rewritten.
 - Version evidence is intentionally not simplified. The PID 1 banner/pkg-config
   say `225`; embedded OpenEmbedded paths say `systemd/1_249.3-r0`. The finding
   rests on exact instructions and installed rules, not either version label.
+- A bounded offline VM control then closed only the unit's path condition:
+  `/dev/tty9` existed as `root:root` mode `0600`, character device `4:9`, under
+  the recovered vendor kernel/userspace and research init. The service was not
+  started and no udev property was injected.
 - This became V-014, the strongest static physical root path in recovered EU
   `260128`. It is not a head-unit reproduction: no malicious device, injected
-  authentic udev event, VT9 interaction, root command, persistence, or
-  applicability to the owner's unknown installed firmware was demonstrated.
+  authentic udev event, systemd unit request, VT9 interaction, root command,
+  persistence, or applicability to the owner's unknown installed firmware was
+  demonstrated.
 - V-006 remains rejected as originally claimed. Its `usb_id`
   `ID_SERIAL_SHORT` allowlist does not protect the separate `v4l_id`/`scsi_id`
   line-oriented property boundary, so the two findings are not contradictory.

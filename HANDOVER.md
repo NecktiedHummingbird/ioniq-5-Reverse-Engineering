@@ -61,9 +61,12 @@ followed by stateful service/CAN/persistence reconstruction.
   systemd, and retain generic `REMOVE_CMD` execution. The image also ships
   `debug-shell.service`, configured to start `/bin/sh` as root on `/dev/tty9`
   when `ConditionPathExists=/dev/tty9` passes; the upstream SCSI route can
-  inject `SYSTEMD_WANTS` to request that existing unit.
-  No malicious-device event, physical root transition, VT9 interaction, or
-  applicability to the owner's unknown installed build is claimed. PID 1's
+  inject `SYSTEMD_WANTS` to request that existing unit. A bounded offline VM
+  control confirmed `/dev/tty9` exists as `root:root` mode `0600`, character
+  device `4:9`, under the vendor kernel/userspace and research init; it did not
+  start the service. No malicious-device event, physical root transition, VT9
+  interaction, or applicability to the owner's unknown installed build is
+  claimed. PID 1's
   banner reports `225`, while embedded build paths say `1_249.3-r0`; exact
   instructions, not either version string, establish pre-fix code. See
   `evidence/systemd-udev-cve-2026-40225.md`.
