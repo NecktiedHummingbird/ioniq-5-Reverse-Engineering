@@ -3,6 +3,55 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.30.0 - the segment publisher is conditional on MICOM data
+
+- Swept every candidate sequentially in one boot. `AppDMClient`, `NotificationManager` and
+  `AppEngineerMode` create **zero** `qipc` segments in this environment. Only `ApplicationManager` creates
+  any, and it still does not create `/Ihu` or `/Inform`.
+- Every binary in the image referencing those keys is in `app/bin`: `UserProfileManager`, `MOFManager`,
+  `AppEngineerMode`, `AppDMClient`, `ApplicationManager`, `NotificationManager` (the rest are `.mp4` assets).
+  So the publisher is in that set, and the only member that creates segments at all is
+  `ApplicationManager`.
+- The consistent reading: `ApplicationManager` publishes `/Ihu` **conditionally, once it has vehicle state**,
+  and that state comes from the MICOM link. Our MICOM peer is passive — it accepts 103 frames and answers
+  none — so the condition is never met.
+- That closes the loop the session opened with: the MICOM contract was needed not only for the boot-info
+  asks but because the UI's shared-memory publication depends on it. The chain is
+  MICOM replies -> ApplicationManager publishes `/Ihu` -> widgets attach -> buffers attached -> pixels.
+- **Next engineering step is therefore concrete and self-contained:** implement a MICOM responder that
+  answers the empirically observed ids with valid XOR frames and plausible boot info, run it as the
+  `/dev/ttyS1` peer, and re-test. The framing, the id table and the reply rule (request id with bit 15 set)
+  are all already measured and written down.
+
+## 1.30.0 - pre-auth USB update parser defect and exact SCOMO staging
+
+- Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new
+  USB method selects the last matching `S5W_SYSTEM_*_*_*.zip`, extracts only
+  `AppUpgrade` and `.lge.upgrade.xml`, verifies both through
+  `/app/share/AppUpgrade/teruten5_pub.key`, decrypts AppUpgrade through
+  CryptoService or the old `DecryptToPIPE` route, copies the authenticated XML,
+  checks ELF magic/executable status, and requests app ID 300.
+- Established exact ordering: archive decompression precedes both member
+  verification calls. The normal bare `unzip` provider is recovered BusyBox
+  SHA-256 `6e123e7f...11348`; its exact banner says 1.35.0 despite a conflicting
+  1.23.2 package record.
+- Added V-020. Exact BusyBox instructions accept ZIP method 12 and reach the
+  bundled BZIP2 decoder. `runCnt` accumulation at `0x489929` lacks the
+  signed-negative check added by upstream commit
+  `14f6b6b580a4c5a64029ea77ef4dbeca7ebdfd8f`; the wrapped bound, count update,
+  sign extension, and allocation-relative write remain at
+  `0x48993f..0x489946`, `0x48995c`, and `0x489a39`.
+- Added `tools/uk_fw/busybox_bunzip2_bounds_model.py` and focused tests. The tool
+  models numeric states only and cannot generate an archive, compressed stream,
+  command, packet, or payload.
+- Kept the residual condition separate from CVE-2017-15873 and found no separate
+  public CVE assignment. No target ran; no trigger archive, crash, controlled
+  write, RCE, root transition, signature bypass, package acceptance, or
+  physical-unit result was produced.
+- Added `evidence/busybox-bunzip2-usb-update.md` and updated the updater trust
+  matrix, exploit inventory, vulnerability register, priorities, checkpoints,
+  and handover.
+
 ## 1.29.0 - shared-memory publishers identified, but not the one that matters
 
 - The segment keys the UI waits on are now known from strings: `/Can`, `/Ihu`, `/Inform`,

@@ -2281,3 +2281,30 @@ and are superseded by corrections rather than silently rewritten.
   something less obvious.
 - The state of the whole investigation is now cleanly summarised: every layer from firmware to compositor
   works, the UI runs, and it refuses to draw because one piece of vehicle state it reads is absent.
+
+## 2026-11-01 — authentication was after the parser
+
+- The missing owner of the SCOMO USB staging step is now exact. AppScomoDM chooses the system ZIP, asks an
+  external extractor for two members, authenticates both extracted files, decrypts AppUpgrade, and then asks
+  AppLauncher to run app ID 300. The XML is authenticated and copied, not decrypted, on this path.
+- That ordering exposed a separate boundary: the archive parser sees removable-media bytes before the public-
+  key decision. The intended `unzip` is BusyBox, and its exact instructions accept BZIP2 method 12 while
+  retaining the unsigned run-count wrap repaired upstream only in October 2026.
+- The package database would have sent the review in the wrong direction: it says BusyBox 1.23.2, while the
+  exact executable says 1.35.0 and contains the latter code shape. The binary, not the label, decides the
+  finding.
+- V-020 is deliberately static. No compressed stream or update archive was built and no target ran. Exact
+  arithmetic and control flow show the conditional pre-allocation write; they do not show a crash, controlled
+  execution, root, signature bypass, accepted update, or physical-unit applicability.
+- A numeric-only model records the old and fixed guards without encoding target input. This preserves the
+  useful proof while keeping trigger material and active update behavior outside the repository.
+
+## 2026-10-31 — the trail leads back to the MICOM
+
+- The shared-memory hunt ended where it started. No manager creates the vehicle interface segments on its
+  own, and the only one that creates anything publishes conditionally on state it can only get from the
+  vehicle link.
+- That is a satisfying closure of the session's main thread: the MICOM contract, labourisly measured early
+  on, turns out to gate not just the boot-info asks but the entire UI's ability to draw.
+- The remaining work is now a single, well-specified component that answers frames we have already recorded,
+  rather than an open question about missing state.
