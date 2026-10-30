@@ -1404,3 +1404,24 @@ and are superseded by corrections rather than silently rewritten.
 - The consequence recorded is that input has to be simulated at the touch layer, which the GUI
   accepts, rather than by presenting a mouse or keyboard. A short VM experiment with the existing
   input helpers would confirm this at runtime.
+
+## 2026-10-29 — USB root test plan written, private
+
+- Wrote a lab procedure for the owner's own head unit covering the three USB vectors worth
+  testing. It is held privately because it contains an exploit payload; the public mirror keeps
+  the status-only V-006 entry.
+- The serial-injection payloads were validated at the shell level against the exact command the
+  firmware builds, and checked against both real filters: the 126-character descriptor limit,
+  the 0x20 to 0x7f charset, the comma rejection and the whitespace rewriting.
+- The useful two-stage result is a credential overwrite: /etc/shadow is a symlink into /tmp, so
+  a root command writing the shipped field layout with an empty hash, combined with securetty
+  already permitting root on ttyS2, gives an interactive root login over the serial console. The
+  change lives in tmpfs and is cleared by a reboot.
+- A drafting error was corrected before committing: the first payload used passwd field order
+  against the shadow file. The shipped line is now mirrored exactly.
+- Hardware guidance was recorded. An ESP32-S3 running TinyUSB is the right tool because the
+  trigger requires an arbitrary interface class of 06/01/01 or ff/ff/00, which stock Pi Zero
+  gadget functions cannot present. USB Ethernet is supported by the kernel but useless alone
+  since the image has neither a DHCP client nor a remote-login daemon.
+- The recommended first step is to pass the device through to QEMU so the real automounter,
+  udev and payload path are exercised before the vehicle is involved.

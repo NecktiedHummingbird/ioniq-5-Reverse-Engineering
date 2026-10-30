@@ -3,6 +3,30 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 0.99.0 - USB root test plan written (private)
+
+- Wrote `evidence/usb-root-test-plan.md`, a lab procedure for the owner's own unit, kept
+  **private**: it contains an exploit payload and the public mirror carries only the
+  status-only V-006 entry.
+- Vector A (V-006 serial injection) is validated at the shell level against the exact
+  command the firmware builds. Two payloads checked against both real filters (126-character
+  limit, `0x20`–`0x7f` minus comma, no whitespace): a 15-character proof of execution writing
+  to `/dev/kmsg`, and a 49-character credential overwrite.
+- The useful payload targets `/etc/shadow`, which is a symlink to `/tmp/shadow`, using the
+  shipped field layout with an empty hash. Combined with `/etc/securetty` already permitting
+  root on `ttyS2`, that yields an interactive root login on the serial console. Because `/tmp`
+  is tmpfs the change is cleared by a reboot.
+- Corrected my own first draft, which wrote `passwd` field order into a `shadow` file; the real
+  `shadow.Global` line is `root:…:20481:0:99999:7:::` and the payload now matches it.
+- Hardware recommendation recorded: **ESP32-S3 with TinyUSB**, because the trigger needs an
+  arbitrary interface class (`06/01/01` or `ff/ff/00`). A Pi Zero in gadget mode cannot present
+  either class from stock configfs functions, all of which are `02/06/00`, `02/02/01` or
+  `08/06/50`.
+- Vector C (USB Ethernet) recorded as supported but useless alone: the kernel has CDC-ECM, but
+  the image ships no DHCP client and no remote-login daemon.
+- Pre-flight recommendation: pass the ESP32 through to QEMU and exercise the real
+  `usb-automount` before involving the car.
+
 ## 0.98.0 - physical HID is dropped by the shell, not by a driver
 
 - Explained the reported mouse and keyboard behaviour from the firmware rather than by guessing.
