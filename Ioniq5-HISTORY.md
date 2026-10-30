@@ -2308,3 +2308,12 @@ and are superseded by corrections rather than silently rewritten.
   on, turns out to gate not just the boot-info asks but the entire UI's ability to draw.
 - The remaining work is now a single, well-specified component that answers frames we have already recorded,
   rather than an open question about missing state.
+
+## 2026-10-31 — the responder was ready and the environment was wrong
+
+- The MICOM peer is written and it listens, but nothing arrives to answer. The cause is not the peer: the
+  daemon that should talk to it only speaks when systemd starts it, not when a research shell does.
+- That distinction had been hiding in plain sight across every run of the day. The byte counter read zero
+  each time and I had treated that as "no peer to talk to", when it also meant "no attempt was made".
+- The correction is cheap to state and expensive to have missed: running and functioning are different
+  claims, and this image separates them cleanly by boot path.

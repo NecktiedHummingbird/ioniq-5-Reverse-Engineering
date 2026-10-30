@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.31.0 - the responder works but is in the wrong environment
+
+- Wrote `micom-responder`: a minimal `/dev/ttyS1` peer implementing the measured framing
+  (`AA id_hi id_lo L payload CS`, XOR checksum, reply with `id | 0x8000`), answering every request and
+  returning a 35-byte payload for the two boot-info candidate ids (`0x01aa`, `0x02c3`). Cross-built static
+  for `x86_64-linux-gnu`, 17,408 bytes, deployed at `/usr/bin/micom-responder` in the clone.
+- It starts and listens, but **no frames arrive to answer**, in either start order, and
+  `micom_serial_bytes` stays 0. That is not the responder's fault: it exposes a distinction the records had
+  not separated before.
+- **`micommanager` only transmits under the systemd boot.** Every research-init run, including all of
+  today's, records `micom_serial_bytes: 0`. The one run that produced 1056 bytes was the authentic
+  `init=/lib/systemd/esinit` boot where systemd starts the daemon with its real environment. The daemon
+  stays alive under the research shell but never speaks.
+- So the responder must be tested in the `esinit-fs` workspace (multi-user, systemd-started `micommanager`),
+  which does not yet have our backend, the software rasteriser or the responder injected. That is the
+  correct next experiment, and it is a deployment task rather than a discovery one.
+- Recorded plainly because it invalidates a natural assumption: "the daemon is running" and "the daemon is
+  talking" are different claims in this image, and only the systemd boot produces the second.
+
 ## 1.30.0 - the segment publisher is conditional on MICOM data
 
 - Swept every candidate sequentially in one boot. `AppDMClient`, `NotificationManager` and
@@ -23,7 +42,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   `/dev/ttyS1` peer, and re-test. The framing, the id table and the reply rule (request id with bit 15 set)
   are all already measured and written down.
 
-## 1.30.0 - pre-auth USB update parser defect and exact SCOMO staging
+## 1.31.0 - pre-auth USB update parser defect and exact SCOMO staging
 
 - Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new
   USB method selects the last matching `S5W_SYSTEM_*_*_*.zip`, extracts only
