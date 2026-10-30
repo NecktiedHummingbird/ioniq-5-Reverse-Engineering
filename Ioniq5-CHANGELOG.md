@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.29.0 - shared-memory publishers identified, but not the one that matters
+
+- The segment keys the UI waits on are now known from strings: `/Can`, `/Ihu`, `/Inform`,
+  `/Information`, `/PhevInterface`, `/CryptoService`, with the literal marker `Lock SHARED MEMORY NAVI`.
+  Qt creates these as `/tmp/qipc_sharedmemory_<KEY><hash>` plus a matching `qipc_systemsem_` file, so
+  presence of those files is direct evidence that a publisher ran.
+- **`ApplicationManager` publishes several segments**, including **`BOOTINFOSTATUS`**,
+  `ApplicationManagerInformation` and `ApplicationEnableInformation`. That is the component's purpose here
+  and it was the right first guess.
+- **`UserProfileManager` and `MOFManager` publish the persistent `E*` set**: `EHOMESCREEN`, `ELASTMODE`,
+  `ERADIOPRESET`, `ERADIOSETTING`, `EREGIONPLATFORMTYPE`, `EA V M800`, `EBLUELINK`, `EBTDEVICE`, `ERVM`,
+  `EARRMYMENU`. These are per-setting state segments, not vehicle boot info.
+- **The ones the app actually wants are still not created by any of them.** With the system bus, all three
+  managers, `micommanager_userspace` and the compositor running, `AppHomeScreen` still logs **12**
+  `Cannot attach to shared memory` failures, still never attaches a buffer, and the frame remains fully
+  black (21,600 pixels, `#000000`). A later segfault in the same process is recorded but is downstream of
+  the same missing state.
+- So the publisher of `/Ihu` and `/Inform` is a component not yet identified. `micommanager_userspace`
+  alone does not create them, which rules out the most obvious candidate.
+- Next step is narrow: determine statically which binary calls `QSharedMemory::create` for those keys —
+  the key strings plus `Create` behaviour are enough to identify it — and start that component with a
+  plausible vehicle state.
+
 ## 1.28.0 - placed view, real repaint, black pixels: the client never attaches a buffer
 
 - Clean end-to-end measurement with the shim active: a surface is mapped, a repaint occurs, and the

@@ -2268,3 +2268,16 @@ and are superseded by corrections rather than silently rewritten.
 - What this project can now say is well defined: everything from the kernel to the compositor to our own
   adaptors works, and the remaining gap is one vendor component's shared state. That is a good place to
   stop guessing and start looking for a segment key.
+
+## 2026-10-31 — found the publishers, but not the right one
+
+- The shared memory question resolved into something much more specific today. Segments are being created,
+  by name, and the names are now known. The application simply wants different ones.
+- ApplicationManager does publish boot status, which looked like the answer and was not. UserProfileManager
+  and MOFManager publish a long list of per-setting segments with an unmistakable naming style. Neither set
+  is the vehicle interface state the widgets read.
+- The negative result is worth as much as a positive one here: micommanager, the obvious publisher for an
+  interface named Ihu, does not create that segment. That removes the intuitive candidate and points at
+  something less obvious.
+- The state of the whole investigation is now cleanly summarised: every layer from firmware to compositor
+  works, the UI runs, and it refuses to draw because one piece of vehicle state it reads is absent.
