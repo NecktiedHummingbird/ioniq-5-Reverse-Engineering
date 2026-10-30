@@ -1425,3 +1425,24 @@ and are superseded by corrections rather than silently rewritten.
   since the image has neither a DHCP client nor a remote-login daemon.
 - The recommended first step is to pass the device through to QEMU so the real automounter,
   udev and payload path are exercised before the vehicle is involved.
+
+## 2026-10-29 — live ESP design for interactive root over USB
+
+- Reworked the USB plan for a reprogrammable ESP. Because descriptors are fixed at enumeration
+  and TinyUSB can re-enumerate in software, changing the payload becomes a live operation, so the
+  approach turns from a blind one-shot into an interactive channel.
+- Two findings made the interactive form possible. First, the payload can end with a comment so
+  that the template's trailing ampersand is swallowed, leaving the injected command as system()
+  foreground child, which allows a shell payload. Second, the kernel has USB ACM as a module, so
+  a CDC-ACM interface provides a data channel without requiring the automounter to mount
+  anything.
+- That second point matters because the automounter's filesystem strings cover only ntfs, exfat
+  and ext4, so a FAT volume presented by a microcontroller is not obviously accepted, whereas an
+  ACM node needs no mount at all.
+- The composite descriptor was specified as a vendor-specific interface to satisfy the branch
+  test, a CDC-ACM interface for the data channel, and the payload in iSerialNumber, with three
+  payloads validated for length and charset including an interactive root shell.
+- A drafting error was caught by the validator: a stray space in one probe payload would have been
+  rewritten to an underscore. The corrected form has no spaces.
+- Caveats were recorded about module autoloading, the device-add timing relative to the automount
+  service, and the fact that an open shell blocks the automounter.

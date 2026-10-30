@@ -3,6 +3,30 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.00.0 - live ESP design: interactive root over USB, not a blind one-shot
+
+- Reworked the USB plan now that the owner can reprogram the ESP while it is plugged in. That
+  turns a one-shot into an interactive channel, for two concrete reasons.
+- **The payload can be a shell.** The template appends `&`, but the payload ends with `;#`, so the
+  `#` comments out the backgrounding and the injected command becomes `system()`'s foreground
+  child. `;/bin/sh</dev/ttyACM0>/dev/ttyACM0${IFS}2>&1;#` (46 chars, charset-clean) is parsed as
+  an interactive root shell whose stdio is the USB serial channel.
+- **There is a real feedback channel.** `CONFIG_USB_ACM=m` is present, so a CDC-ACM interface
+  yields `/dev/ttyACM0` without needing any mount. That is better than a mass-storage mailbox,
+  because the automounter's filesystem strings are only `ntfs`, `exfat` and `ext4` — a FAT volume
+  from a microcontroller is not obviously accepted.
+- Composite descriptor recorded: `ff/ff/00` vendor interface to satisfy the MTP branch test,
+  CDC-ACM for the data channel, and the payload carried as `iSerialNumber`. Since descriptors are
+  fixed at enumeration, changing the payload means re-enumerating, which TinyUSB can do in
+  software — that is the whole iteration loop, over WiFi, with no unplugging.
+- Step order recorded: `;id>/dev/ttyACM0;#` to prove both the injection and the channel, then
+  locate the node if `ttyACM0` is absent, then the shell payload, with the credential overwrite
+  as an alternative.
+- Corrected a stray space in my own `tty*` probe payload, which the whitespace rewrite would have
+  mangled into `_`.
+- Caveats kept: ACM is a module and may not autoload; the branch fires on the device add event so
+  the automount service must already be up; and an open shell blocks the automounter.
+
 ## 0.99.0 - USB root test plan written (private)
 
 - Wrote `evidence/usb-root-test-plan.md`, a lab procedure for the owner's own unit, kept
