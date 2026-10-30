@@ -3,6 +3,36 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.15.0 - PlayerEngine reaches the ASF corruption and vendor offsets are exact
+
+- Corrected the PlayerEngine contract: accepted audio options are nested JSON,
+  `{"option":{"mediatype":"audio"}}`; old flat calls were negative contract
+  controls. Stock audio is `alsasink` on `media_mixer`.
+- Isolated the remaining VM prerequisite. QEMU reports no soundcards, so stock
+  `media_mixer` fails. A disposable VM-only ALSA `type null` mapping for that
+  exact PCM lets a valid one-stream WMA return true and reach `asfdemux` without
+  changing the vendor sink factory or device name.
+- Confirmed the boundary under one environment: one-stream and 32-stream file
+  URIs return true and PlayerEngine survives; 33- and 34-stream inputs return
+  true, enter the vulnerable range, and terminate PlayerEngine with signal 11.
+  A plain path returns false while `file:///tmp/input.wma` succeeds.
+- Extracted the exact fatal stack:
+  `g_queue_push_head+0x1d <- libgstasf.so+0xb6cc <- libgstasf.so+0x1305d`.
+  The shell marker `PLAYERENGINE_ALIVE=1` means `kill -0` failed and the process
+  had died; 0 means alive.
+- Corrected the source-derived layout against the shipped plugin. The vendor
+  `AsfStream` stride is 208 bytes, not 200. The 33rd stream zeros the low 32
+  bits of `flowcombiner`; its pad pointer lands in `old_stream[0]`. Exact code at
+  `0xb6c0..0xb6c7` loads the corrupted combiner and calls
+  `gst_flow_combiner_add_pad`, leading to the observed GLib failure.
+- Preserved the boundary: this proves manual uid-0 PlayerEngine service
+  reachability, memory corruption, and process death—not attacker-selected
+  pointer control, RCE, persistence, automatic removable-media/indexer
+  invocation, or physical-head-unit applicability.
+- Added minimally sufficient tracked excerpts under
+  `evidence/artifacts/media-candidates/` and updated V-012, the exploit
+  inventory, corrections log, handover, and prioritization.
+
 ## 1.14.0 - adjacent ALSA CVEs split by exact lock and permission evidence
 
 - Rejected ALSA PCM CVE-2017-0861 for recovered EU `260128`: exact shipped

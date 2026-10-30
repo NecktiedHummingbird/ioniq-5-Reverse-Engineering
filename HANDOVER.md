@@ -60,18 +60,33 @@ followed by stateful service/CAN/persistence reconstruction.
   `[A-Za-z0-9#+\-.:=@_]`; the old `${IFS}`/separator payload became underscores
   and did not execute. Retain V-006 as unsafe shell construction and possible
   denial of service, not a demonstrated USB-to-root path on `260128`.
-- **V-012 added:** the shipped GStreamer ASF plugin
-  `libgstasf.so` (`05e887...f45d`) is dynamically affected by CVE-2026-2920. A
-  valid 33-stream WMA causes authentic `gst-discoverer-1.0` to accept stream 33,
-  corrupt element state and exit 139 after a kernel-recorded segfault. This proves
-  memory corruption/crash in the isolated VM, not RCE or installed-unit reachability.
-- New tracked tooling: `tools/uk_fw/asf_stream_probe.py` plus
-  `tests/test_asf_stream_probe.py`. Primary write-up:
-  `evidence/gstreamer-cve-2026-2920.md`.
-- Next security work: make a real production playback/indexing path reach
-  `asfdemux`; confirm the source-derived post-`stream[31]` layout against the loaded
-  vendor binary; keep physical bench tests crash-only until recovery and service
-  restart behavior are validated.
+- **V-012 service reachability confirmed:** the shipped GStreamer ASF plugin
+  `libgstasf.so` (`05e887...f45d`) is dynamically affected by CVE-2026-2920.
+  Authentic `gst-discoverer-1.0` exits 139, and the normal uid-0 PlayerEngine
+  D-Bus service now reaches the same parser with the corrected nested option
+  `{"option":{"mediatype":"audio"}}`. A 32-stream file returns true and
+  survives; 33- and 34-stream files return true and terminate PlayerEngine with
+  signal 11. This proves manual service reachability and process death in the
+  isolated VM, not RCE, automatic USB/indexer invocation, or installed-unit
+  reachability.
+- QEMU has no soundcard. Stock `alsasink` / `media_mixer` therefore rejects even
+  valid WMA. The successful service controls use a disposable VM-only
+  `/etc/asound.conf` mapping `pcm.media_mixer` to ALSA `type null`, preserving
+  the stock sink factory and device name. Under that environment a `file://` URI
+  succeeds while a plain path returns false.
+- Exact vendor instructions correct the public-source-only overwrite model:
+  `AsfStream` stride is `0xd0`/208, not 200. The 33rd stream zeros the low 32
+  bits of `flowcombiner`; the first observed fatal use is
+  `gst_flow_combiner_add_pad -> g_queue_push_head+0x1d`, with
+  `libgstasf.so+0xb6cc` as the return address.
+- Tracked tooling remains `tools/uk_fw/asf_stream_probe.py` plus
+  `tests/test_asf_stream_probe.py`. Primary write-up and minimal reviewed
+  excerpt: `evidence/gstreamer-cve-2026-2920.md` and
+  `evidence/artifacts/media-candidates/playerengine-asf-service-evidence.txt`.
+- Next security work: trace LightMediaScanner, thumbnail, and removable-media
+  automation into a consumer; analyze allocation/lifetime behavior without
+  developing a payload; keep physical bench tests crash-only until recovery and
+  service restart behavior are validated.
 
 ## Breakpoint capability matrix complete — 2026-10-29
 

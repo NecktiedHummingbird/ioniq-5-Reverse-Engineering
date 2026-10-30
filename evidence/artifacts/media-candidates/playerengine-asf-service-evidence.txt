@@ -1,0 +1,145 @@
+PLAYERENGINE / CVE-2026-2920 — MINIMAL REVIEWED EVIDENCE
+Date: 2026-11-01
+Target: recovered EU 260128 userspace in an offline, snapshot-backed QEMU VM
+
+COMPONENT IDENTITIES
+libgstasf.so SHA-256:
+05e887731708f0b0a52ff9fc75767a00fda9984e422983e5ff1d672f4b1af45d
+libplayerengine_player.so SHA-256:
+28987e1accfa7a7d04557b3d81dab7f8cd2aabb84a9c5aab7e1c8c4bc85510a0
+PlayerEngine runner SHA-256 (ignored work artifact):
+0201869586eee571c2835edd45688823fd1a906f9d18e65bccf9851d1baf5f5c
+
+SERVICE CONTRACT
+Destination: com.lge.PlayerEngine
+Object: /com/lge/PlayerEngine
+Method: com.lge.PlayerEngine.SetURI(s uri, s option) -> b
+Accepted audio option: {"option":{"mediatype":"audio"}}
+Rejected flat control: {"mediatype":"audio"}
+Stock sink configuration: audio=alsasink; device=media_mixer
+VM-only compatibility file: /etc/asound.conf containing:
+  pcm.media_mixer {
+    type null
+  }
+
+CONTROL / PROBE HASHES
+one-stream template.wma:
+26caf51e423814844b533fb09487905398ca3578410be3e7b4adaf9c8eeb53cc
+32-stream tool-asf32.wma:
+85a362190c146a41c7f794481de84af266f6937205b32d28d07b62d903827e82
+33-stream tool-asf33.wma:
+9c5aaa1f7ad2a4e8526066f6f22e2b3737b912de93f94ab1aa858e3a9ec32518
+34-stream tool-asf34.wma:
+3ef3f1108661256657f419215d6a8f7528086f5b588c8996e8e90d7abeded3da
+
+FULL LOG HASHES (logs remain ignored under work/vm/vendor-userspace-260128/)
+stock sink, nested option, one stream:
+afaaebc2912d76cb5e4780280e919e618a6caa8957192fce48c174f2ad83ecf6
+ALSA-null, nested option, file URI, one stream:
+f474a212dabadb06f6df63dea9c29a3589bdcea6095df71a4028f8da2ce73e85
+ALSA-null, nested option, plain path, one stream:
+f0da731dfc9ea2f2e068500e614eed263b77f2a9831c036a43bb81c9e60635ce
+ALSA-null, nested option, file URI, 32 streams:
+949d069052de525f24b4a2995b06d62ee4592cbcce3dcdd4a2a8cc9329799b36
+ALSA-null, nested option, file URI, 33 streams:
+16ff6f1241899846ccbfb3d9bae54a5f50994543c07a044625b846f19e598993
+ALSA-null, nested option, file URI, 34 streams:
+eee3b52e2ef458d67638b2bbf6f7e99d8ac2824bc3347411957e5001f0895908
+
+KEY RESULTS
+1. The stock sink control reaches PlayerEngine but cannot open the QEMU-missing
+   PCM. SetURI returns false and the process remains alive:
+     boolean false
+     Playback open error on device 'media_mixer': No such file or directory
+     PLAYERENGINE_ALIVE=0
+
+2. With only the VM PCM mapped to ALSA type null, the valid one-stream file URI
+   is accepted, reaches asfdemux, and the process remains alive:
+     boolean true
+     PLAYERENGINE_ALIVE=0
+
+3. Under that same working environment, a plain /tmp/input.wma path is rejected:
+     boolean false
+     PLAYERENGINE_ALIVE=0
+   The accepted service form is file:///tmp/input.wma. This supersedes the old
+   path-vs-URI comparison that used the wrong option and unavailable sink.
+
+4. The 32-stream boundary control is accepted and survives:
+     boolean true
+     PLAYERENGINE_ALIVE=0
+
+5. The 33-stream probe is accepted by SetURI, reaches the out-of-range stream,
+   and the PlayerEngine process dies. `PLAYERENGINE_ALIVE=1` is the shell status
+   from `kill -0`; 1 means the process no longer exists:
+     boolean true
+     Found stream 33
+     Created pad audio_32 for stream 32
+     PLAYERENGINE_ALIVE=1
+
+6. The 34-stream control also reaches streams 33 and 34 and dies with the same
+   fatal stack:
+     boolean true
+     Found stream 33
+     Found stream 34
+     PLAYERENGINE_ALIVE=1
+
+PLAYERENGINE FATAL RECORD (33-stream log)
+1970/01/01 00:00:17.629875 ... [SigHandler] Caught Signal : 11
+1970/01/01 00:00:17.637004 ... [LogBacktrace] /usr/lib/libglib-2.0.so.0(g_queue_push_head+0x1d)
+1970/01/01 00:00:17.637036 ... [LogBacktrace] /usr/lib/gstreamer-1.0/libgstasf.so(+0xb6cc)
+1970/01/01 00:00:17.637070 ... [LogBacktrace] /usr/lib/gstreamer-1.0/libgstasf.so(+0x1305d)
+1970/01/01 00:00:17.637104 ... [LogBacktrace] /usr/lib/libgstreamer-1.0.so.0(+0xb1eb1)
+1970/01/01 00:00:17.637136 ... [LogBacktrace] /usr/lib/libglib-2.0.so.0(+0x80ede)
+1970/01/01 00:00:17.637167 ... [LogBacktrace] /usr/lib/libglib-2.0.so.0(+0x801d9)
+1970/01/01 00:00:17.637200 ... [LogBacktrace] /lib/libpthread.so.0(+0x7404)
+1970/01/01 00:00:17.637232 ... [LogBacktrace] /lib/libc.so.6(clone+0x3f)
+
+The pthread/clone tail identifies a GStreamer worker thread. The retained log
+contains the process id (732 in GST_DEBUG lines) but not a trustworthy Linux TID
+for the signal handler, so no exact TID is claimed.
+
+EXACT VENDOR-BINARY LAYOUT EVIDENCE
+The vendor plugin differs from the public 1.8.3 source layout. Its indexed
+stream stride is 0xd0 (208), not the source-derived 200 bytes. The stream array
+starts at GstASFDemux+0x1a8, activated_streams is at +0x1ba8, flowcombiner at
++0x1bb0, and old_stream[0] at +0x1bb8.
+
+Selected authentic libgstasf.so instructions:
+
+  8e70: callq gst_flow_combiner_new@plt
+  8e75: movq  %rax, 0x1bb0(%rbx)       # demux->flowcombiner
+
+  97b2: movl  0x1a0(%rbp), %r15d      # demux->num_streams
+  97b9: leaq  (%r15,%r15,2), %rax
+  97bd: leaq  (%r15,%rax,4), %rdx
+  97c1: shlq  $0x4, %rdx               # index * 13 * 16 = index * 208
+  97c5: leaq  0x1a8(%rbp,%rdx), %rax   # &demux->stream[index]
+  97e1: movq  %rbx, 0x1b8(%rdx)        # stream[index].pad at +0x10
+  97ef: movw  %ax, 0x1c0(%rdx)         # stream[index].id at +0x18
+  9805: movl  %eax, 0x1c8(%rdx)        # fps_known at +0x20
+  97da: movq  %r12, 0x1d0(%rdx)        # caps at +0x28
+  9829: movq  %rax, 0x1e0(%rdx)        # pending_tags at +0x38
+  9886: movq  %rax, 0x1f8(%r13)        # payloads at +0x50
+  9896: movq  %rax, 0x210(%r13)        # payloads_rev at +0x68
+  990d: movl  $0x0, 0x1b0(%rbp)        # vendor field at stream+0x08
+  9917: movl  $0x0, 0x1ac(%rbp)        # active at stream+0x04
+
+For index 32, stream+0x08 equals demux+0x1bb0. Thus the instruction at 0x990d
+zeros the low 32 bits of the live flowcombiner pointer. The later pad-pointer
+store lands at old_stream[0]+0x00, rather than transplanting the pad directly
+into flowcombiner as the unmodified public source layout suggested.
+
+FIRST OBSERVED FATAL CORRUPTED USE
+
+  b6b0: movq  -0x18(%rbx), %rsi
+  b6b4: movq  %r15, %rdi
+  b6b7: callq gst_element_add_pad@plt
+  b6bc: movq  -0x18(%rbx), %rsi
+  b6c0: movq  0x1bb0(%r15), %rdi       # corrupted flowcombiner
+  b6c7: callq gst_flow_combiner_add_pad@plt
+  b6cc: movl  $0x1, -0x20(%rbx)        # return address in backtrace
+
+The service backtrace places the failure in g_queue_push_head+0x1d called by
+this gst_flow_combiner_add_pad invocation, with libgstasf.so+0xb6cc as its return
+address. This confirms the first observed fatal use of the corrupted vendor
+field. It does not prove attacker-selected pointer control or code execution.

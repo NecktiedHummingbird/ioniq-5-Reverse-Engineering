@@ -328,6 +328,29 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C24 — Public ASF source layout is not the exact vendor layout
+
+- **Was:** the source-derived x86-64 `AsfStream` size was treated as 200 bytes,
+  placing the 33rd stream's `pad` assignment directly over the live
+  `GstFlowCombiner *` field.
+- **Now:** exact shipped `libgstasf.so` instructions use a 208-byte (`0xd0`)
+  stride and an additional 8 bytes before the pad field. For stream index 32,
+  plugin offset `0x990d` zeros the low 32 bits of `flowcombiner`; the pad pointer
+  instead overwrites the start of `old_stream[0]`.
+- **Why:** the vendor plugin contains a layout-changing source modification not
+  represented by the public GStreamer 1.8.3 header. Source is useful for naming
+  behavior but cannot supply exact offsets for a modified binary.
+- **Dynamic confirmation:** PlayerEngine catches signal 11 with
+  `g_queue_push_head+0x1d <- libgstasf.so+0xb6cc`; exact code at
+  `0xb6c0..0xb6c7` loads the corrupted `flowcombiner` and calls
+  `gst_flow_combiner_add_pad`.
+- **Boundary:** this establishes the first observed fatal corrupted use, not an
+  attacker-selected pointer, instruction-pointer control, or RCE.
+- **Evidence:** `evidence/gstreamer-cve-2026-2920.md` and
+  `evidence/artifacts/media-candidates/playerengine-asf-service-evidence.txt`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

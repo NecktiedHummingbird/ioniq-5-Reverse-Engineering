@@ -1693,3 +1693,26 @@ and are superseded by corrections rather than silently rewritten.
   with ioctls reachable through `O_RDONLY` (V-013), one exact fix (CVE-2017-0861), and
   one path missing the official serialization whose required access is blocked
   by DAC (CVE-2018-1000004). None is promoted to root.
+
+## 2026-11-01 — PlayerEngine reaches the ASF bug, and the binary corrects the source model
+
+- The earlier PlayerEngine failure was two independent setup errors: a flat JSON
+  option that the service does not accept, and QEMU's missing `media_mixer` PCM.
+  With the nested audio option and a disposable ALSA-null mapping for the stock
+  PCM name, a valid WMA returns true and reaches the authentic ASF demuxer.
+- The boundary controls are now clean. One stream and 32 streams survive under
+  the same environment. A 33-stream file and a 34-stream file both terminate
+  the uid-0 PlayerEngine service with signal 11. A plain path still fails while
+  the `file://` URI succeeds, so the prior confounded URI conclusion is retired.
+- The service's own crash handler recorded the useful transition:
+  `g_queue_push_head+0x1d` called from `libgstasf.so+0xb6cc`. Exact plugin
+  instructions show that `+0xb6cc` is the return from
+  `gst_flow_combiner_add_pad` after loading the corrupted combiner pointer.
+- Exact binary layout also overturned one source-only detail. The vendor stream
+  stride is 208 bytes rather than public 1.8.3's 200. The 33rd stream zeros the
+  low half of `flowcombiner`; its pad pointer overwrites `old_stream[0]` instead
+  of becoming the combiner pointer itself. That is why offsets remain
+  binary-derived facts, even when public source explains the control flow.
+- Nothing in this run demonstrates instruction-pointer control or RCE. Manual
+  D-Bus service reachability is now closed; automatic USB indexing,
+  LightMediaScanner, thumbnail handoff, and physical-unit behavior remain open.
