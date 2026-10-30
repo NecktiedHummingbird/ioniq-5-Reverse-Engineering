@@ -595,3 +595,43 @@ startup creates the 35-byte segment" result); `micom-contract/micommanager-seria
 `evidence/child-notes/04-micomd-cve-2020-8539.md` (only for the observation that the MICOM is the
 CAN/head-unit-local bridge; that note describes an *Android* `/dev/socket/micomd`, a **different**
 interface from this D-Bus one, and must not be cited as evidence for this contract).
+
+
+## Resolution of §5.1 — the daemon transcribes first (measured 2026-10-29)
+
+Run `work/vm/esinit-fs/runs/1793345055493857000` with `--micom-serial` on the authentic multi-user
+boot captured **1056 bytes / 103 frames** on `/dev/ttyS1`, where earlier attempts recorded
+`micom_serial_bytes: 0`. Both open questions in this contract are now closed by measurement:
+
+1. **The daemon transmits before it receives.** It does not wait for a MICOM-init frame, so a passive
+   peer is sufficient to reach the ask stage. The earlier zero-byte result was an artefact of the
+   transcript filter, not a protocol precondition.
+2. **The framing is confirmed on real traffic, not just in the validator.** All 103 frames parse as
+   `AA id_hi id_lo L payload CS` with the whole-frame XOR equal to zero. Zero malformed frames.
+
+**Empirical command-id table** (the mapping that no static table in the binary encodes):
+
+| id | count | note |
+|---|---|---|
+| `0x0400` | 32 | most frequent; periodic poll candidate |
+| `0x01a4` | 20 | |
+| `0x029d` | 13 | |
+| `0x0266` | 10 | |
+| `0x0210` | 10 | |
+| `0x0212` | 5 | startup burst, first three frames of the run |
+| `0x0201` | 4 | |
+| `0x02a3` | 3 | |
+| `0x0289` | 2 | |
+| `0x01aa` | 1 | carries payload `01`; boot/probe candidate |
+| `0x02c3` | 1 | |
+| `0x0217` | 1 | |
+| `0x0110` | 1 | |
+
+Opening order: `0x0212` ×3, `0x01aa(01)`, `0x0212` ×2, `0x02c3`, `0x0266`, `0x0201`, then a repeating
+`0x0266`/`0x0201` group mixed with the high-count ids above.
+
+**Still unestablished:** which id corresponds to `AskSysBootinfo`, and therefore which frame must carry
+the 35-byte `ay` reply. The static work places `AskSysBootinfo` as the second call in the launcher's
+sequence, so the pair `0x01aa (payload 01)` then the first `0x02c3` are the leading candidates. A
+simulator that answers every id with a valid frame and a plausible 35-byte payload for the candidate
+ids would settle this in one run by observing which `ay` the launcher's field decoder consumes.

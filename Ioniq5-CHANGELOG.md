@@ -3,6 +3,52 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.10.0 - the MICOM daemon does transcribe first, and the command table exists
+
+- Measured on the authentic multi-user boot with `--micom-serial`: **1056 bytes, 103 frames** on
+  `/dev/ttyS1`, against `micom_serial_bytes: 0` on every earlier attempt. The contract's weakest link
+  is now closed by measurement rather than argument.
+- **The daemon transmits before it receives.** It does not wait for a MICOM-init frame, so a passive
+  peer suffices to reach the ask stage. The earlier zero-byte observation was an artefact of a
+  transcript filter that watched a single fd, not a protocol precondition.
+- The frame format is confirmed on real traffic and not merely in the validator: all 103 frames parse
+  as `AA id_hi id_lo L payload CS` with whole-frame XOR zero, and none are malformed.
+- The command-id table that no static table in the binary encodes now exists empirically: `0x0400`
+  ×32, `0x01a4` ×20, `0x029d` ×13, `0x0266` and `0x0210` ×10 each, `0x0212` ×5, `0x0201` ×4,
+  `0x02a3` ×3, `0x0289` ×2, then `0x01aa` (payload `01`), `0x02c3`, `0x0217` and `0x0110` singly. The
+  run opens with `0x0212` ×3, then `0x01aa(01)`, then `0x0212` ×2, `0x02c3`, `0x0266`, `0x0201`.
+- Still open: which id is `AskSysBootinfo`, and so which frame must carry the 35-byte `ay`. The
+  launcher's static sequence places it second, making `0x01aa (01)` then the first `0x02c3` the leading
+  candidates, answerable in one run by replying to all ids and observing which reply the launcher's
+  field decoder actually consumes.
+- A delegated worker on this task was cut off before producing anything; the measurement above was
+  taken directly instead. `micom-contract.md` was unchanged by that worker, so nothing is being
+  credited to it that it did not do.
+
+## 1.10.0 - bounded Tuxera harness and exact kernel-backport checks
+
+- Added `tools/uk_fw/tuxera_fs_probe.py` and its tests: a no-network,
+  snapshot-backed harness that attaches only a project-local regular raw image
+  with QEMU `readonly=on`, loads one exact vendor filesystem module, mounts with
+  `ro,nodev,nosuid,noexec`, and performs bounded metadata enumeration.
+- Switched the harness from QEMU xHCI to EHCI after authentic `xhci-pci` faulted
+  in vendor `xhci_toggle_dis_perr_det()`. EHCI with the authentic `ehci-pci`
+  module is stable; the xHCI result is recorded as a VM compatibility issue, not
+  a production vulnerability.
+- Authentic Tuxera exFAT `3016.6.23.3` cleanly mounted a 64 MiB control. Sixteen
+  malformed upstream exfatprogs fixtures yielded three clean rejections and
+  thirteen clean bounded mounts/unmounts, with no detected kernel parser fault.
+  This is a bounded negative result rather than evidence of parser safety.
+- Exact recovered-binary analysis rejects four version-derived local-root
+  candidates for EU `260128`: Dirty COW/CVE-2016-5195, AF_PACKET
+  CVE-2016-8655, AF_PACKET CVE-2017-1000111, and the generic Stack Clash
+  missing-guard-gap premise. The vendor kernel contains the relevant
+  `FOLL_COW`, socket-locking, and 1 MiB inter-VMA guard-gap backports despite its
+  `4.1.27-abl` banner.
+- Added dedicated evidence reports and corrections C18-C20. V-011 remains a
+  hardening gap: exact Tuxera NTFS special-file materialization and harmless
+  access still require isolated testing.
+
 ## 1.09.0 - normal multi-user reached; the blockers are now the two known ones
 
 - **`Reached target Multi-User System`**, startup 10.6 s kernel plus 46.9 s userspace, no emergency

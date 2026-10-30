@@ -1620,3 +1620,18 @@ and are superseded by corrections rather than silently rewritten.
 - The `Requires=` on `micommanager` is worth noting as a design observation: the launcher cannot come
   up without the vehicle interface daemon, so the simulator is not a nice-to-have for the HMI path, it
   is the gate.
+
+## 2026-10-29 — the MICOM speaks, and it speaks first
+
+- The question the contract could not answer statically was whether the daemon waits for the vehicle
+  before it talks. With a real serial boundary on the now-booting system it emitted 103 valid frames
+  immediately. It does not wait. A silent peer is enough to reach the ask stage, which means the
+  simulator is a listener that answers rather than something that must pretend to boot.
+- Every frame checksummed correctly, which is worth more than it sounds. A protocol transcribed from
+  disassembly that produces 103 frames with zero XOR errors on first contact was understood correctly.
+  That confidence is what makes the remaining question tractable.
+- The command ids are now known from traffic rather than inferred from code, including the ids that
+  appeared exactly once at startup. The one thing still missing is which id is the boot-info ask, and
+  the launcher's own call order narrows it to two candidates.
+- A worker on this task was cut off mid-sentence and produced nothing. Rather than present the round as
+  organised work, the measurement was taken directly and the record says so.
