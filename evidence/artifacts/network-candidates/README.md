@@ -22,5 +22,14 @@ access, or applicability to the owner's installed firmware.
 - `ofono-qmi-list-evidence.txt`: exact CVE-2024-7537 missing QMI list
   count/length validation, overflow-diagnostic four-byte fallback,
   allocation/copy-loop arithmetic, and modem trust boundary for V-018. It
-  contains no QMI message,
-  PDU, modem input, or packet material.
+  contains no QMI message, PDU, modem input, or packet material.
+- `wpa-p2p-backport-evidence.txt`: exact recovered wpa_supplicant identities,
+  conditional launch chain, and instruction-level proof that CVE-2015-1863 and
+  CVE-2021-27803 are fixed. It contains no wireless frame or trigger material.
+- `dropbear-inert-artifacts-evidence.txt`: exact dormant Dropbear package,
+  template, public-key, and missing executable/socket/host-key evidence. It
+  contains no private key, login attempt, listener, or credential material.
+- `vbtd-cve-2017-0782-bnep-evidence.txt`: exact pre-fix BNEP remaining-length
+  instructions in both PCB-selectable Broadcom BSA daemons, plus activation,
+  privilege, and radio-reachability boundaries for V-019. It contains no
+  Bluetooth packet, trigger, payload, or exploit material.

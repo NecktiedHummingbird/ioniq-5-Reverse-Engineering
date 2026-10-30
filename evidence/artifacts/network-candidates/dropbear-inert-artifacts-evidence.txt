@@ -1,0 +1,81 @@
+Recovered EU 260128 Dropbear activation/authentication evidence
+===============================================================
+
+Scope
+-----
+Static recovered-filesystem review only. No service, socket, listener, login,
+credential, or target binary was started.
+
+Package/configuration records
+-----------------------------
+Recovered RPM inventory record:
+  dropbear-2020.81-r8mango2
+
+/lib/systemd/system/dropbear@.service
+  SHA-256 dbb3f36f9b6ca7aca1b44f577d311450e472cade6847a37e195c22ce6794ca59
+/etc/default/dropbear
+  SHA-256 b357e4ee48b20f990e088ac14eb6443a5a03122025bf946587cf3b9aa3008ca8
+/etc/dropbear/dropbear_publickey_installer.sh
+  SHA-256 04440e440073f7768347cc931b4573d753cda7073277241747b421cf6d2bd5d9
+/etc/dropbear/authorized_keys
+  SHA-256 554cc38c6f4caf5dba066c618669a98f330ec420207976fd906d355b55185980
+  key fingerprint SHA256:dUfV2bm2NcfJODhShzwqpAsz5sHtS1REtNp1VhNp2Mg
+  comment rsa-key-20181102
+/usr/lib/opkg/alternatives/ssh
+  SHA-256 a78bb579308926a8024102c1be841cb1f7cf1dc80c6f46bb54110b136ee67101
+  content: /usr/sbin/dropbearmulti 20
+
+Unit semantics if all missing dependencies were restored
+---------------------------------------------------------
+ConditionPathExists=/tmp/secure_console_disable
+Environment="DROPBEAR_RSAKEY_DIR=/var/dropbear"
+EnvironmentFile=-/etc/default/dropbear
+ExecStartPre=-/etc/dropbear/dropbear_publickey_installer.sh
+ExecStart=-/usr/sbin/dropbear -i -s -r ${DROPBEAR_RSAKEY_DIR}/dropbear_rsa_host_key $DROPBEAR_EXTRA_ARGS
+StandardInput=socket
+
+`-i` is per-connection inetd/socket mode. `-s` disables password login. The
+shipped default file comments out `-w`, so the static command does not disable
+root login. The pre-start script copies the shipped public key into
+`/home/root/.ssh/authorized_keys`, replacing a differing file. This would be a
+root public-key authentication route only for a holder of the matching private
+key and only if the server and socket path existed.
+
+Exact inertness evidence in the recovered filesystem
+-----------------------------------------------------
+Absent:
+  /usr/sbin/dropbear
+  /usr/sbin/dropbearmulti
+  /lib/systemd/system/dropbear.socket
+  /lib/systemd/system/dropbearkey.service
+  /var/dropbear/dropbear_rsa_host_key
+
+No dropbear service/socket enable symlink was found. `dropbear@.service` is a
+template expecting a socket-fed instantiated connection, but no recovered
+socket unit supplies one. Its soft `Wants=dropbearkey.service` dependency names a unit that is also
+absent. The alternatives record points at absent dropbearmulti rather than
+providing an executable.
+
+Marker and policy boundary
+--------------------------
+`/lib/systemd/esinit` creates `/tmp/secure_console_disable` by default and
+removes it only when the MICOM secure_console parameter is 1. Thus the unit's
+path condition is not the present blocker in the default no-secure-console
+branch; the absent executable, socket unit, host-key unit/key, and enablement
+are.
+
+No explicit Dropbear SMACK rule or process-label assignment was found in the
+reviewed recovered policy. With no executable/process, no runtime label can be
+established.
+
+Conclusion
+----------
+The recovered build contains stale or deliberately dormant Dropbear package and
+configuration artifacts, including a root authorized public key, but no
+executable or socket activation chain. A bounded search under recovered `mango-rootfs` found no candidate private-key
+material using filename patterns `*.pem`, `*private*key*`, `id_rsa`, and
+`id_ed25519`, or PEM markers `BEGIN [RSA|OPENSSH|EC] PRIVATE KEY`; this public
+key was the only ordinary `ssh-rsa` occurrence. No cryptographic comparison was
+possible without a candidate. This does not establish a listening
+SSH service, accepted login, private-key possession, remote entry path, or CVE
+exposure. A public key is not usable without possession of its private key.

@@ -50,7 +50,10 @@ python3 tools/uk_fw/rootfs_patch.py meta   out/mango-rootfs.tar.gz \
 - `list` reports members, modes, ownership and sizes.
 - `inject` installs a systemd unit, appends an SSH key to
   `/etc/dropbear/authorized_keys` (creating it mode 0600), optionally installs
-  the public-key installer, and copies arbitrary `SRC:DEST` payloads.
+  the public-key installer, and copies arbitrary `SRC:DEST` payloads. This does
+  **not** create SSH on recovered EU `260128`: that image lacks the server/
+  multi-call executable, socket unit, host-key service/key, and enablement. A
+  complete independently supplied service chain would be required.
 - `meta` computes the rebuilt file's size and **signed CRC-32** and rewrites the
   matching `.ver` record.
 

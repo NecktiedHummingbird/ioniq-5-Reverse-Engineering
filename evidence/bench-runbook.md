@@ -159,10 +159,13 @@ official downgrades on a stock unit. Establish whether `260128` offers it before
 The documented sequence is: install a replacement `AppNavi` through Engineering
 Mode, which runs `main_loop.sh` from USB root; copy `DecryptToPIPE` and
 `decryption_key.der` to the USB; decrypt the OTA offline; patch the rootfs; and
-keep every future official update patched. The SSH persistence path is to add
-keys to `/etc/dropbear/authorized_keys`, run the shipped publickey installer and
-relax the `dropbear@.service` condition. Record each step's evidence; do not skip
-the key backup.
+keep every future official update patched. Community material describes SSH by
+adding keys, running the public-key installer, and relaxing the template
+condition, but that is **not sufficient on recovered EU `260128`**: the server/
+multi-call executable, socket unit, host-key service/key, and enable links are
+absent. Any bench plan must first prove an independently supplied complete SSH
+chain and may not infer a listener from the template/key remnants. Record each
+step's evidence; do not skip the key backup.
 
 ## What is already known going in
 

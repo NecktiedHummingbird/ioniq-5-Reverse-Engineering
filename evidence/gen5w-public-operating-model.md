@@ -88,10 +88,14 @@ Documented preconditions:
 - Install `wideopen.service`.
 - Every subsequent official update must be re-patched, or the unit loses the
   modification.
-- Public SSH path: remount `/` read-write, add keys to
-  `/etc/dropbear/authorized_keys` (the shipped key lacks a trailing newline), run
-  `/etc/dropbear/dropbear_publickey_installer.sh`, and edit
-  `dropbear@.service` to drop its `ConditionPathExists` guard.
+- Public SSH path as documented by community material: remount `/` read-write,
+  add keys to `/etc/dropbear/authorized_keys` (the shipped key lacks a trailing
+  newline), run `/etc/dropbear/dropbear_publickey_installer.sh`, and edit
+  `dropbear@.service` to drop its `ConditionPathExists` guard. **This procedure
+  is incomplete for recovered EU `260128`:** that image lacks `dropbear`/
+  `dropbearmulti`, a socket unit, host-key service/key, and enable links. A
+  public patch would have to independently supply and activate that missing
+  chain; changing the key and condition alone cannot create a listener.
 
 ## Cross-reference with the static findings
 

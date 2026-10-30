@@ -155,12 +155,45 @@ state, the owner's installed hash, RCE, and unrestricted root are unproven. See
 `evidence/ofono-sms-decoder-cves.md` and
 `evidence/ofono-qmi-message-list-cve-2024-7537.md`.
 
-The package database also identifies older network components, including
-`wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
-`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are triage leads,
-not findings: exact file identity, vendor backports, installed activation, and
-runtime listeners still control applicability. ConnMan's installed
-`--nodnsproxy` argument, for example, removes the older DNS-proxy listener route.
+## Exact P2P backport result: two wpa_supplicant candidates rejected
+
+The package database identifies `wpa-supplicant-2.5+56-r1`, but exact recovered
+instructions supersede the old version string. In `p2p_add_device()`,
+`0x5b1ca..0x5b1d3` gates every SSID copy on peer-supplied length at most 32,
+matching the CVE-2015-1863 fix. In the Provision Discovery Request handler,
+`0x688e8` calls `p2p_add_device()` and successful return reaches an
+unconditional post-add `p2p_get_device(p2p, sa)` at `0x68dee`; this matches the
+CVE-2021-27803 fix and replaces the potentially stale pointer. Both CVEs are
+therefore rejected for the exact recovered binary. See
+`evidence/wpa-supplicant-p2p-cves.md`.
+
+The result does not eliminate P2P as a surface. P2P code is compiled into the
+supplicant, ConnMan contains peer/find/listen/provision-discovery machinery, and
+an enabled path unit conditionally starts `supplicantmanager` when
+`/tmp/no_unece` exists. Production marker state, arguments, interface ownership,
+P2P device creation, discovery/listen state, SMACK label, and radio delivery are
+unknown. Dropbear's package record is not a network route in this image. The recovered
+filesystem retains a socket-fed template, installer, and static root authorized
+public key, but no `dropbear`/`dropbearmulti` executable, socket unit, host-key
+service/key, or enable link. It is inert; see
+`evidence/dropbear-activation-and-authentication.md`. The other package
+records—`busybox-1.23.2-r0mango12` and `openssl-1.0.2k-r0`—remain triage leads
+pending exact activation and route review. ConnMan's installed `--nodnsproxy`
+argument, for example, removes the older DNS-proxy listener route.
+
+## Separate Bluetooth/PAN candidate: Broadcom BSA CVE-2017-0782
+
+Both PCB-selectable `vbtd` binaries contain CVE-2017-0782's exact pre-fix BNEP
+remaining-length parser. Their exported `bnep_process_control_packet()` reads
+beyond declared remaining length before the public fix's field bounds. The unit
+is enabled with a configured uid-0 default and policy intends `App::bluetooth`,
+but both profiles say `PAN : N/A` and no direct `BNEP_Register` reference was
+found. Treat V-019 as dormant pending indirect/runtime profile-registration
+evidence. Any radio route would still require an active adapter and accepted
+ACL/L2CAP channel. Pairing/authorization, physical delivery, allocation-bound
+OOB, public generic RCE, and owner applicability remain unknown. This is not
+Wi-Fi-to-root. See
+`evidence/broadcom-bsa-bluetooth-cves.md`.
 
 ## What I need from you to make this concrete
 

@@ -180,7 +180,7 @@ and they are the concrete form of the bypass described in the public docs:
 |---|---|
 | `AppEngineerMode_PinCodeKeypad.qml` | `enterMenu == 21` → `enterMenu`; `enterMenu == 11` → `enterMenu` (PIN check removed) |
 | every `*.qml` | `checkSOPVersion() ===` → `checkSOPVersion() !==`; the no-space variant too; `: AppEngineerModeEngine.checkSOPVersion()` → `: false` |
-| `/usr/sbin/dropbear` | symlink to `dropbearmulti` if absent |
+| `/usr/sbin/dropbear` | symlink to `dropbearmulti` if absent; recovered EU `260128` also lacks the `dropbearmulti` target, socket unit, and host-key chain, so this edit alone cannot restore SSH |
 | `/etc/systemd/system/` | install `wideopen.service` + `multi-user.target.wants` symlink |
 
 Repack, exactly:

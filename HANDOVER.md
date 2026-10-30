@@ -100,6 +100,39 @@ followed by stateful service/CAN/persistence reconstruction.
   path, not evidence of direct SMS/base-station control, RCE, or unrestricted
   root. See `evidence/ofono-qmi-message-list-cve-2024-7537.md` and
   `tools/uk_fw/ofono_qmi_list_bounds_model.py`.
+- **Two wpa_supplicant P2P candidates rejected by exact code:** recovered
+  `/usr/sbin/wpa_supplicant`, SHA-256
+  `6ad96a34c09b66c29ed2f9ad7ae73dee8389c81064a30dfd36a1212c52a21212`,
+  advertises `v2.5` but contains both reviewed fixes (the CVE-2015-1863 fix
+  predates upstream 2.5; CVE-2021-27803 is the later backport).
+  `p2p_add_device()` gates every SSID copy on length at most 32
+  (CVE-2015-1863), and the Provision
+  Discovery Request handler unconditionally re-fetches the peer after
+  `p2p_add_device()` (CVE-2021-27803). P2P capability and conditional
+  `/tmp/no_unece` launch machinery are present; production find/listen state,
+  arguments, interface ownership, SMACK label, and radio delivery remain
+  unknown. See `evidence/wpa-supplicant-p2p-cves.md`.
+- **Dropbear is inert in recovered `260128`:** the RPM record, socket-fed
+  template, public-key installer, and one static root authorized public key
+  remain, but `/usr/sbin/dropbear`, `dropbearmulti`, `dropbear.socket`,
+  `dropbearkey.service`, the host key, and all enable links are absent. The
+  template's `-s` would disable passwords but not root public-key login if the
+  missing chain were restored; a bounded recovered-filesystem marker/filename
+  search identified no candidate private-key material. Do not infer
+  a listener, accepted credential, CVE route, or backdoor from these dormant
+  artifacts. See `evidence/dropbear-activation-and-authentication.md`.
+- **V-019 added — exact CVE-2017-0782 BNEP bounds in both Bluetooth variants:**
+  `BSA0107_00.51.00` and `BSA0107_00.63.00` both read peer-controlled BNEP
+  extension/control fields before the field-by-field remaining-length checks
+  added by the public fix. PCB 11/12 selects `vbtd-63`; other values select
+  `vbtd-51`. The unit is enabled, has a configured uid-0 default, restarts
+  always, and recovered policy intends `App::bluetooth` if started. Both profile
+  files say `PAN : N/A`, startup calls `BNEP_Init`, and no direct
+  `BNEP_Register` reference was
+  found, so treat V-019 as dormant pending profile/PSM evidence. Adapter state,
+  pairing/authorization, accepted channel, physical delivery, allocation-bound
+  OOB, disclosure, RCE, SMACK escape, owner PCB, and installed hash remain unknown.
+  No radio or packet was used. See `evidence/broadcom-bsa-bluetooth-cves.md`.
 - Added `tools/uk_fw/rpm_nvra_inventory.py`, a strict read-only parser for
   printable Berkeley DB dumps. A compatible project-local Berkeley DB 18.1.40
   dump of the exact `Nvra` index produced 1,679 records; the dump and complete
@@ -194,7 +227,14 @@ followed by stateful service/CAN/persistence reconstruction.
   uid/SMACK label, modem devices, QMI services, benign SMS reception,
   SIM-Toolkit state, and benign stored-message enumeration; keep any later fault
   control crash-only and disconnected, and do not collapse modem-originated QMI
-  metadata into direct radio reachability. Continue identifying an authentic caller
+  metadata into direct radio reachability. For Wi-Fi/P2P, passively capture the
+  installed supplicant hash, `/tmp/no_unece`, exact arguments, process label,
+  interface ownership, and find/listen state; the two reviewed P2P CVEs are
+  already fixed. For V-019, capture PCB selection, patchram, installed `vbtd`,
+  adapter/profile/SDP state, bond and authorization policy, process label, and
+  restart behavior before any malformed radio control. For Dropbear, passive
+  file/unit/socket/listener checks are sufficient unless an owner image differs
+  from the inert recovered filesystem. Continue identifying an authentic caller
   of V-012 `requestThumbnails` outside
   the now-reviewed scan/property paths—especially QML-facing ownership and
   indirect virtual/callback dispatch—or playback after indexing, and repair the

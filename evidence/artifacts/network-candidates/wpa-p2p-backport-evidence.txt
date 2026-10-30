@@ -1,0 +1,106 @@
+Exact recovered wpa_supplicant P2P backport evidence
+===================================================
+
+Scope
+-----
+Recovered EU Gen5W 260128 userspace only. Static instruction, unit, and public
+upstream-fix comparison. No target execution, wireless frame, radio, network,
+P2P discovery, pairing, or malformed input was used.
+
+Exact identities
+----------------
+/usr/sbin/wpa_supplicant
+  SHA-256 6ad96a34c09b66c29ed2f9ad7ae73dee8389c81064a30dfd36a1212c52a21212
+  Build ID 387944d45d54ccfef07ede83a517c59344f9447a
+  RPM wpa-supplicant-2.5+56-r1.corei7_64
+  embedded version: wpa_supplicant v2.5
+
+/app/bin/supplicantmanager
+  SHA-256 331e1e8a4a2d24ac9c74a7dba8232a8f37c093b526e5a19991549112c217cc59
+/lib/systemd/system/supplicantmanager.service
+  SHA-256 9f31f774e985532b9549197d67fc1b3fad012330fbf4f93bee7baace5b999a3e
+/lib/systemd/system/supplicantmanager.path
+  SHA-256 75642c7c16284e17f035391cd38688db0ea763361dcf4d8d3dc2b248915c5cbb
+
+CVE-2015-1863 exact fixed signature
+-----------------------------------
+Upstream fix 9ed4eee345f85e3025c33c6e20aa25696e341ccd gates the SSID copy
+path on the peer-supplied element length being at most 32 bytes. Preserved patch
+SHA-256:
+  bdd68ae81c25bc1a4305b9ad20b5a7cd8976774c6999f1e94c2d59f4a815e5de
+
+The exact recovered p2p_add_device() begins at static ELF virtual address
+0x5b040. Its SSID path:
+
+  5b1c5: test %r14,%r14               # SSID element pointer
+  5b1c8: je 0x5b22e
+  5b1ca: movzbl 0x1(%r14),%r12d       # element length
+  5b1cf: cmp $0x20,%r12b
+  5b1d3: ja 0x5b22e                   # values above 32 skip the copy path
+  5b1d5: lea 0x2(%r14),%rax           # value begins only after bound
+  5b1e7: lea 0x374(%rcx),%rdx         # fixed destination field
+  5b1f2: jae 0x5b9ab                 # inlined wider-copy path
+  5b207: movzbl (%rax),%ecx           # bounded short-copy path
+  5b20e: mov %cl,0x374(%rsi)
+  5b21e: movzbl 0x1(%r14),%eax
+  5b227: mov %rax,0x398(%rcx)         # save bounded SSID length
+
+The `>32` branch dominates every inlined copy path, not merely pointer
+formation. This is the exact fix signature. CVE-2015-1863 is not present in the reviewed
+binary despite its v2.5 version string.
+
+CVE-2021-27803 exact fixed control flow
+---------------------------------------
+Upstream fix 8460e3230988ef2ec13ce6b69b687e941f6cdb32 requires
+p2p_process_prov_disc_req() to fetch the peer pointer again unconditionally
+after p2p_add_device(). The pre-fix code performed that lookup only inside
+`if (!dev)`, leaving an old non-NULL pointer stale if peer-table eviction had
+freed it. Preserved patch SHA-256:
+  7f40cfec5faf5e927ea9028ab9392cd118685bde7229ad24210caf0a8f6e9611
+
+The exact recovered provision-discovery request handler begins at 0x68490:
+
+  68571: call 0x525a0                 # initial p2p_get_device(p2p, sa)
+  ...
+  688e8: call 0x5b040                 # p2p_add_device(...)
+  688f1: test %eax,%eax
+  688f3: je 0x68de8                   # successful add
+  ...
+  68de8: mov %rbp,%rsi                # sa
+  68deb: mov %rbx,%rdi                # p2p
+  68dee: call 0x525a0                 # unconditional post-add relookup
+  68df3: mov %rax,%r15                # replace old dev pointer
+  68df6: test %rax,%rax
+  68df9: jne 0x685ba                  # continue only with re-fetched peer
+  68e03: lea 0x14cd70,%rsi            # "device not found" diagnostic
+
+No condition on the old peer pointer precedes 0x68dee. This is fixed, not the
+pre-fix conditional relookup. CVE-2021-27803 is not present in the reviewed
+binary.
+
+Activation and P2P capability boundary
+--------------------------------------
+`multi-user.target.wants/supplicantmanager.path` enables a path watching
+`/tmp/no_unece`. When that marker exists, `supplicantmanager.service` loads
+`cfg80211`, starts `/app/bin/supplicantmanager`, and restarts it. The manager's
+`start_wpa_supplicant()` executes `/usr/sbin/wpa_supplicant`, supports optional
+`WPA_SUPPLICANT_PARAMS`, and embeds the Broadcom `wlan0` firmware configuration.
+Neither unit has `User=`, so they default to uid 0 if activated.
+
+P2P is compiled into the exact supplicant. Exact ConnMan exports peer-management
+functions including connman_peer_create/register/request_connection and embeds
+P2PDevice, p2p_find, p2p_listen, provision-discovery, and GO-negotiation paths.
+This is stronger than an isolated string, but it is not evidence that the owner
+vehicle currently enables discovery/listen or accepts radio frames.
+
+Claim boundary
+--------------
+Established: exact identities, conditional launch machinery, compiled P2P
+capability, CVE-2015-1863's pre-copy SSID bound, and CVE-2021-27803's
+unconditional post-add peer relookup.
+
+Not established: the owner's installed hashes, `/tmp/no_unece`, actual launch
+arguments, interface ownership, P2P enablement, discovery/listen state,
+peer-table occupancy, management-frame delivery, process uid/SMACK label at
+runtime, radio reachability, or any dynamic behavior. No P2P vulnerability is
+accepted from these two candidates.

@@ -101,22 +101,56 @@ not memory corruption or code execution. See
 - Unknown: whether `260128` still accepts the replacement, and whether the SOP
   gate can be cleared without already having execution.
 
-### 5. Other Wi-Fi/network daemon candidates — exact identity now available, reachability still gated
+### 5. Other Wi-Fi/network daemon candidates — exact review rejects two P2P CVEs
 
 The recovered RPM Btree contains 1,679 records and identifies, among others,
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
-`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. These are inventory leads,
-not vulnerability findings. Exact file hashes, vendor backports, service
-arguments, listeners, and packet routes must still be checked. For example,
-ConnMan runs with `--nodnsproxy`, which removes older DNS-proxy CVE routes even
-though the affected code may exist in the package.
+`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. Exact review of
+wpa_supplicant, SHA-256
+`6ad96a34c09b66c29ed2f9ad7ae73dee8389c81064a30dfd36a1212c52a21212`,
+shows why these package labels are leads rather than verdicts: its
+`p2p_add_device()` gates the SSID copy on length at most 32, fixing
+CVE-2015-1863, and its Provision Discovery Request handler unconditionally
+re-fetches the peer after `p2p_add_device()`, fixing CVE-2021-27803.
+
+P2P remains compiled into wpa_supplicant and ConnMan, and an enabled path unit
+conditionally starts `supplicantmanager` when `/tmp/no_unece` exists. Production
+marker state, arguments, interface ownership, P2P find/listen state, and radio
+reachability are unknown. These two CVEs are rejected for recovered `260128`;
+Dropbear's exact activation review is also complete for the recovered image:
+its package record, socket-fed template, installer, and static root authorized
+public key remain, but `dropbear`/`dropbearmulti`, the socket unit, host-key
+service/key, and enable links are absent. It is dormant, not a listener or
+version-derived CVE route. Remaining BusyBox, OpenSSL, and other daemon
+candidates still require exact file, activation, listener, and route review.
+ConnMan's `--nodnsproxy`, for example, removes older DNS-proxy CVE routes even
+when package-age matching suggests them.
 
 `tools/uk_fw/rpm_nvra_inventory.py` deterministically parses preserved
 `db_dump -p` output. `tools/uk_fw/net_surface.py` remains the physical-bench
 listener and banner capture tool. No public end-to-end Wi-Fi-to-root for this
 Gen5W_L build has been established.
 
-### 6. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
+### 6. Bluetooth BSA BNEP — exact parser defect, but recovered PAN configuration is dormant
+
+Both PCB-selected daemons contain CVE-2017-0782's pre-fix
+`bnep_process_control_packet()` control flow. They read the BNEP extension and
+control fields before the field-by-field remaining-length checks added by public
+fix `1b08775917413f1674882130a948add1ae44cc91`; the same code exists in
+`BSA0107_00.51.00` and `BSA0107_00.63.00`. `vbtd.service` is enabled, has a
+configured uid-0 default, restarts always, and recovered policy intends
+`App::bluetooth`; mandatory `/tmp/session_appmgr.env` is a runtime gate.
+
+Both engineering profiles explicitly say `PAN : N/A`. Startup calls
+`BNEP_Init`, but bounded review found no direct `BNEP_Register` reference. This
+is V-019, dormant/conditionally reachable exact code—not a radio-to-root result.
+An indirect/runtime profile registration would still need an active adapter,
+accepted ACL/L2CAP channel, and parser delivery. Pairing/authorization,
+allocation-bound OOB, disclosure, write primitive, RCE, and owner applicability
+remain unknown. See
+`evidence/broadcom-bsa-bluetooth-cves.md`.
+
+### 7. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
 
 Kernel config enables `USB_F_IAP2`, `USB_U_IAP2`, `USB_G_SERIAL`,
 `GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules and the
@@ -126,7 +160,7 @@ finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 7. Kernel — analysed; conditional post-execution candidates remain
+### 8. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -157,7 +191,7 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.
 
-### 8. MICOM / CAN — post-exploitation
+### 9. MICOM / CAN — post-exploitation
 
 `micom_*` (24 symbols) includes a user-writable sysfs handler
 (`micom_sys_spidump_store`). CVE-2020-8539 (`micomd`) is a **local** issue:
