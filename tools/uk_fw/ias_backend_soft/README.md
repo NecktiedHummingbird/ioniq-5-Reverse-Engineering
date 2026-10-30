@@ -145,3 +145,16 @@ runner). Nothing in `debug/` is part of the shipped plugin.
 The fix is tracked as `vendor-abi.patch` because `work/` is gitignored; `build.sh` applies it
 idempotently (`patch -p1` from `work/weston-source-1.10/full`) before compiling, and the two-file
 build it produces reproduces the injected `ias-backend-soft.so` byte for byte.
+
+## Repository hygiene for these scripts
+
+This repository is public and its harness rejects machine-specific paths. Every script here therefore
+resolves its own location and works from any checkout:
+
+- `debug/run_ias.py` derives the repository root from `__file__`.
+- `debug/inject.sh` uses `debugfs` from `PATH`; set `DEBUGFS=/path/to/debugfs` if it lives elsewhere.
+- `build.sh` uses `brew --prefix` for host headers; override `BREW_PREFIX`, `PIXMAN_INC` or `XKB_INC`
+  for a different prefix.
+
+Do not reintroduce absolute host paths when adding debug scripts. Build products (`*.so`) are gitignored
+and must stay untracked: they embed the build path in their string tables.

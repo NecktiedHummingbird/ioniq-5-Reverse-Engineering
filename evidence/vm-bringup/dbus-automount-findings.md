@@ -37,7 +37,7 @@ the full timeout, `VM_COMMAND_END` never printed). `/usr/bin/setsid ... </dev/nu
 
 ## Reproduce
 ```
-/opt/homebrew/bin/python3.13 work/vm/vendor-userspace-260128/dbus-automount-probe.py 3
+python3.13 work/vm/vendor-userspace-260128/dbus-automount-probe.py 3
 ```
 (homebrew python3.14 is broken on this host: `posix_spawn: ... Undefined error: 0`; use python3.13.)
 

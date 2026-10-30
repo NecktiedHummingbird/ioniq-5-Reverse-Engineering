@@ -2,7 +2,12 @@
 # Inject a host-built .so into the softbackend CoW clone and refresh prepare.json.
 set -e
 cd "$(dirname "$0")/../../../.."
-DBG=/opt/homebrew/opt/e2fsprogs/sbin/debugfs
+# debugfs comes from e2fsprogs; override with DEBUGFS=... if it is not on PATH.
+DBG=${DEBUGFS:-$(command -v debugfs 2>/dev/null || true)}
+if [ -z "$DBG" ]; then
+	echo "inject.sh: debugfs not found; set DEBUGFS=/path/to/debugfs" >&2
+	exit 1
+fi
 IMG=work/vm/softbackend/rootfs.img
 SO=${1:?usage: inject.sh path/to.so}
 "$DBG" -w -R "rm /usr/lib/weston/ias-backend-soft.so" "$IMG" >/dev/null 2>&1 || true

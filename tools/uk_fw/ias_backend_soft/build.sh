@@ -16,6 +16,12 @@ SRC=${1:-$W/src/compositor-headless.c}
 DST=${2:-$OUT/headless-probe.so}
 shift 2 2>/dev/null || true
 
+# Host header locations for the cross build. Override PIXMAN_INC / XKB_INC if your
+# prefix is not the local Homebrew one; nothing here assumes a specific machine layout.
+BREW_PREFIX=${BREW_PREFIX:-$(brew --prefix 2>/dev/null || echo /usr/local)}
+PIXMAN_INC=${PIXMAN_INC:-$BREW_PREFIX/include/pixman-1}
+XKB_INC=${XKB_INC:-$BREW_PREFIX/include}
+
 # The guest's weston is LG-patched: its struct weston_output/weston_seat/
 # weston_compositor carry extra members, so a header taken from upstream 1.10
 # produces a plugin that writes 0x18 bytes too low and segfaults weston in
@@ -27,7 +33,7 @@ fi
 
 "$ZIG" cc -target x86_64-linux-gnu -shared -fPIC -O1 \
   -I "$OUT" -I "$W/src" -I "$W/shared" -I "$W" \
-  -I "$WAY" -I /opt/homebrew/include/pixman-1 -I /opt/homebrew/include \
+  -I "$WAY" -I "$PIXMAN_INC" -I "$XKB_INC" \
   -o "$DST" "$SRC" "$@"
 
 file "$DST" | cut -c1-80

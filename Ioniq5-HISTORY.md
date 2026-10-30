@@ -1942,7 +1942,7 @@ and are superseded by corrections rather than silently rewritten.
 
 - The recovered package and binary advertise wpa_supplicant 2.5, but exact
   instructions contain later security backports. In `p2p_add_device()`, the
-  peer-controlled SSID element length is rejected above 32 before the copy,
+  every SSID copy is gated on the peer-controlled element length being at most 32,
   matching the CVE-2015-1863 fix.
 - CVE-2021-27803 required a more careful control-flow comparison. The recovered
   Provision Discovery Request handler calls `p2p_add_device()`, then on every
@@ -2115,3 +2115,13 @@ and are superseded by corrections rather than silently rewritten.
 - The control path now works end to end: a client enumerates a CRTC, sets a mode, and the compositor
   reports 1920x720 at 60 Hz on an output named HDMI1. The display architecture decision has its first
   working slice.
+
+## 2026-10-31 — privacy sweep on the IAS tooling
+
+- Two absolute paths in a debug script tripped the public harness. Fixing only the reported instance
+  would have left the same leak in three other files, so the sweep covered every tracked file in this
+  line of work instead of the single reported one.
+- One apparent hit was not a leak at all: `/home/root` is a path inside the guest, not on this machine.
+  Worth the extra look, because a blind find-and-replace would have corrupted a correct statement.
+- The build products are the quiet risk: they embed the host path in their string tables, and they are
+  ignored rather than tracked. That is now noted so nobody "helpfully" commits one.

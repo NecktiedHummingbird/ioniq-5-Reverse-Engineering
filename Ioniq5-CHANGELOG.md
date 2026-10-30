@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.20.1 - housekeeping: no absolute host paths in published IAS work
+
+- The public harness rejected two machine-specific paths from `tools/uk_fw/ias_backend_soft/debug/run_ias.py`.
+  Fixed by deriving the repository root from `__file__` instead of hardcoding it, so the script works from
+  any checkout.
+- The same class of leak was then removed everywhere it appeared in this line of work, rather than only
+  where it was reported: `debug/inject.sh` now takes `debugfs` from `PATH` (with a documented `DEBUGFS`
+  override), `build.sh` uses `brew --prefix` with `BREW_PREFIX`/`PIXMAN_INC`/`XKB_INC` overrides, and two
+  evidence documents had `python3.13` invocations rewritten without the Homebrew path.
+- Verified by scanning every tracked file in `tools/uk_fw/ias_backend_soft` and `evidence/vm-bringup`:
+  zero `/Users`, `/opt/homebrew` or host-home references remain. One apparent hit in
+  `usb-root-vector-map.md` was a **guest** path (`/home/root`) and correctly left alone.
+- Build products stay untracked: `*.so` is gitignored and none are in the index, which matters because
+  their string tables embed the build path.
+- A hygiene section now sits in the scaffold README so the next debug script does not reintroduce this.
+
 ## 1.20.0 - the CRTC works, and the cause was a modified vendor ABI
 
 - **The falsification criteria from the scope document are now met.** `wrandr` reports
@@ -81,7 +97,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   script would copy the static key into root's authorized keys. This is only a
   route for a holder of the matching private key if the missing server chain is
   independently restored; a bounded recovered-filesystem marker/filename search
-  identified no candidate private key.
+  identified no candidate private-key material.
 - Added `evidence/dropbear-activation-and-authentication.md` and a sanitized
   artifact excerpt. No listener, login attempt, credential, or target process
   was used.
@@ -90,8 +106,8 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 - Identified exact recovered `wpa_supplicant` and `supplicantmanager` hashes,
   package record, Build ID, path-unit activation, and conditional marker gate.
-- Confirmed CVE-2015-1863 is fixed: `p2p_add_device()` rejects peer-controlled
-  SSID lengths above 32 before the copy path.
+- Confirmed CVE-2015-1863 is fixed: `p2p_add_device()` enters its SSID copy
+  paths only when the peer-controlled length is at most 32.
 - Confirmed CVE-2021-27803 is fixed: after successful `p2p_add_device()`, the
   Provision Discovery Request handler unconditionally re-fetches the peer and
   replaces the old pointer before continuing.

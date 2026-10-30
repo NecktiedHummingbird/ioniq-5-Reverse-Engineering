@@ -88,7 +88,7 @@ only difference between it and the automounter's line is udev's sanitiser.
 
 ## Reproduce
 ```
-/opt/homebrew/bin/python3.13 work/vm/vendor-userspace-260128/v006-injection-probe.py port
+python3.13 work/vm/vendor-userspace-260128/v006-injection-probe.py port
 ```
 (default serial = the payload above; an optional second argument overrides it). Runs: 1793334207675115000
 (failed QEMU, no rootdir), 1793334237293217000 / 1793334276767100000 (enumeration timing, EHCI),
