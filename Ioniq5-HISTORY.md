@@ -1372,3 +1372,20 @@ and are superseded by corrections rather than silently rewritten.
   not being the parent surface at all.
 - The next discriminator is to confirm the helper connects and its first request is accepted,
   by capturing both its output and the compositor's response.
+
+## 2026-10-29 — correction: visibility is granted and the harness has no ApplicationManager
+
+- Withdrew the claim that no visibility events are emitted. The count came from searching for
+  ivi_surface_visibility, whereas the compositor logs ivi_surface@7.visibility(1) twice, so the
+  surface is in fact made visible. This is the second occasion in this investigation where a
+  wrong marker string inverted the conclusion, and both are now on record.
+- Noted as well that this harness deliberately runs without an ApplicationManager, so its empty
+  manager query says nothing about the manager's view; the earlier drawing-application-zero
+  observation came from a different configuration.
+- With the retained milestone screenshot showing genuine map pixels, the standalone harness
+  already reaches visible authentic AppNavi rendering.
+- The remaining gap is therefore integration rather than rendering. The full launcher chain
+  starts AppNavi through AppLauncher with different environment and ordering, and does not
+  reproduce this harness's ingredients.
+- The next step is to carry the three essentials into the full chain: the gpio440 adaptor, the
+  valet-status D-Bus boolean stub, and the widget visibility helper.
