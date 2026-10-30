@@ -1389,3 +1389,18 @@ and are superseded by corrections rather than silently rewritten.
   reproduce this harness's ingredients.
 - The next step is to carry the three essentials into the full chain: the gpio440 adaptor, the
   valet-status D-Bus boolean stub, and the widget visibility helper.
+
+## 2026-10-29 — physical HID identified as dropped by the shell
+
+- Investigated the reported behaviour that a mouse pointer appears but never moves and a keyboard
+  is ignored. The weston configuration selects ias-backend with ivi-shell and contains no input
+  section, while the backend itself fully supports pointer, keyboard and touch through libinput
+  and libevdev, and udev is stock apart from a touchscreen symlink rule.
+- The gap is ivi-shell, which contains no pointer or keyboard focus implementation at all; the
+  only keyboard logic in the window manager concerns the on-screen keyboard surface.
+- Consequently the cursor is drawn because a pointer seat exists, but nothing moves it or grants
+  pointer focus, and keys are consumed by the compositor with no focus surface and dropped. The
+  caps-lock LED change on plug-in reflects device-open LED state rather than key handling.
+- The consequence recorded is that input has to be simulated at the touch layer, which the GUI
+  accepts, rather than by presenting a mouse or keyboard. A short VM experiment with the existing
+  input helpers would confirm this at runtime.
