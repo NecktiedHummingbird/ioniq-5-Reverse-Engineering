@@ -160,3 +160,114 @@ line that names any of these four units being started, and no `systemd` line at 
 | `runs/1793336299417507000/` | esinit from research shell; `ps`, `/tmp` listing, `readlink` of `/tmp/fstab`, `/etc/passwd` |
 | `runs/1793336659679272000/` | clean-guest `modprobe fan` (`fan1_rc=0`) then lge oops then `hid-generic` (`hg_rc=0`) |
 | `runs/1793336899275858000/` | D-state `modprobe fan` with `__driver_attach` / `lge_fan_init` kernel stack |
+
+## 9. Blocker cleared (2026-10-30, second pass): PID 1 becomes systemd
+
+Approach 1 of §7 was used — suppress only `lge_usb_adapter` — and it is sufficient on its own.
+Approach 2 (pre-loading `fan`) was **not** needed: with the oops gone, esinit's own
+`/sbin/modprobe fan` at line 588 returns normally (`[ 12.079111] LGE fan driver initialization`).
+
+### 9.1 How the module was neutralised
+
+`/sbin/modprobe` is a symlink chain `modprobe -> /sbin/modprobe.kmod -> ../bin/kmod`, i.e. real
+kmod, so it reads `/etc/modprobe.d`. `/etc/esinit-modprobe.sh` line 5 requests the module by its
+exact name, so a `blacklist` line (which only affects alias/udev lookups) would not apply; the
+load was instead overridden with an `install` directive:
+
+```
+/etc/modprobe.d/zz-vm-research-no-lge-usb.conf
+  install lge_usb_adapter /bin/true
+```
+
+The canonical image was not touched. A copy-on-write APFS clone was made and edited, giving a
+separate proof workspace:
+
+* `work/vm/esinit-nolge/` — `cp -c` clone of the workspace (instant, CoW), same `bzImage`,
+  same synthetic `manifest.bin`/`seed_*.bin`, new `prepare.json` with the clone's own hashes.
+* Only write: `debugfs -w -R "write … /etc/modprobe.d/zz-vm-research-no-lge-usb.conf"`.
+* Before/after: `work/vm/vendor-userspace-260128/rootfs.img` is still
+  `sha256 4953a005…66d036f` (§1 value, unchanged). The clone is `e9f76d15…3331815`.
+* The QEMU drive is still `snapshot=on`, so the guest's own writes remain throwaway.
+
+### 9.2 Result — authentic chain reaches systemd
+
+```
+python3.13 tools/uk_fw/vm_boot.py run --workspace work/vm/esinit-nolge \
+  --sdhci-compat --init /lib/systemd/esinit --timeout 420
+```
+
+`work/vm/esinit-nolge/runs/1793337936219669000/serial.log`:
+
+```
+[   12.529302] systemd[1]: Successfully loaded Smack policies.
+[   12.608565] systemd[1]: systemd 225 running in system mode. (-PAM -AUDIT -SELINUX +IMA …)
+[   12.620200] systemd[1]: Set hostname to <prm-gen-5>.
+```
+
+`systemd[1]` is PID 1 and `esinit`'s `exec /lib/systemd/systemd` (line 617) therefore ran. The run
+contained **zero** occurrences of `BUG:`, `sbi_apl_commit` or `Killed` (previously §5), and no
+`lge-usb-adapter … probe` line: the module was never loaded and no lock was orphaned.
+
+### 9.3 Units attempted, and the first failure
+
+Started/reached before the wall: `systemd-modules-load` (inserted `mei`, `mei_me`, `mei_txe`,
+`lgivi_usbser`, `lgivi_usbrmnet`), `udev`, `systemd-sysusers`, `systemd-tmpfiles-setup`,
+`systemd-journald`, `systemd-remount-fs`, `check-mount`, `spi-validation`, `pstore-reboot`,
+`auditd`, `local-fs.target` and its fstab mounts (`log_data`, `navi`, `navi2`, `rw_data`, `space`,
+`update`, `voicememo`, `vr`, `Data-mnt-\x2d{backup,wt,c}`); `nua.service` and
+`micommanager.service` were queued and then stopped by the emergency switch. **No**
+`weston.service`, `ApplicationLauncher`, `Dbuslaunch` or `micom.service` job was ever attempted.
+
+First failing unit (t=13.575, before any other):
+
+```
+[   13.575440] systemd[1]: systemd-remount-fs.service: Control process exited, code=exited status=64
+[   13.586212] systemd[1]: Failed to start Remount Root and Kernel File Systems.
+[   13.600762] systemd[1]: systemd-remount-fs.service: Failed with result 'exit-code'.
+```
+
+Second: `check-mount.service: Failed at step EXEC spawning /bin/check-mount.sh: Permission denied`
+(`status=203/EXEC`), then `auditd.service` failing repeatedly until `start-limit`.
+
+The fatal chain is environmental, not platform-bus related: every fstab entry names a partition
+of the real eMMC (`/dev/mmcblk0p6…p17`) that does not exist in this single-partition projection,
+so the `.device` jobs time out after 90 s:
+
+```
+[  103.214697] systemd[1]: dev-mmcblk0p8.device: Job dev-mmcblk0p8.device/start timed out.
+[  103.218052] systemd[1]: Dependency failed for /log_data.
+[  103.223161] systemd[1]: local-fs.target: Job local-fs.target/start failed with result 'dependency'.
+[  103.441238] systemd[1]: Reached target Emergency Mode.
+[  103.691651] systemd[1]: Startup finished in 12.357s (kernel) + 1min 31.334s (userspace) = 1min 43.691s.
+```
+
+So systemd reaches `emergency.target` at ~103 s guest time and idles there until the harness
+timeout (`result.json`: `"timeout": true`).
+
+### 9.4 esinit artefacts exist (direct listing, not inference)
+
+`work/vm/esinit-nolge/runs/1793338415885041000/` (same clone, research shell, esinit started from
+it so `/tmp` could be listed after the fact):
+
+```
+POLL_ITER=1
+lrwxrwxrwx 1 root root  15 /tmp/fstab -> /etc/fstab_emmc
+-rw-r--r-- 1 root root 996 /tmp/passwd
+-rw-r--r-- 1 root root   0 /tmp/spi_validation_NOK
+lrwxrwxrwx 1 root root  31 /tmp/weston.ini -> /etc/xdg/weston/weston_1920.ini
+FSTAB_TARGET=/etc/fstab_emmc
+WESTON_TARGET=/etc/xdg/weston/weston_1920.ini
+```
+
+`/tmp/passwd` is 996 bytes = `passwd.legacy` (§4). `/tmp/spi_validation_NOK` still exists, so the
+SPI gate still fails and esinit still takes the `SPI NOK` branch (writing the relative-path
+`kmsg` file, §4) — weston is still not launched by esinit. The remaining HMI blocker is now
+systemd-side: the missing eMMC partitions and the emergency-mode fallback, not the platform bus.
+
+### 9.5 Evidence index (second pass)
+
+| Path | Content |
+|---|---|
+| `work/vm/esinit-nolge/` | CoW clone + one `modprobe.d` override; `prepare.json` records the change |
+| `work/vm/esinit-nolge/runs/1793337936219669000/` | authentic `init=/lib/systemd/esinit` boot that reaches `systemd[1]`, then `emergency.target` |
+| `work/vm/esinit-nolge/runs/1793338415885041000/` | `/tmp` listing proving `/tmp/{passwd,fstab,weston.ini}` and `spi_validation_NOK` |

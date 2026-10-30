@@ -1569,3 +1569,20 @@ and are superseded by corrections rather than silently rewritten.
 - Also corrected a housekeeping error of my own: the repository ignores `/work/`, so the analysis
   documents I believed I had committed were not in the repository at all. They are now under
   `evidence/vm-bringup/`.
+
+## 2026-10-29 — systemd at last, and a quieter kind of finding
+
+- Suppressing one module load was enough to let the authentic boot reach systemd, which reframes the
+  whole bring-up: the vendor userspace has been ready to run for some time and one driver asserting
+  hardware presence was holding it shut. Doing it on a CoW clone kept the canonical image untouched.
+- systemd then failed in the least interesting place, the fstab. A projection with one partition cannot
+  satisfy units that want `mmcblk0p8`, and systemd behaves exactly as documented: dependency failure,
+  emergency mode, no drama. That is a good sign — the failures are now ordinary and legible rather than
+  silent kernel faults.
+- On the security side the valuable find was the least dramatic one. The MTP injection is dead, the
+  kernel oops turned out to be unreachable, and what remains is a mount performed without `MS_NODEV`.
+  No bug, no clever string, just a flag that lets a device node from a plugged-in filesystem reach
+  storage that file permissions were supposed to protect.
+- Worth noting the shape of that: three candidate attacks were investigated today and two dissolved
+  under evidence, while the one that survived was visible in a constant at a single offset. Evidence
+  keeps selecting for the boring answer.

@@ -3,6 +3,65 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.08.0 - systemd runs for the first time; USB nodev defect found
+
+- **PID 1 is now systemd.** `systemd 225 running in system mode`, hostname `prm-gen-5`, with
+  `systemd-modules-load`, udev, sysusers, tmpfiles, journald, `auditd` and the fstab mount units all
+  attempted. This is the first time the authentic vendor boot has got past esinit's own script.
+- The unblock was one line: `install lge_usb_adapter /bin/true` in `etc/modprobe.d`, applied to an
+  APFS copy-on-write clone (`cp -c`, instant) rather than the canonical image, which still hashes
+  `4953a005…66d036f`. `fan` then loaded normally, confirming the earlier deadlock was the orphaned
+  platform lock and nothing else.
+- The chain now stops at `local-fs.target`. `systemd-remount-fs` exits 64, `check-mount.sh` fails with
+  permission denied, and every fstab entry wants a `/dev/mmcblk0pN` that this projection does not have,
+  so `dev-mmcblk0p8.device` times out and the system reaches **Emergency Mode** at 103 s. The missing
+  piece is the partition table, not a service.
+- `/tmp` artefacts from esinit are all present and correct: `/tmp/passwd` 996 bytes, `/tmp/fstab`,
+  `/tmp/weston.ini`, and the SPI marker. The SPI gate still blocks esinit's own weston launch.
+- USB root-surface map completed. **Most promising vector: the automounted USB filesystem is mounted
+  without `MS_NODEV`.** The flag word at `0x4c00` is `0xC0ED000A`, which is `nosuid,noexec,dev` — so an
+  attacker-controlled filesystem image can carry a device node and reach block devices that
+  `0660 root:disk` would otherwise guard. Statically provable and needs no bug. Recorded as V-011.
+- The udev sanitiser mechanism is now precisely characterised: the `#+-.:=@_` allow-list is
+  `util_replace_chars(0x22a00)` called from `builtin_usb_id` with `allow=NULL`, not
+  `udev_util_encode_string`; `ID_SERIAL` is safe only because its components were sanitised first;
+  `ENV{…}=` rules apply no sanitiser at all, but the single USB-relevant rule is unreachable behind a
+  firewire and skip_pci gate.
+- **V-010 is downgraded.** Its faulting pointer is the global `0xffffffff81bd5460`, set only from
+  `dev.platform_data` at `0x810594c2`, with no attacker-reachable path identified. It stands as a
+  bring-up defect and a reminder that the driver asserts hardware presence, not as a security finding.
+- Second and third ranked vectors recorded for further work: the unseparated media-parser chain
+  (V-007), and a `..` serial combined with an unchecked `umount2`/`mkdir`/`mount` sequence that lands a
+  mount on `/media` when `/media` is writable — an amplifier whose severity depends on a `/media` mode
+  that is still unverified.
+
+## 1.08.0 - authentic ASF parser overflow reproduced; V-006 guidance corrected
+
+- Dynamically reproduced CVE-2026-2920 in the shipped GStreamer ASF plugin
+  `/usr/lib/gstreamer-1.0/libgstasf.so` (SHA-256
+  `05e887731708f0b0a52ff9fc75767a00fda9984e422983e5ff1d672f4b1af45d`). A valid
+  WMA/ASF probe with 33 unique Stream Properties Objects causes authentic
+  `gst-discoverer-1.0` to create stream 33 beyond the element's fixed 32-entry array and then
+  terminate with `SIGSEGV`/exit 139.
+- Added `tools/uk_fw/asf_stream_probe.py`, a bounded generator/auditor that duplicates exactly one
+  valid ASF stream object, repairs header/file sizes, assigns unique 7-bit stream IDs, refuses
+  malformed templates and in-place output, and audits the upstream rejection marker. Added five unit
+  tests.
+- Recorded the parser finding as V-011. The VM proves memory corruption and denial of service, not
+  arbitrary code execution, persistence or physical-head-unit applicability. Upstream/NVD describe
+  RCE potential, but instruction-pointer control was not attempted or claimed.
+- Traced likely production context: `libthumbnailextractor.so` links GStreamer and contains a
+  `uridecodebin ... ! appsink` pipeline, while D-Bus activation does not drop uid. Two bounded
+  `Start(as)` attempts did not reproduce the ASF crash, so automatic thumbnail/scanner reachability
+  remains unproven and those runs are retained as negative controls.
+- Rewrote the stale `usb-root-test-plan.md` and exploit inventory. The old `${IFS}` MTP serial
+  payload is explicitly withdrawn: `usb_id`'s second sanitizer limits `ID_SERIAL_SHORT` to
+  `[A-Za-z0-9#+-.:=@_]`, as already confirmed dynamically in 1.05.0. The root shell sink remains
+  unsafe design and a possible denial-of-service surface, not demonstrated descriptor-to-root code
+  execution.
+- Added `evidence/gstreamer-cve-2026-2920.md` with artifact hashes, exact dynamic sequence, production
+  reachability boundary, related-CVE triage, remediation and regression criteria.
+
 ## 1.07.0 - authentic init chain runs to a kernel oops, and the MICOM contract is written
 
 - The boot harness gained a validated `--init` choice (`/init` or `/lib/systemd/esinit`), defaulting to

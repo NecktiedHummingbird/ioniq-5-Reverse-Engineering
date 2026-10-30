@@ -10,7 +10,7 @@ This is a backfill from existing research, **not a new vulnerability discovery p
 
 **Validation status of the 2026-10-28 advisor report.** The three claims supplied as a third-party summary were tested offline against the recovered rootfs on 2026-10-28. None was accepted as stated:
 
-- **V-006 was upgraded to a confirmed command-injection vulnerability** (static proof, CWE-78) — but through `/app/bin/usb-automount`'s MTP branch, not a "mount script". The reported literal payload would in fact **fail**, because spaces are neutralised to `_` by `util_replace_whitespace`; parameter expansion is needed instead.
+- **V-006 is not a USB-to-root command-injection path in this build.** The MTP branch constructs unquoted `system()`/`popen()` commands, but `usb_id` calls both `util_replace_whitespace()` and `util_replace_chars(..., NULL)`. The second call restricts `ID_SERIAL_SHORT` to alphanumerics plus `#+-.:=@_`. A full VM run delivered the MTP event to the authentic root automounter and rewrote command separators/substitution characters to `_`; no command executed. The unsafe shell construction remains a latent defect and denial-of-service surface.
 - **V-007 was confirmed as a configuration fact** (media parsers default to uid 0 with no isolation) and reclassified as informational hardening, not a vulnerability.
 - **V-008 was confirmed as shipped configuration** (a password-gated root console) but **not** as a vulnerability; the SHA-512 hash is sound and no bypass was found.
 
@@ -88,24 +88,22 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 - **Remediation direction:** validate the surface dimensions before deriving a copy stride, or re-derive the stride after `swrast_update_buffers` returns; treat a non-positive width or height as "no copy" rather than converting it into a byte count. Reject negative and overflowing sizes in the copy loop.
 - **Validation still needed:** reproduce with stock Intel graphics; test zero-size and first-swap buffers specifically; confirm that rejecting non-positive dimensions does not regress legitimate rendering.
 
-## V-006 — Root command injection via USB device serial string (CONFIRMED, static)
+## V-006 — Unsafe MTP shell construction, descriptor injection blocked (LATENT DEFECT)
 
-- **Status:** **confirmed vulnerability, static proof only** — CWE-78 OS command injection. Runtime exploitation on a running unit has **not** been demonstrated. Triaged 2026-10-28.
-- **Severity framing:** defects are not scored numerically here. Reachability requires physical USB access; the payoff is root code execution inside the head unit.
+- **Status:** the shell sink and physical MTP branch are VM-confirmed, but **USB descriptor-to-command execution is rejected for this exact build**. This supersedes the 2026-10-28 static classification.
+- **Severity framing:** defects are not scored numerically here. Physical USB can reach and disrupt this root helper, but root command execution through `ID_SERIAL_SHORT` is not established.
 - **Affected component:** `/app/bin/usb-automount` (43,136-byte stripped x86-64 ELF), started by `lib/systemd/system/usb-automount.service`, which contains **no `User=` directive** and therefore uses the system-service default of uid 0.
 - **Evidence:** `work/vm/vendor-userspace-260128/validation-261028/v006/` (report, udev inventory, sanitiser excerpt, disassembly). Independently re-verified with `llvm-objdump`:
   - `0x5326` `__sprintf_chk` builds `"%s %s %s %s &"` (`.rodata 0x7928`) from `"/usr/bin/go-mtpfs"`, `"--dev"`, **`ID_SERIAL_SHORT`**, and `"/media/mtp/<ID_SERIAL_SHORT>"`; `system()` is called at `0x535f`. No quoting or escaping.
   - `0x53b9` `popen()` runs `"cat /proc/mounts | grep %s"` (`.rodata 0x7936`) using the same serial-derived string.
   - `ID_SERIAL_SHORT` is read at `0x4146` via `udev_device_get_property_value` (`.rodata 0x760c`).
-  - Branch selection at `0x44c3`–`0x44cf` requires `ID_USB_INTERFACES` to contain `060101` (PTP/Still-Image) or `ffff00` (vendor-specific). Plain mass-storage-only devices take a different branch that uses `mount(2)`/`umount2(2)`/`mkdir(2)` and no shell — so **the claim's "mount script" mechanism is wrong, but the injection is real on the MTP path.**
-- **Why the usual udev mitigation does not help** (see the runtime amendment below, which falsifies the pass-through claim in this bullet): `systemd-udevd`'s `usb_id` builtin sanitises with `util_replace_whitespace` (`0x22b20`); at `0x22b72` it tests only the `_ISspace` ctype bit (mask `0x2000`). Only whitespace is rewritten to `_`. Shell metacharacters (`; $ ( ) \` | & ' " < > * ? # ! { } /`) pass through unchanged.
-- **Encoding constraints on the attacker string:** the serial filter at `0x1c2df` accepts bytes `0x20`–`0x7f` and rejects `0x2c` (comma). Literal spaces are therefore neutralised to `_`, and comma-list brace expansion is unavailable; parameter expansion such as `${IFS}` needs neither, so the filter is not a mitigation.
-- **Aggravating detail:** `/tmp` is mounted as tmpfs read-write by `lib/systemd/esinit:10` with default options, so it is executable and suid-capable. `/usr/bin/go-mtpfs` is **absent** from the image, but the shell parses and expands the entire command line before attempting execution, so a missing helper does not prevent an injected command from running.
-- **Preconditions:** physical access to a USB port; a device that advertises a PTP (`06/01/01`) or vendor-specific (`ff/ff/00`) interface; a chosen `iSerialNumber`; and the `usb-automount` service starting with effective uid 0 (configured, but not observed at runtime).
-- **Impact boundary:** if execution retains uid 0, an attacker can manipulate infotainment processes and accessible data, and disrupt media/navigation/UI. This does **not** establish vehicle-bus access or transmit permission, control of braking/steering or other safety systems, access to hardware-protected keys or ECU key material, or persistence across reboot or firmware update. UID 0 is not automatically unrestricted under SMACK.
+  - Branch selection at `0x44c3`–`0x44cf` requires `ID_USB_INTERFACES` to contain `060101` (PTP/Still-Image) or `ffff00` (vendor-specific). Plain mass-storage-only devices take a different branch that uses `mount(2)`/`umount2(2)`/`mkdir(2)` and no shell. The unsafe MTP sink is real; descriptor-based command injection is blocked downstream by udev sanitization.
+- **Corrected sanitizer analysis:** after `util_replace_whitespace` at `0x1c334`, `builtin_usb_id` calls `0x22a00` at `0x1c33e` with `rsi = NULL`. That second function calls the predicate at `0x29d80`, whose built-in allowlist at `0x537c9` is exactly `#+-.:=@_`, in addition to ASCII letters and digits. Other printable bytes become `_`. A literal `\\x` pair can survive, but the shell treats it as an escaped `x`, not a hexadecimal byte escape. The earlier analysis mislabelled `0x22a00` as trimming and therefore reached the wrong security conclusion.
+- **Dynamic result:** QEMU `usb-mtp` presented raw serial `a;id>/tmp/v006.id;echo${IFS}V006KMSG>/dev/kmsg;#`; sysfs retained it, while udev emitted `a_id__tmp_v006.id_echo__IFS_V006KMSG__dev_kmsg_#`. The authentic uid-0 automounter stayed alive and reached the MTP `system()` branch, but created no marker and executed no injected command. A broader matrix preserved only `[A-Za-z0-9#+\-.:=@_]` and rewrote separators, substitutions, redirections, quotes, globs and slashes. Logs: `v006-exploit-host.log` SHA-256 `568f3197ff178cbf8356674c74a149b66ec1bfd96eedd5f2098a830c84adb27a`; matrix SHA-256 `de0757442ca4a74d3a3f87db79e8c3eb2b16b101dc47131d266af71ac734b0a1`.
+- **Residual impact and preconditions:** physical PTP/MTP access can reach the root shell sink. A leading `#` can truncate the helper command as a comment, so denial of service is plausible. No surviving descriptor sequence found can introduce a new shell word, substitution, redirection or command.
 - **Remediation:** remove both `system()` and `popen()`. Launch an absolute path with `execve()`/`posix_spawn()` and a fixed argument vector plus controlled environment. Read `/proc/mounts` directly and compare decoded fields instead of shelling out to `grep`. Derive mount-directory names independently of the raw serial; constrain paths beneath an owned directory and prevent traversal and symlink races. Treat serial validation as defence in depth, never as a substitute for removing the shell. Disable the MTP branch cleanly when the helper is absent. Move descriptor handling and helper execution out of root, retaining only narrowly scoped privileged mount operations.
 - **Acceptance / regression:** shell metacharacters, separators, `${IFS}`-style expansion, over-long serials, comma and non-ASCII serials, and a missing helper must all produce no shell interpretation; legitimate PTP and mass-storage mount and unmount must still work; no privileged child of the automounter should exist.
-- **Not yet done:** isolated-VM dynamic confirmation (see below). Do not describe this as "USB-to-root demonstrated".
+- **Validation boundary:** do not describe V-006 as "USB-to-root" or as an exploitable CWE-78 on `260128`. Re-test other firmware builds because the sanitizer is defence in depth rather than a substitute for removing the shell.
 
 **Runtime amendment (2026-10-29) — the metacharacter pass-through claim above is falsified.**
 
@@ -136,21 +134,14 @@ that allow-list, a path that reads the raw descriptor instead of the property, o
 an unsanitised string. Treat the allow-list as accidental defence in depth, not as the fix. The earlier
 statement in this register that shell metacharacters "pass through unchanged" is withdrawn.
 
-**Reproduction harness status (2026-10-29).** The emulated-device half of the harness now works: a
-QEMU USB device presenting `0403:6001` with an arbitrary serial string enumerates on UHCI with that
-string read back verbatim, so the attacker-controlled input to this vulnerability is reproducible in
-the VM. Two blockers remain before an end-to-end demonstration: the image carries no `ftdi_sio`-family
-driver, and `usb-automount` refuses to run without a system D-Bus, exiting on a `QDBusConnection`
-assertion. Neither affects the static confirmation above. A plain serial adapter is the wrong device
-class for this entry in any case; the MTP branch requires an MTP device. Evidence: runs
-`1793332245651259000` and `1793332361615248000`.
+**Reproduction status (updated 2026-10-30).** QEMU `usb-mtp`, the authentic udev database, system D-Bus and `usb-automount` now run together. `ID_USB_INTERFACES=:060101:` and the missing-`go-mtpfs` shell error prove MTP-branch reachability. The sanitizer—not missing hardware, D-Bus or payload syntax—is the reason command injection does not occur.
 
 ## V-007 — Media parsing runs as an unprivileged-separation gap (CONFIRMED configuration, not a demonstrated exploit)
 
-- **Status:** **confirmed configuration, informational.** Not a vulnerability on its own: no parser defect has been identified, and root execution of a parser is a risk amplifier rather than an exploitable condition. Triaged 2026-10-28; reclassified from "unverified actor report" and from the earlier "SUPPORTED vulnerability" framing.
+- **Status:** **confirmed configuration, informational.** Root execution of a parser is a risk amplifier rather than a vulnerability by itself. A separate, dynamically reproduced ASF parser defect is now recorded as V-010; this entry remains the privilege-separation finding. Triaged 2026-10-28.
 - **Evidence:** `work/vm/vendor-userspace-260128/validation-261028/v007/` (report, component table, evidence excerpts).
 - **Observation:** none of the media service units specify `User=` (the only templated unit in the image is `user@.service`). `lightmediascannerd`, `thumbnail_extractor`, `mediamanager`, `playerengine` (GStreamer 1.8.3 with 160 plugins plus libav) and `MediaBrowser` (libmediainfo) are therefore configured for uid 0. No `CapabilityBoundingSet=`, `NoNewPrivileges=` or `SystemCallFilter=` is present, no `libseccomp` exists in the image, and the image contains **zero setuid binaries**. The only confinement is SMACK labelling (`App::mediaplayer`, `App::usbautomount`), which does not change uid.
-- **What is not established:** observed runtime uid; any reachable memory-safety defect in any parser; that missing unit directives prove the absence of inherited or directly-installed seccomp filtering; and consequently any media-triggered code execution.
+- **What is not established:** production-hardware runtime uid; that missing unit directives prove the absence of inherited or directly-installed seccomp filtering; automatic V-010 reachability through the production scanner/thumbnail D-Bus workflow; or media-triggered code execution rather than the VM-confirmed crash.
 - **Remediation:** run scanners, thumbnail workers, players and their D-Bus activation paths under dedicated non-root accounts; put privileged device and mount management behind a narrow broker; restrict filesystem writes and network access; tighten SMACK rules; apply the hardening this systemd-225 build actually supports; backport parser fixes and fuzz hostile media.
 - **Acceptance:** media components run under distinct non-root identities; a parser crash cannot reach privileged state; legitimate playback, indexing and thumbnail generation still work.
 
@@ -190,7 +181,7 @@ init runs, and whether a local unprivileged context is reachable at all. Stated 
 worth checking on real hardware, not as an exploit. Evidence: `work/vm/vendor-userspace-260128/
 dbus-automount-findings.md` and the `dbus-automount-probe.py` driver.
 
-## V-010 — Null-pointer dereference in `sbi_apl_commit` wedges the platform bus (CANDIDATE)
+## V-010 — Null-pointer dereference in `sbi_apl_commit` wedges the platform bus (DOWNGRADED: bring-up defect, not security)
 
 Loading the vendor module `lge_usb_adapter` on emulated hardware faults immediately:
 
@@ -215,10 +206,33 @@ influenced by unprivileged input or by device-supplied data. If they can, this i
 null-dereference or worse in a driver that runs before the HMI; if they cannot, it is a
 bring-up defect. That question is open.
 
-**Status: candidate.** Unverified: whether the faulting pointer is derived from data any less
-privileged actor controls, whether the same path is reachable after boot, and whether the vendor
-intends a hardware-presence precondition that emulation violates. Not a demonstrated security
-vulnerability. Evidence: `evidence/vm-bringup/esinit-bringup-findings.md`.
+**Status: downgraded 2026-10-29.** Follow-up analysis resolved the open question in the negative: the faulting pointer is the global `0xffffffff81bd5460`, assigned only from `dev.platform_data` at `0x810594c2`, and no attacker-reachable path to it was found. The driver asserts hardware presence that emulation does not provide, so this is a bring-up defect and an illustration that the driver trusts platform data. Kept in the register for that lesson, not as a finding. Evidence: `evidence/vm-bringup/esinit-bringup-findings.md`.
+
+## V-011 — GStreamer ASF >32-stream object overwrite (VM-CONFIRMED CRASH; RCE POTENTIAL)
+
+- **Status:** CVE-2026-2920's affected path is dynamically reached in the recovered `260128` userspace and causes deterministic memory corruption followed by `SIGSEGV`. Arbitrary code execution is **not** demonstrated. Production scanner/thumbnail auto-reachability and installed-device applicability remain unverified.
+- **Component:** `/usr/lib/gstreamer-1.0/libgstasf.so`, SHA-256 `05e887731708f0b0a52ff9fc75767a00fda9984e422983e5ff1d672f4b1af45d`, GStreamer ABI `1.8.3`. The firmware was built before upstream's 11 February 2026 fix.
+- **Mechanism:** `GstASFDemux` has `stream[32]`. The affected parser accepted stream 33, created `audio_32`, and wrote the next `AsfStream` over following element state. Upstream fix `37d7991168a223d0810fd1f4493ec6a8b6a510d3` adds bounds checks before audio/video stream setup. Its rejection string is absent from the vendor plugin.
+- **Dynamic proof:** a bounded probe duplicated one valid ffmpeg-produced WMA Stream Properties object to IDs 1–33. Authentic `gst-discoverer-1.0` logged `Found stream 33`, created its pad, continued into the data object, then the kernel recorded:
+  `asfdemux0:sink[...] segfault at e00000000 ... in libglib-2.0.so.0.4400.1`.
+  Exit status was `139`. Probe SHA-256: `9c5aaa1f7ad2a4e8526066f6f22e2b3737b912de93f94ab1aa858e3a9ec32518`; host-log SHA-256: `b98b05560207193831fe1d47ed8cc093d5ffcc46b48e2b1c0e23c4ee22da6225`.
+- **Reachability context:** `libthumbnailextractor.so` links GStreamer and contains a `uridecodebin ... ! appsink` video pipeline; its D-Bus activation script does not drop uid. Two bounded D-Bus `Start` attempts did not reproduce the ASF crash, so automatic extraction reachability is not claimed. User-selected playback or another GStreamer consumer remains plausible but untested.
+- **Impact boundary:** NVD/ZDI classify the generic defect as potential remote code execution in the current process. Here, only a root-context VM parser crash is proven. No shell, persistence, SMACK bypass, CAN access or control of execution was obtained.
+- **Tooling:** `tools/uk_fw/asf_stream_probe.py` safely duplicates one valid ASF stream object, updates header/file sizes, and audits the upstream rejection marker. It refuses malformed templates, in-place overwrite and stream counts outside `1..127`. The generated file carries no command payload or shellcode.
+- **Remediation:** backport the upstream bounds checks for both audio and video stream objects; reject `num_streams >= G_N_ELEMENTS(demux->stream)` before any pad or stream state is created. Run media parsing under a dedicated unprivileged, sandboxed worker. Disable ASF parsing if the format is not required.
+- **Acceptance:** 32-stream positive control parses as before; 33+ streams fail cleanly before pad creation; malformed/repeated headers do not crash; production thumbnail, scanner and playback paths are tested under non-root identities.
+- **Evidence:** `evidence/gstreamer-cve-2026-2920.md`.
+
+## V-011 — Automounted USB filesystem is mounted with `dev`, defeating device permissions
+
+- **Status:** defect confirmed statically; privilege consequence partly inferred, not demonstrated. CWE-269-class (improper privilege management) with a defence-in-depth failure of the `nodev` mitigation.
+- **Where:** `/app/bin/usb-automount`, the mass-storage branch. The mount flag word loaded at `0x4c00` is `0xC0ED000A`, which carries `MS_NOSUID | MS_NOEXEC | MS_DEV`.
+- **Why it matters:** `MS_DEV` is the *absence* of `nodev`. With it cleared, a filesystem supplied on removable media may contain device nodes, and those nodes work. The unit restrict access to internal storage with `0660 root:disk` on `/dev/mmcblk*`; a device node created inside an attacker's filesystem image on removable media bypasses that ownership boundary entirely, because the node is interpreted by the kernel, not by the filesystem owner.
+- **Preconditions:** physical USB access and an image the automounter accepts; the tree offers no evidence that filesystem ownership or provenance is checked.
+- **Impact boundary:** this does not by itself yield code execution. It yields a channel to block devices that the permission model assumed were root-only, which is materially worse than reading removable media should be, and it composes with anything that can act on a mounted device — including this register's unseparated media parsers (V-007).
+- **Verified vs inferred:** the flag value, the call site and the absence of `nodev` are verified. That `/media` and its subdirectories are reachable and that a crafted node is accepted are inferred from the mount call and fstab, and require one runtime check.
+- **Falsified cheaply:** mount any USB image through the service and inspect `/proc/mounts`; if the entry carries `nodev`, this entry is wrong.
+- **Remediation:** add `MS_NODEV` (and keep `nosuid`, `noexec`) to the mass-storage mount flags. Independently, mount removable media in a mount namespace owned by an unprivileged context and expose only a bind of the media root, so flags stop being the only barrier. Reject images containing device or setuid nodes before exposure.
 
 ## Rejected / out-of-scope items
 
