@@ -55,3 +55,39 @@ Method, and the two harness facts that make it work:
 
 The same method will generate any other protocol header the backend needs, including the Weston XMLs in
 `work/weston-source-1.10/full/protocol/`.
+
+## First successful build (verified)
+
+`build.sh` cross-builds the **unmodified** vendored `compositor-headless.c` into a loadable plugin:
+
+```
+ELF 64-bit LSB shared object, x86-64, 35696 bytes
+T backend_init
+31 undefined symbols   # resolved from the weston executable at dlopen, as plugins expect
+```
+
+That settles the build question: a backend for this guest can be produced from the Weston tree on this
+host, with no guest toolchain.
+
+### Prerequisites, each established by a failure
+
+1. **`config.h`** — committed here as a minimal stub. Weston generates it with autotools; the defines
+   this backend actually needs are the handful in the file.
+2. **`wayland-server.h` etc.** — from the `wayland-1.10.0` release tarball, unpacked to
+   `work/vm/wayland-1.10.0-src`. Homebrew cannot supply these: the formula reports "Linux is required
+   for this software" and refuses to build on macOS.
+3. **`wayland-server-protocol.h`** — generated in the guest from `/usr/share/wayland/wayland.xml` by the
+   image's own `wayland-scanner`, because the tarball does not ship it.
+4. **`xkbcommon`** — `brew install libxkbcommon` (had a bottle; needed by `compositor.h:37`).
+5. **pixman headers** — Homebrew 0.46.4 against the image's 0.42.2 runtime; skew still a stated risk.
+
+### Getting files out of the guest
+
+Two channels were tried and one works for large files:
+
+- Console (gzip+b64): fine for ~8 KB, corrupts for ~23 KB. Failed on `wayland-server-protocol.h`.
+- Socket capture (`/dev/ttyS1` via `--micom-serial`): **drops bytes**, 22972 in-guest vs 23064 captured,
+  and gzip refused to inflate it.
+- **`-chardev file,...,path=/tmp/out` on a second `isa-serial,index=2`**: lossless. Guest writes
+  `busybox base64 /tmp/wp.h > /dev/ttyS2` and the host reads the file. This produced the verified
+  97042-byte header, matching the in-guest size exactly.

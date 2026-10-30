@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.18.0 - the backend cross-builds; first successful plugin
+
+- **A Weston backend plugin now builds for the guest from this host.** `zig cc -target
+  x86_64-linux-gnu` compiles the unmodified vendored `compositor-headless.c` into a 35,696-byte
+  x86-64 ELF that exports `backend_init` and leaves 31 symbols undefined for the weston executable to
+  resolve at `dlopen` — exactly the shape a plugin should have. Reproducible via
+  `tools/uk_fw/ias_backend_soft/build.sh`.
+- Dependencies were each found by a failure rather than guessed: the `config.h` stub, wayland 1.10.0
+  headers from the release tarball (**Homebrew refuses to build wayland on macOS**: "Linux is required
+  for this software"), `wayland-server-protocol.h` generated in-guest because the tarball omits it, and
+  `libxkbcommon` for `compositor.h:37`.
+- `wayland-server-protocol.h` extracted at **97,042 bytes, matching the in-guest size exactly**, with 22
+  interface definitions.
+- Three extraction channels were tested and only one is trustworthy for large files. Console
+  gzip+base64 handled the 7.7 KB header but corrupted a 23 KB one. The `/dev/ttyS1` socket capture
+  **drops bytes** (22,972 in-guest versus 23,064 captured, gzip refused to inflate). A second
+  `isa-serial,index=2` backed by `-chardev file` is lossless and is now the documented method.
+- Next: derive the backend from this base to create `HDMI1` at 1920x720 and publish the `ias_crtc` and
+  `ias_mode` tables.
+
 ## 1.22.0 - Confirm exact oFono SMS decoder corruption and vendor-QMI route
 
 - Identified `ofono-0.6.8+5w.master.199-r1.corei7_64`, then confirmed from the

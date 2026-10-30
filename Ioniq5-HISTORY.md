@@ -1993,3 +1993,18 @@ and are superseded by corrections rather than silently rewritten.
   the in-guest size exactly, plus the expected count of interface definitions, is the difference between
   a header and a plausible-looking corruption.
 - Two build items remain rather than four, and both are small.
+
+## 2026-10-29 — it builds
+
+- The first real artefact: a backend plugin for this 2015 embedded guest, compiled from an arm64 laptop
+  with no cross-compiler installed. The undefined-symbol count is the detail that makes it a plugin
+  rather than a binary — those 31 symbols are weston's, resolved when it loads us.
+- Every dependency on the way was discovered by failing, in this order: config.h, wayland headers,
+  a protocol header the tarball does not ship, xkbcommon, then pixman. None of those would have been
+  guessed in advance, and each is now written down so the next build starts from them.
+- Homebrew refusing wayland on macOS was the surprise. The formula is a Linux compositor library and the
+  bottle system simply will not build it here, so the release tarball was the way in.
+- The extraction channels were worth testing properly instead of trusting the first one. Console transfer
+  looked fine at 8 KB and silently corrupted at 23 KB; the socket capture looked authoritative and ate
+  bytes. Both would have produced a header that compiled and then behaved strangely, which is the worst
+  kind of wrong.
