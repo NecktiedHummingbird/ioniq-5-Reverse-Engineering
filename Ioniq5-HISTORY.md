@@ -3037,3 +3037,13 @@ and are superseded by corrections rather than silently rewritten.
   issuing requests, and the correct signal is the registry sweep completing.
 - Also worth recording: our displacement of the vendor daemon works but provokes systemd to restart it and log a
   registration failure. Functional, not tidy.
+
+## 2026-10-31 — the calls fired, and the answer was in the setup
+
+- With proper sequencing two of three variants actually reached the launcher and neither launched anything. That is a
+  real negative for those two, finally.
+- The reason looks structural rather than adversarial: the launcher enumerates /app/bin at startup to build the table
+  it dispatches from, and our probe files were created after that enumeration. Offering a target that was never in
+  the registry cannot succeed whatever appid is supplied.
+- This is the same class of error that has dogged the whole VM thread — the instrument and the target disagreeing
+  about when things exist — and it is now a one-line fix rather than a mystery.

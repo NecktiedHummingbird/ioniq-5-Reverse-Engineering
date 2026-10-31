@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.71.0 - sequenced calls fire and still do not execute; the registry hypothesis
+
+- With registration confirmed and a settle window before issuing requests, the calls now reach the launcher:
+  variant **A** (appid 999, `/tmp/probe.sh`, false/false) and variant **C** (appid 5, `/app/bin/probe.sh`, true/true)
+  both appear in the log. **Neither produced a marker.** Variant B is again absent from the log, so it is treated as
+  unrun.
+- **V-028's runtime execution therefore remains unobserved with correct sequencing and the exact signature.** That is
+  no longer an inconclusive test for A and C; it is a negative for them.
+- The log suggests the reason, and it is a good one: the launcher **builds its application registry by sweeping
+  `/app/bin` at startup** (`dir info [/app/bin/AppX]` for dozens of binaries, at 00:01:32). Our probe files were
+  written *after* that sweep, so neither existed when the registry was built — and a launcher that only dispatches
+  registered applications would never launch them regardless of appid or path.
+- **Next test is therefore specific and cheap:** write the probe into `/app/bin` **before** the launcher starts, let the
+  sweep include it, then call `launch` with that path. If it executes, V-028's runtime link is confirmed; if it still
+  does not, the remaining causes are SMACK on exec or an appid-to-entry mapping we have not reproduced.
+- Recorded as a narrowed hypothesis rather than as another attempt, because the difference between "the call is
+  wrong" and "the target was never registered" is exactly the kind of thing this thread has repeatedly mistaken for
+  one another.
+
 ## 1.70.0 - launch matrix inconclusive; the launcher builds its registry first
 
 - Ran a three-variant matrix over the exact signature: (A) appid 999 with `/tmp/probe.sh`, false/false;
@@ -74,6 +93,45 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   the V-028 launch test still could not run.
 - Next: extend the settle window (the launcher was still working at 1 min 26 s), and answer the remaining ask
   methods with plausible non-empty payloads rather than empty arrays, in case a later step requires real values.
+
+## 1.73.0 - correct CVE-2017-6074 to the specific DCCPv6 request path
+
+- After independent **REJECT**, corrected the applicability model to the specific
+  public path requiring DCCP core (`input.o`) plus DCCPv6/IPv6 (`ipv6.o`). Under
+  applicable public v4.1 Kconfig/Kbuild rules, exact `IP_DCCP=n` excludes the
+  whole named DCCP subtree. The canonical stock archive contains 163 regular
+  `.ko` members and no canonical DCCP core or DCCPv6 module.
+- Split the complete ten-name authoritative-map inventory into core and DCCPv6
+  presence facts. Exact queried core-symbol presence establishes core
+  translation-unit presence; exact queried DCCPv6-symbol presence establishes
+  DCCPv6 translation-unit presence. IPv4-only functional evidence establishes
+  core only. Positive complete DCCPv6 functional evidence establishes both
+  components and overrides absence.
+- Replaced the rejected ten-input model with a 15-input schema-v2 Boolean-only
+  classifier. Physical component/path outputs no longer depend on the public
+  CVE dependency. Rejection is exactly dependency plus physical complete-path
+  absence. The exact build-rule default and a formally complete built-in/module-
+  inventory route establish component absence; incomplete path states remain
+  unknown and positive component evidence records conflicts.
+- Retained bounded scope: `CONFIG_INET=y` and `CONFIG_IPV6=y`, so this is not
+  general networking or IPv6 safety; an `IPv6=n` input alone would not prove
+  general IPv6 absence. USER_NS is non-decisive, and ordinary DCCP socket
+  creation would not be inherently capability-gated if DCCP were built.
+- Retained byte-identical mainline commit
+  `5edabca9d4cff7f1f2b68f0bac55ef99d9798ba4` and stable 4.1.y backport
+  `98442999b9671784e659b205be8b5b6be8e81629`. The retained official
+  `ChangeLog-4.1.41` release commit/date records 15 June 2017. Removed the
+  unretained archive-index claim. Version history and fix effects remain
+  contextual because the named path is absent.
+- Focused validation passes `13 tests, 32793 subtests`; the complete suite
+  passes `617 tests, 318204 subtests`; bytecode compilation, exact static checks,
+  and `git diff --check` pass. The public harness passes with
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. Corrected independent review
+  returned **ACCEPT** with no blocking findings. Generic public research used
+  Astra; implementation provenance is `codex-router/gpt-daybreak-blue-latest`.
+  DeepSeek remained static-ready/runtime-unverified and did not run. No installed
+  identity, runtime behavior, fix effect in recovered code, corruption, root,
+  persistence, or target interaction is claimed.
 
 ## 1.72.0 - reject CVE-2015-1805 by exact pipe iterator architecture
 
