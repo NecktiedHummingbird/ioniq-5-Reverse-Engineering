@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.59.0 - buffer shim built and deployed; the trial run did not execute
+
+- Built `vnbuf_shim.so` (16,904 bytes, cross-built with the bundled zig). It interposes `wl_display_connect` to
+  capture the display and bind `wl_shm`, and `wl_surface_commit` to attach a known opaque-magenta `ARGB8888`
+  1920x720 buffer the first time a surface is committed — deliberately at **commit**, because the measurement was
+  that the client never calls `attach` at all, so hooking attach would never fire.
+- **The trial run was inconclusive, not negative.** No `vnbuf:` line appeared on the console and the compositor
+  mapped **0** surfaces, so the application did not start or did not reach the compositor in that attempt. The
+  shim therefore remains unexercised.
+- Two faults of my own in that run, both worth recording: launch diagnostics were grepped from `/tmp/w.log` while
+  the shim writes to `/dev/ttyS0` and the client's stderr (so the search looked in the wrong file), and the
+  no-dump result followed from the absent surface rather than from any shim behaviour.
+- Next step is ordered and small: (1) confirm `AppHomeScreen` starts under `LD_PRELOAD` and that `vnbuf:
+  connected, shm=…` appears, (2) only then read `shim mapped` and attempt a capture, (3) expect magenta if the
+  stack renders. Until step 1 passes, no conclusion about the shim is available.
+
+## 1.61.0 - reject CVE-2016-7911 by exact same-task-lock effects
+
+- Bound complete exact `get_task_ioprio`, `SyS_ioprio_get`, and `exit_io_context` machine code against upstream fix `8ba8682107ee2ca3347354e018865d8e1967c5f4` rather than the `4.1.27-abl` banner.
+- Getter acquires `task +0x630` before reading `task->io_context +0x678` and `io_context->ioprio +0x12`, then unlocks. Exit acquires the same lock, loads and clears the same pointer field, unlocks, and only then releases the old object.
+- Added exact machine code, the authoritative patch, an eight-input Boolean-only schema-v2 model, and exhaustive 256-state tests. Incomplete fix facts remain unknown unless an unlocked read is explicit.
+- Kept installed identity, runtime syscall policy, task permissions, concurrency, stale access, crash, corruption, privilege gain, root and persistence unobserved. No syscall, process, thread, race, allocation pressure, crash, or target execution was created.
+
 ## 1.60.0 - reject CVE-2016-7910 by exact block iterator cleanup
 
 - Compared complete exact `disk_seqf_next`, `disk_seqf_start`, and `disk_seqf_stop` machine code against upstream fix `77da160530dd1dc94f6ae15a981f24e5f0021e84` rather than relying on the `4.1.27-abl` banner. The same compiled effect is present; the stripped binary cannot distinguish a cherry-pick, stable backport, or independently applied identical change.

@@ -2842,6 +2842,20 @@ and are superseded by corrections rather than silently rewritten.
   repeated free, crash, corruption, privilege transition or persistence action
   was performed.
 
+## 2026-11-03 — ioprio UAF read rejected by exact same-lock effects
+
+- Exact `get_task_ioprio` acquires the target task lock before loading the I/O
+  context pointer or its priority field and releases it only afterward.
+- Exact `exit_io_context` acquires the same task-offset lock, loads and clears
+  the same I/O-context pointer, unlocks, and only then drops/releases the old
+  object. This closes CVE-2016-7911's unlocked-read race despite the old banner.
+- Complete syscall code retains three direct getter calls. Runtime task
+  permissions, syscall filtering, installed identity, concurrent exit and every
+  impact outcome remain separate unobserved gates.
+- Added exact evidence and an exhaustive Boolean-only model without issuing a
+  syscall, creating a task/thread, inducing a race or allocation pressure, or
+  executing target code.
+
 ## 2026-10-31 — the parsers are older than the car
 
 - Reading link tables turned a theoretical surface into a dated one: libogg from the early 2000s, libpng from 2017,
@@ -2870,3 +2884,12 @@ and are superseded by corrections rather than silently rewritten.
 - The VM question is now well posed and externally unanswerable: the client commits without attaching. Pushing
   further from outside the process is wasted effort; the decisive move is to supply the missing buffer from a shim
   and see whether the scene lights up.
+
+## 2026-10-31 — built the adaptor, then failed to exercise it
+
+- The shim exists and does exactly one thing: if the client commits without a buffer, it supplies one. That is the
+  whole hypothesis, expressed in code.
+- The trial proved nothing because the application did not reach the compositor, and I compounded it by grepping
+  the wrong log for evidence. Both are written down rather than smoothed over.
+- Leaving this at "unexercised" is more useful than another attempt tonight: the next session can verify one line
+  of shim output before drawing any conclusion at all.
