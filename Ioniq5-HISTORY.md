@@ -2527,3 +2527,13 @@ and are superseded by corrections rather than silently rewritten.
 - CVE-2017-11176 looked promising: the exact old kernel has POSIX message queues, and its `netlink_attachskb` return-one edge loops without an explicit socket-register clear.
 - Full successor tracing reversed that first impression. A failed retry cannot reach socket detach with the old released pointer; it goes directly to notification-skb cleanup. The compiler represented upstream `sock = NULL` as branch routing.
 - The candidate is rejected for the recovered kernel, with exact addresses, file offsets, upstream source comparison, retained disassembly, and a boolean-only ownership model. No race or target syscall was executed.
+
+## 2026-10-31 — recognising a cul-de-sac
+
+- The trace blocked the wrapper and produced nothing, and the tell was the same zero as before: no attempts,
+  not no errors. Having now made that mistake twice, the pattern is at least documented.
+- The more useful decision is to stop chasing the vendor daemon's bus handling. The goal is a running HMI, and
+  there is a shorter path: publish the shared memory it cannot. That is precisely the kind of simulated adaptor
+  this work exists to build.
+- Keeping the distinction clear matters for the record: the daemon's bug is real, unfixed, and not the thing
+  standing between this project and a rendered screen.

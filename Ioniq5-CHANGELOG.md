@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.40.0 - strace attempt blocked the wrapper; switching to publishing `/Ihu` ourselves
+
+- The tracing attempt did not produce data. Running the daemon under
+  `busybox timeout 15 strace -f -e trace=connect …` **blocked the wrapper** long enough that the daemon never
+  started, which is visible in the result: `writeToDBus` errors are **0**, i.e. zero attempts, and no trace
+  lines reached the console. Same trap as two entries ago — a zero that means nothing ran.
+- Rather than keep micro-debugging the vendor daemon's bus handling, the cheaper route to the actual goal is to
+  **publish `/Ihu` ourselves**. The widget failures are `QSharedMemory::handle … key file doesn't exist`; the
+  key is known (`/Ihu`, plus `/Can`, `/Inform`, `/Information`, `/PhevInterface`), and Qt's layout is
+  observable from any segment the vendor creates (`/tmp/qipc_sharedmemory_<KEY><hash>` plus a matching
+  `qipc_systemsem_` file).
+- That is exactly the project's stated shape of work: a **simulated adaptor** standing in for a component the
+  emulation cannot run. It sidesteps the daemon's connection bug entirely and answers the question that
+  matters — whether the UI will draw once its shared state exists.
+- Concretely: a small tool to create `/tmp/qipc_sharedmemory_Ihu…` with the same naming and SysV segment Qt
+  would create, fill a plausible boot-info structure, then start `AppHomeScreen` and read the
+  `Cannot attach to shared memory` count. If that count goes to zero, the widgets proceed and the frame is the
+  next thing to look at.
+- Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
+  and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
+
 ## 1.40.0 - the missing clear was present as control flow
 
 - Audited CVE-2017-11176 against exact recovered `vmlinux`, not its
