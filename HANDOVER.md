@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## GStreamer VMNC backport checkpoint — 2026-11-02
+
+- CVE-2016-9445 and CVE-2016-9446 are rejected for exact recovered `libgstvmnc.so` even though its embedded recipe path says GStreamer `1.8.3-r0`.
+- The complete packet-parser FDE binds WMVi width/height to unsigned 16-bit fields. Every feasible WMVi route checks each against 16384 before the handler; a syntactic bypass edge is predicate-infeasible because it requires the earlier WMVi comparison to be false while `%edi` remains unchanged. Either oversized dimension returns `-1`.
+- The handler accepts only 8/16/32-bit depth, assigns bytes-per-pixel as 1/2/4, copies the guarded rectangle dimensions into the allocation fields, and calls `g_malloc0`; the maximum accepted product is `0x40000000`. Both effects of upstream commit `4cb1bcf1422bbcd79c0f683edb7ee85e3f7a31fe` are present.
+- Added exact evidence and a bounded deterministic model. This rejects only these two mechanisms; it does not establish general VMNC/media safety or production invocation.
+
 ## IPv6 append-data bounds checkpoint — 2026-11-01
 
 - V-029 records exact CVE-2017-9242 pre-fix ordering with `CONFIG_IPV6=y`: `udpv6_sendmsg` reaches the append wrapper and complete `__ip6_append_data` allocates/copies before calculating and rejecting negative remaining copy.

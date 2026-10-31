@@ -4,6 +4,18 @@ This directory contains only small, reviewed excerpts needed to support the
 tracked media-parser conclusions. Full VM serial/DLT logs, generated ASF files,
 recovered binaries, and the local runner remain under ignored `work/`.
 
+## VMNC / CVE-2016-9445 and CVE-2016-9446
+
+`gstreamer-vmnc-cve-2016-9445.asm` retains the complete affected packet-parser
+FDE and the relevant WMVi allocation block from the exact recovered
+`libgstvmnc.so`. Although its embedded recipe path says GStreamer `1.8.3-r0`,
+the machine code contains the later upstream fix effects: every feasible WMVi
+path passes unsigned 16384 bounds checks before handler dispatch, and the canvas
+uses `g_malloc0`.
+`cve-2016-9445-fix.patch` is the reviewed upstream patch for comparison. These
+artifacts reject the two exact public mechanisms; they do not claim the decoder
+is free of every defect or prove any production media route.
+
 ## PlayerEngine / CVE-2026-2920
 
 `playerengine-asf-service-evidence.txt` records:

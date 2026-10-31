@@ -333,7 +333,10 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    `VideoContext → uridecodebin → eligible asfdemux`, while LightMediaScanner
    startup indexing uses a separate non-GStreamer ASF plugin. Manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
-   or RCE is established.
+   or RCE is established. Do not prioritize VMNC CVE-2016-9445/9446: exact
+   every feasible WMVi path in the recovered code passes the 16384 dimension
+   checks before dispatch, and the allocation uses `g_malloc0`, despite its
+   `1.8.3-r0` metadata.
 6. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
 7. Measure production interface features before treating CVE-2017-1000112 as a

@@ -27,6 +27,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Bound complete packet-parser flow: WMVi width and height are unsigned 16-bit fields; every feasible WMVi route compares both with 16384 before handler dispatch, and either oversized value returns `-1`. A syntactic bypass edge is predicate-infeasible, so no strict structural-dominance claim is made.
 - Bound the handler's accepted depths to 8/16/32 bits, the exact width/height/bytes-per-pixel field assignments, and the relevant allocation to `g_malloc0`. The maximum accepted product is `16384 * 16384 * 4 = 0x40000000`, so the guarded multiplication fits signed 32-bit arithmetic. The zeroed allocation also rejects CVE-2016-9446's uninitialised-canvas mechanism.
 - Added the authoritative upstream patch, exact machine-code excerpt, bounded numeric model, tests, and evidence. This rejects only the two named mechanisms, not every VMNC defect or every media-parser candidate.
+- Independent review caught and resolved missing allocation-operand/depth binding, an overbroad structural-dominance claim, and an inadmissible bpp-3 model state; final review returned **ACCEPT**. Full validation passed `453 tests, 131818 subtests`; the public research harness passed.
 - No media file, parser execution, packet, overwrite, crash, code execution, privilege transition, or persistence action was performed.
 
 ## 1.50.0 - V-007's root identity measured live; the parse itself still not demonstrated
