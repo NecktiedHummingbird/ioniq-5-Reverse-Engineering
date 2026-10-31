@@ -318,6 +318,36 @@ cryptographic success, and outer-gate progression is never reported as update
 acceptance. The no-input deterministic summary used for review has SHA-256
 `7ea027da089d25b6dd6579705e4365d8515ac2ca204eded39dc4c0d7f211d803`.
 
+## Downstream navigation-map signature gate
+
+The embedded FUMO child has a separate navigation-map signature gate with FDE
+`0x128070..0x128c52`. It marks `this+0xd5` complete without starting its
+asynchronous verifier when any of these conditions holds:
+
+- dedicated local marker
+  `/update/disableNaviMapSignatureCheck_20230207` exists;
+- `/app/bin/NaviUpdateApp` is absent, logged as unavailable NUA;
+- startup encryption-mode byte `0x6d20b4` is zero;
+- no `navi_` item with `.zip` or `.enc` is selected.
+
+The third condition links the earlier mode route to this inner gate:
+`/update/disableEncryptionUpdate` present at FUMO startup changes the mode byte
+to zero, and the navigation-map signature function later logs the non-encrypted
+skip path. This narrows one downstream authentication decision; it does not
+remove AppDMClient's unequal-path `-404/-404` contract, prove control of the
+local marker, or bypass non-map payload, write, slot, boot, or persistence
+checks.
+
+Encrypted mode with a provider and map candidate starts a worker. Start or
+result failures/timeouts call failure handler `0x127e80` with zero. A zero
+result at `0x128f40..0x128f75` sets the completion byte and re-enters the gate.
+The dedicated marker literal has only this existence-check reference in the
+exact binary; no additional literal reference or writer was found, while dynamic
+construction and writers in other processes remain unexcluded.
+`tools/uk_fw/fumo_navi_signature_gate_model.py` is a numeric/boolean-only model
+of these states; its deterministic no-input report has SHA-256
+`51e38681ff084fb51745e0dd887aa78a23aebe33bd130fb32e505e0a4f5a8298`.
+
 ## Remaining work
 
 1. Analyze source-file stability from the initial unequal staging operation,

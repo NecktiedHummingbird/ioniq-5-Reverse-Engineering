@@ -438,12 +438,38 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
   Project Zero private-area signedness/overflow primitive is therefore absent.
 - **Residual:** the same exact function still performs
   `frames_per_block * tp_block_nr` in 32 bits without the companion
-  `UINT_MAX / tp_block_nr` guard from `8f8d28e4d6d8`. Its impact and runtime
-  reachability remain unproved; it is not promoted to corruption or root.
-- **Boundary:** all packet-socket paths still require `CAP_NET_RAW`, TPACKET_V3
-  reachability, and the owner's installed module identity. This does not reject
+  `UINT_MAX / tp_block_nr` guard from `8f8d28e4d6d8`. Public-source follow-up
+  found no standalone crash, corruption, escalation, or DoS assigned to the
+  redundant TPACKET_V3 field. Exact V1/V2 paths share the multiplication and
+  later retain `frame_max`, so their allocation/indexing consequences remain
+  impact-unknown rather than being downgraded to hardening only.
+- **Boundary:** all packet-socket paths still require `CAP_NET_RAW`, applicable
+  ring-version reachability, and the owner's installed module identity. This does not reject
   unrelated AF_PACKET defects.
 - **Evidence:** `evidence/vendor-kernel-af-packet-backport.md`.
+
+---
+
+## C29 — The FUMO encryption-mode byte does control one navigation signature gate
+
+- **Was:** a separate Navi NUA signature path was noted, but the reviewed data
+  flow had not shown `/update/disableEncryptionUpdate` controlling it.
+- **Now:** exact inner-FUMO function `0x128070` tests the shared mode byte at
+  `0x128940`. Byte zero logs the non-encrypted navigation-map signature skip and
+  sets gate-complete byte `this+0xd5`. FUMO startup sets that mode byte to zero
+  when `/update/disableEncryptionUpdate` exists.
+- **Additional skip:** dedicated marker
+  `/update/disableNaviMapSignatureCheck_20230207`, absent NaviUpdateApp/NUA
+  provider, and no navigation-map candidate also complete this one gate without
+  running its asynchronous verifier. The exact binary has only the existence
+  check as a static reference to the dedicated marker literal; dynamic
+  construction and other-process writers remain unexcluded.
+- **Boundary:** this is a named navigation-map signature skip, not a universal
+  package-signature or payload-acceptance bypass. Marker creation, outer FUMO
+  contracts, version/model/region, non-map digests, writes, slot/boot trust,
+  root, and persistence remain separate.
+- **Evidence:** `evidence/appupgrade-update-trust.md` and
+  `evidence/artifacts/update-candidates/fumo-navi-signature-gate-evidence.txt`.
 
 ---
 

@@ -60,7 +60,17 @@ Date: 2026-11-01
     sites, while P5-family and later target checks remain;
   - added a numeric/boolean-only model for exact trailer classification and
     retained-result pair gates; it emits no update material and never equates
-    gate progression with update acceptance.
+    gate progression with update acceptance;
+  - traced the inner FUMO navigation-map signature gate at `0x128070`: its
+    dedicated disable marker, missing NaviUpdateApp/NUA provider, non-encrypted
+    mode byte, and no-map state all skip that one gate; async start/result
+    failures stop through `0x127e80`, while success sets `this+0xd5` and
+    re-enters the gate;
+  - corrected the mode relationship: FUMO startup
+    `/update/disableEncryptionUpdate` sets the same byte later used by the
+    navigation-map non-encrypted skip branch. Added a separate numeric-only gate
+    model and exact retained evidence without claiming universal signature or
+    payload acceptance.
 - Wrote `evidence/appupgrade-update-trust.md`,
   `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
@@ -83,10 +93,10 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    and the now-proven local relaunch; trace the provenance of the two local
    completion strings and name any authentication state preceding the FUMO
    progress-callback `force_launch=run` writes.
-4. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
-   and write functions, and map inner AppUpgrade `car-variant`/system-version
-   decisions without inferring that one skipped branch removes all trust
-   controls.
+4. Continue from the now-named navigation-map signature use into other FUMO
+   mode-byte decryption, digest, archive, and write functions; map inner
+   AppUpgrade `car-variant`/system-version decisions without inferring that one
+   skipped branch removes all trust controls.
 5. Reconstruct payload target selection, inactive-slot writing, boot selection,
    userspace health, and mark-good independently.
 6. On a disconnected bench, passively capture installed BusyBox/AppScomoDM/

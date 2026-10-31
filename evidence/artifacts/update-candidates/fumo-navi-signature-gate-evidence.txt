@@ -1,0 +1,75 @@
+Referenced NaviUpdateApp provider identity
+SHA-256 c80f92f11020869712697025fc2e8bf8415dbc718f56d41576e7099af05b9d2d
+GNU Build ID 7cc3b74db75918b4bcebdd9e2304cf86bd8a70fc
+Path /app/bin/NaviUpdateApp
+The FUMO gate checks provider existence; provider internals are not assigned here.
+
+Embedded FUMO identity and analysis provenance
+Exact structural ELF:
+  work/public-vuln-research-20261101/appupgrade-exact-extract/AppUpgrade.embedded-5721c8.elf
+  size 5066264 bytes
+  SHA-256 464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7
+  GNU Build ID 863a8730e66a1c5245a1bf458fe2554adee0351a
+Earlier padded analysis ELF:
+  work/public-vuln-research-20261101/AppUpgrade-embedded-5721c8.elf
+  size 5076976 bytes
+  SHA-256 01a6f1d0725850591568fe671f75f7b0316f395141fd9d3ac514e0410d48a8d4
+A byte-for-byte comparison confirms that all 5066264 exact-ELF bytes are the
+prefix of the padded analysis file; the additional tail begins after the exact
+structural extent. Every instruction cited below lies inside the identical
+prefix.
+Architecture x86-64 PIE
+Address namespace: embedded ELF virtual addresses (not outer-file offsets)
+Instruction authority: Homebrew LLVM llvm-objdump 23.1.3. Ghidra 12.1.4
+output is advisory; its project maps ELF VA + 0x100000.
+
+Navigation-map signature gate
+Function FDE 0x128070..0x128c52
+- this+0xd5 is the gate-complete byte. A nonzero value bypasses repeated gate setup.
+- 0x128128 constructs /update/disableNaviMapSignatureCheck_20230207.
+- 0x12814d calls QFile::exists; existence branches at 0x12816a to 0x128720.
+- 0x128720..0x128745 logs the explicit disable/skip state and sets this+0xd5 = 1.
+- 0x128170 checks /app/bin/NaviUpdateApp. Absence reaches
+  0x128790..0x1287b5, logs that NUA is unavailable, and sets this+0xd5 = 1.
+- The candidate scan searches update items for navi_ and .zip/.enc components
+  at 0x128242..0x128920.
+- 0x128940..0x128947 tests encryption-mode byte VA 0x6d20b4. Its zero
+  branch targets 0x128330..0x128364, which logs the non-encrypted skip state
+  and sets this+0xd5 = 1.
+- In encrypted mode, the separate no-candidate comparison reaches
+  0x128a32..0x128a54 and sets this+0xd5 = 1.
+- Otherwise 0x128984..0x128a18 logs that signature verification will use NUA,
+  starts the worker thread, and starts a one-second result timer.
+
+Asynchronous start and result handling
+- Start poll function FDE is 0x128c60..0x128e37. Its counter starts at 1 and
+  times out on the fifth not-ready poll; a timeout or nonzero start result calls
+  failure handler 0x127e80 with argument 0.
+- Result poll function FDE is 0x128e40..0x129037. Its selected wait logic uses
+  counter limit 0xe10; timeout or nonzero verification result calls the same
+  failure handler.
+- On zero verification result, 0x128f40..0x128f51 logs success and sets
+  this+0xd5 = 1; 0x128f6c..0x128f75 tail-calls gate 0x128070 again.
+
+Boundary
+The explicit marker, missing NaviUpdateApp provider, non-encrypted mode, and
+no-map state are local skip conditions for this navigation-map signature gate.
+Only one static reference to the dedicated marker literal was found in the exact
+binary, and it is the existence check above. No additional literal reference or
+writer was found; dynamic path construction and writers in other processes
+remain unexcluded.
+The separate /update/disableEncryptionUpdate startup marker can set the mode byte
+to zero, which also selects the non-encrypted skip branch. These facts do not
+prove removable-media creation of either marker, arbitrary package acceptance,
+version/model/region bypass, other digest/signature bypass, partition writes,
+slot switching, boot acceptance, root, policy escape, or persistence.
+
+Ignored analysis records
+work/public-vuln-research-20261101/AppFumoUpgrade-embedded-disasm.txt
+  SHA-256 489fcd3b57a95409256639d47aa5b627d8d1cdff08f9f19fde37de45b2b1124b
+work/public-vuln-research-20261101/AppFumoUpgrade-eh-frame.txt
+  SHA-256 761439ae4ceb934d5995511ba1a86487e9a451184f33d44b0b94135ef2f0717b
+Advisory Ghidra decompilations:
+  0x228070.c SHA-256 4b2d66aa08c047ffb69399a092f0f0039d180e46d2e458ac2c2992f95ccfc368
+  0x228c60.c SHA-256 1ff7ef0730b3a2659ad3739b16f628294e1b0733b39d624916a1b1eae888e143
+  0x228f40.c SHA-256 3fa3c38c52f7b3e7b6285075d1fb5a7ec2285fedf55806438fe780f048815b00

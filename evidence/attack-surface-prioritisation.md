@@ -207,8 +207,11 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 - Exact checks reject CVE-2016-0728, Dirty COW, both ranked AF_PACKET races,
   CVE-2017-7308's published private-area primitive, ALSA PCM CVE-2017-0861,
   and the generic missing Stack Clash guard-gap premise despite the old banner.
-  The companion AF_PACKET frame-count multiplication guard is absent, but its
-  impact and `CAP_NET_RAW`/TPACKET_V3 runtime reachability remain unresolved.
+  The companion AF_PACKET frame-count multiplication guard is absent. Reviewed
+  public sources document no standalone corruption, escalation, or DoS from the
+  redundant TPACKET_V3 field, but exact V1/V2 paths share the unchecked
+  multiplication and later retain `frame_max`; their consequences remain
+  impact-unknown and gated by `CAP_NET_RAW`.
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.

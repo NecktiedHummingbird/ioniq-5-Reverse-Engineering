@@ -16,8 +16,13 @@ The module also contains the 64-bit private-area arithmetic from the primary
 CVE-2017-7308 fix `2b6867c2ce76c596676bec7d2d525af525fdc6e2`, rejecting the
 published `tp_sizeof_priv` signedness/overflow primitive. It does **not** contain
 the companion `tp_frame_nr` multiplication guard from
-`8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`; that narrower arithmetic gap
-remains a candidate rather than a demonstrated corruption or root path.
+`8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`. Public-source follow-up found no
+documented standalone corruption, privilege escalation, or denial of service
+from that omitted guard. However, exact code places the multiplication on the
+common V1/V2/V3 ring path and later retains `tp_frame_nr - 1` as `frame_max`;
+V1/V2 allocation/indexing consequences remain unresolved. It is therefore an
+impact-unknown validation gap, not an assigned exploit primitive or a proved
+hardening-only defect.
 
 Module SHA-256:
 `c810265b3c22f95d2b90494cc206abd6b4e67b7710bff2adcb177ee4867f467b`.
@@ -78,8 +83,26 @@ the later frame-count check still multiplies in 32 bits:
 
 There is no preceding `tp_block_size > UINT_MAX / tp_block_nr` rejection added
 by companion commit `8f8d28e4...`. The published Project Zero privilege chain
-centres on the fixed private-area bug; the security impact and reachability of
-the remaining frame-count overflow are not assigned here.
+centres on the fixed private-area bug and states that `tp_frame_nr` is ignored
+for block-based TPACKET_V3. Upstream's commit and mailing-list submission assign
+no crash, out-of-bounds access, privilege escalation, or standalone DoS to the
+frame-count check. The kernel PACKET_MMAP documentation calls `tp_frame_nr`
+redundant. That observation is specific to TPACKET_V3: the exact multiplication
+at `.text+0x20c7` is on the common version path, and later code stores
+`tp_frame_nr - 1` as the ring's `frame_max` at `.text+0x226c..0x226e`. Later
+commit `fc62814d690cf62189854464f4bd07457d5e9e50` narrowed the over-broad
+original guard after it blocked 4 GiB rings, while preserving the non-wrapping
+invariant. Thus public sources do not assign a standalone impact, but they also
+do not settle V1/V2 consumers in this exact build. The missing check remains an
+impact-unknown validation candidate pending those allocation/indexing traces.
+
+Public references:
+
+- <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b>;
+- <https://lore.kernel.org/all/b6e4098bf0d0bccc538e133ce5200432be8c4732.1490796500.git.andreyknvl%40google.com/>;
+- <https://docs.kernel.org/networking/packet_mmap.html>;
+- <https://googleprojectzero.blogspot.com/2017/05/exploiting-linux-kernel-via-packet.html>;
+- <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=fc62814d690cf62189854464f4bd07457d5e9e50>.
 
 The immediately following `PACKET_RESERVE` branch independently contains the
 later CVE-2017-1000111 fix:
@@ -114,9 +137,11 @@ Retained local artifacts:
 ## Boundary
 
 This rejects CVE-2016-8655, CVE-2017-1000111, and CVE-2017-7308's published
-private-area primitive only. The missing companion frame-count guard remains
-unresolved. None of these static checks establishes that an application has
-`CAP_NET_RAW`, that TPACKET_V3 is reachable under its effective SMACK/capability
-state, or that the owner's unknown installed build matches this module. CVE
+private-area primitive only. The missing companion frame-count guard remains a
+real validation gap: no standalone security impact was found in reviewed public
+sources, while exact V1/V2 consequences remain untraced. None of these static
+checks establishes that an application has `CAP_NET_RAW`, that a packet-ring
+version is reachable under its effective SMACK/capability state, or that the
+owner's unknown installed build matches this module. CVE
 candidates must be checked against each shipped module rather than inferred from
 the base kernel release.

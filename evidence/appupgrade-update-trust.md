@@ -389,6 +389,45 @@ or boot checks disappear.
 The marker must exist at process startup. Creating it after the startup test
 does not retroactively change the already loaded byte.
 
+#### Navigation-map signature sub-gate
+
+Exact follow-on tracing resolves one downstream use that earlier work left
+separate. Function FDE `0x128070..0x128c52` owns a navigation-map signature gate,
+with completion byte `this+0xd5`. Before starting its asynchronous NUA-backed
+check, it has four skip routes that set the completion byte:
+
+- existence of `/update/disableNaviMapSignatureCheck_20230207` at
+  `0x128128..0x12816a`, followed by skip branch `0x128720..0x128745`;
+- absence of `/app/bin/NaviUpdateApp`, logged as unavailable NUA, at
+  `0x128790..0x1287b5`;
+- FUMO encryption-mode byte `0x6d20b4` equal to zero at test
+  `0x128940..0x128947`, targeting non-encrypted skip block
+  `0x128330..0x128364`;
+- no selected navigation-map item after the `navi_` plus `.zip`/`.enc` scan,
+  reaching separate skip block `0x128a32..0x128a54`.
+
+Thus `/update/disableEncryptionUpdate` does indirectly select the
+non-encrypted skip branch when it was present at startup and changed the shared
+mode byte to zero. This is a correction to the earlier statement that its data
+flow into the NUA path had not been shown.
+
+When none of those skip conditions applies, the updater starts a signature
+worker and two timer-polled stages. Start failure/timeout in function FDE
+`0x128c60..0x128e37` and verification failure/timeout in function FDE
+`0x128e40..0x129037` call failure handler `0x127e80` with zero. A zero
+verification result logs success, sets `this+0xd5`, and tail-calls the gate again
+at `0x128f40..0x128f75`.
+
+This is a real, named navigation-map signature skip, but it is not a universal
+package-signature bypass. The dedicated marker literal has one static reference
+in the exact binary: this existence check. No additional literal reference or
+writer was found, but dynamic construction and other processes remain
+unexcluded. Neither marker is proved
+removable-media-creatable, and descriptor, version/model/region, non-map digest,
+payload, write, slot, boot, and persistence gates remain separate. Numeric-only
+`tools/uk_fw/fumo_navi_signature_gate_model.py` records the exact skip/wait/fail
+states without ingesting or emitting update material.
+
 ### SCOMO child
 
 In the exact SCOMO ELF, startup reaches embedded `0x82ba6` and logs:
@@ -403,8 +442,8 @@ mode selector. It appears later in common completion cleanup around
 `/test_keep_encryption_disable`; test mode 4 can retain the marker during
 cleanup. Neither use establishes a startup package-trust bypass.
 
-A separate mode affects a Navi NUA signature path, but the reviewed data flow
-does not make `/update/disableEncryptionUpdate` its controller.
+The navigation-map NUA gate belongs to the FUMO child described above. SCOMO's
+startup decision to ignore `/update/disableEncryptionUpdate` remains separate.
 
 ## AppSetup is an initiator, not the parser
 
@@ -452,7 +491,7 @@ The verdicts below are deliberately separate.
 | model/region eligibility | Filename syntax only in AppScomoDM; FUMO explicit section-zero vehicle check is disabled at reviewed USB calls, but P5-family and later AppUpgrade `car-variant`/target checks remain |
 | FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and is proven reachable through intended local `/update/usb/bin` relaunch state |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks; signed ranges, source stability, authentication state before `force_launch=run`, and child payload binding remain incomplete |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks. Inner FUMO has a distinct navigation-map signature gate that skips for an explicit marker, absent provider, non-encrypted mode, or no map candidate; this is not a universal package-signature bypass. Signed ranges, source stability, authentication state before `force_launch=run`, and remaining child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |

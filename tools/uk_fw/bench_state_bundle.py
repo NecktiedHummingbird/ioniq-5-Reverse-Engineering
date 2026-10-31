@@ -581,7 +581,7 @@ begin_section storage
 capture_file fstab /etc/fstab
 capture_file partitions /proc/partitions
 capture_file mounts /proc/mounts
-for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo fota_status showEncryptionMenu disableEncryptionUpdate force_launch system_update_complete system_update_completed firmware_update_complete scheduled_update_complete scheduled_update_complete_for_DM updateCompleteTime
+for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo fota_status showEncryptionMenu disableEncryptionUpdate disableNaviMapSignatureCheck_20230207 force_launch system_update_complete system_update_completed firmware_update_complete scheduled_update_complete scheduled_update_complete_for_DM updateCompleteTime
  do
     capture_file update-flag "/update/$S_FLAG"
  done
@@ -592,11 +592,11 @@ for S_DIR in /update/sysroot /update/usb/upgrade /update/usb/bin
 end_section storage 0
 
 begin_section hashes
-for H_META in /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade
+for H_META in /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/NaviUpdateApp /app/bin/CarOption.csv /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade
  do
     file_meta "$H_META"
  done
-for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
+for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/NaviUpdateApp /app/bin/CarOption.csv /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
  do
     hash_file "$H_TARGET"
  done

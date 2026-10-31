@@ -51,6 +51,16 @@ followed by stateful service/CAN/persistence reconstruction.
   `evidence/appdmclient-fumo-usb-eligibility.md`. Numeric-only tool
   `tools/uk_fw/appdmclient_fumo_gate_model.py` models the exact trailer and
   retained-result gates without reading or creating update material.
+- Inner-FUMO navigation-map signature handling is now named. Gate `0x128070`
+  skips its asynchronous NUA verifier for a dedicated local marker, missing
+  NaviUpdateApp/NUA provider, no map candidate, or encryption-mode byte zero. The
+  last condition proves `/update/disableEncryptionUpdate` indirectly selects
+  this one non-encrypted signature skip after setting the startup mode byte.
+  Verification start/result failures stop through `0x127e80`; success sets
+  `this+0xd5` and re-enters the gate. This corrects an earlier unresolved data
+  flow but does not establish universal package-signature or payload acceptance.
+  Added numeric-only `tools/uk_fw/fumo_navi_signature_gate_model.py` and passive
+  capture of the dedicated marker.
 - **V-020 added and independently corrected:** stock `/usr/bin/unzip` resolves
   to BusyBox SHA-256 `95bab633...bd9ebc`, version 1.23.2. It accepts method 8,
   rejects method 12, and retains CVE-2015-9261's pre-fix `huft_build` `v+n`
@@ -94,10 +104,13 @@ followed by stateful service/CAN/persistence reconstruction.
   injection destinations, and in-place package/manifest overwrite. This protects
   the offline custom-firmware build path but does not solve update acceptance.
 - Fable delegation remains unavailable: its catalog entry is not advertised for
-  native subagents. The DeepSeek Flash doctor is static-ready only; no route was
-  substituted and no private target details were delegated. Two generic,
-  read-only child investigations cover public update-system evidence and passive
-  bench-collector design.
+  native subagents. DeepSeek Flash remains static-ready, but native dispatch
+  rejected the configured model identifier; no route was substituted and no
+  private target details were delegated. Generic public-only child
+  `dd42daa1-9180-4b0f-8fa8-84c034330b6f` found no documented standalone impact
+  for the AF_PACKET frame-count check, while exact V1/V2 consequences remain
+  untraced. Earlier generic children cover public update-system evidence and
+  passive bench-collector design.
 
 ## Filesystem/parser and kernel checkpoint — 2026-11-01
 
@@ -120,8 +133,10 @@ followed by stateful service/CAN/persistence reconstruction.
   keyring reference release, `FOLL_COW`, socket locking, 64-bit
   `tp_sizeof_priv` arithmetic, PCM open mutex, and 1 MiB inter-VMA guard-gap
   backports despite its `4.1.27-abl` banner. The companion AF_PACKET
-  `tp_frame_nr` overflow guard is absent but remains impact- and
-  reachability-unresolved.
+  `tp_frame_nr` overflow guard is absent. Public follow-up found no standalone
+  impact assigned to the redundant TPACKET_V3 field, but exact V1/V2 paths share
+  the multiplication and retain `frame_max`; those consequences remain
+  impact-unknown and gated by `CAP_NET_RAW`.
 - **V-013 added:** exact `snd-seq.ko` lacks CVE-2017-15265's port use-lock fix.
   A tracked benign diagnostic confirmed numeric uid/gid 65534 can open
   `/dev/snd/seq` and complete one create/delete sequence under the recovered

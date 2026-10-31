@@ -15,9 +15,11 @@ re-reviewed, and locally accepted on 2026-11-01.
   - parses serial timestamps offline with exact section/schema/status/completion
     validation, 64 MiB capture and 8 MiB line/section bounds, and capture,
     section, and canonical-report hashes;
-  - passively records the FUMO local-relaunch state (`force_launch`, completion
-    markers, update-directory metadata, staged AppUpgrade/XML hashes, and
-    `/tmp/AppUpgrade`) without creating or changing any marker;
+  - passively records FUMO mode and local-relaunch state
+    (`disableEncryptionUpdate`, `disableNaviMapSignatureCheck_20230207`,
+    `force_launch`, completion markers, update-directory metadata, staged
+    AppUpgrade/XML hashes, and `/tmp/AppUpgrade`) without creating or changing
+    any marker;
   - distinguishes absent from unreadable/read-error state and fails the terminal
     completion verdict on failed reads, metadata/link queries, passive commands,
     or malformed/empty hash output.
@@ -48,10 +50,10 @@ independently accepted.
 ## Validation
 
 ```text
-322 passed, 84 subtests passed
+346 passed, 109 subtests passed
 public harness: PASS (pass=3, info=4, no pending/blocked/fail)
-probe audit: safe=true
-probe SHA-256: 67468b0168315261d244b84f0bcdf897689f8e9487cc12873531312d0ef88be4
+probe audit: safe=true, syntax_ok=true, violations=[]
+probe SHA-256: e5759a8410ffe4fcb1d37e2d55ecdc981e2be9794fee42bdf670897a8c78fb05
 git diff --check: PASS
 py_compile: PASS
 ```

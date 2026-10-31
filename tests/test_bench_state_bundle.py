@@ -74,6 +74,7 @@ class BenchStateBundleTests(unittest.TestCase):
             "/app/bin/AppDMClient",
             "/app/bin/AppScomoDM",
             "/app/bin/AppUpgrade",
+            "/app/bin/NaviUpdateApp",
             "/app/bin/CarOption.csv",
             "/app/share/AppUpgrade/DecryptToPIPE",
             "/app/share/AppUpgrade/teruten5_pub.key",
@@ -86,6 +87,7 @@ class BenchStateBundleTests(unittest.TestCase):
         ):
             self.assertIn(update_path, script)
         for update_flag in (
+            "disableNaviMapSignatureCheck_20230207",
             "force_launch",
             "system_update_complete",
             "system_update_completed",

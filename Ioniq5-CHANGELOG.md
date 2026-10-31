@@ -25,7 +25,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 ## 1.38.0 - trace the inner FUMO navigation-map signature gate
 
 - Reconstructed inner-FUMO function `0x128070` and its asynchronous start/result
-  polling. A dedicated disable marker, absent dynamicmenu/NUA provider,
+  polling. A dedicated disable marker, absent NaviUpdateApp/NUA provider,
   non-encrypted mode, or no navigation-map candidate completes this one gate
   without running the signature worker. Failures/timeouts stop through
   `0x127e80`; success sets `this+0xd5` and re-enters the gate.
@@ -75,8 +75,10 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   fixes. The published TPACKET_V3 private-area primitive is absent because
   `tp_sizeof_priv` arithmetic is performed in 64 bits, matching upstream
   `2b6867c2`. The companion `tp_frame_nr` multiplication guard from
-  `8f8d28e4` is absent; its impact and `CAP_NET_RAW`/TPACKET_V3 runtime
-  reachability remain unresolved rather than being promoted to root.
+  `8f8d28e4` is absent. Public follow-up found no standalone impact assigned to
+  the redundant TPACKET_V3 field, but exact V1/V2 paths share the multiplication
+  and retain `frame_max`; those consequences remain impact-unknown and gated by
+  `CAP_NET_RAW`.
 - No recovered target executable was run, no malformed input or update material
   was created, and no target filesystem, partition, marker, or slot was changed.
 
