@@ -28,7 +28,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   `Failed to start Smack service loads smack rules`, so the system is degraded in a way the earlier runs were
   not, and the bus or SMACK ruleset is the next thing to fix.
 
-## 1.36.0 - name the FUMO `-404` state and check CVE-2017-7308 exactly
+## 1.37.0 - name the FUMO `-404` state and check CVE-2017-7308 exactly
 
 - Traced AppDMClient's verifier wrapper into the exact fixed-suffix parser.
   It seeks to `file_size - 0x4024`, reads one `0x4024`-byte item, and recognizes

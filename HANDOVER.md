@@ -35,7 +35,9 @@ followed by stateful service/CAN/persistence reconstruction.
   `lhavn`/`wideavn`, and requires a strict current-version upgrade plus an
   equality-allowed second reference. On the unequal source/destination branch,
   marker absence requires retained AppUpgrade/XML verifier results `0/0` and
-  marker presence requires `-404/-404`. An equal pre-staged path skips both
+  marker presence requires `-404/-404`; exact linked code identifies `-404` as
+  no recognized fixed-size `TER`/`TE2` trailer, not successful verification.
+  An equal pre-staged path skips both
   checks. Caller reconstruction now proves that path is an intended local
   relaunch: `slotUsbMounted` stores its path in `this+0x128`, standby status 12
   can use fixed `/update/usb/bin`, and a helper relaunches from that directory
@@ -46,7 +48,9 @@ followed by stateful service/CAN/persistence reconstruction.
   and source stability across separate opens remain unresolved. Reviewed USB
   calls disable one section-zero vehicle comparison, but P5-family and later
   AppUpgrade `car-variant`/target checks remain. See
-  `evidence/appdmclient-fumo-usb-eligibility.md`.
+  `evidence/appdmclient-fumo-usb-eligibility.md`. Numeric-only tool
+  `tools/uk_fw/appdmclient_fumo_gate_model.py` models the exact trailer and
+  retained-result gates without reading or creating update material.
 - **V-020 added and independently corrected:** stock `/usr/bin/unzip` resolves
   to BusyBox SHA-256 `95bab633...bd9ebc`, version 1.23.2. It accepts method 8,
   rejects method 12, and retains CVE-2015-9261's pre-fix `huft_build` `v+n`
@@ -108,13 +112,16 @@ followed by stateful service/CAN/persistence reconstruction.
   Sixteen upstream malformed exfatprogs fixtures produced three clean rejects
   and thirteen clean bounded mounts; no kernel parser fault was observed. This
   is a small corpus negative result, not a broad safety claim.
-- Exact vendor-binary review rejects six version-derived local-root candidates
+- Exact vendor-binary review rejects seven version-derived local-root premises
   for recovered EU `260128`: CVE-2016-0728, Dirty COW/CVE-2016-5195, the
-  AF_PACKET races CVE-2016-8655 and CVE-2017-1000111, ALSA PCM
-  CVE-2017-0861, and the generic Stack Clash missing-gap premise. The shipped
-  code contains the relevant keyring reference release, `FOLL_COW`, socket
-  locking, PCM open mutex, and 1 MiB inter-VMA guard-gap backports despite its
-  `4.1.27-abl` banner.
+  AF_PACKET races CVE-2016-8655 and CVE-2017-1000111, CVE-2017-7308's
+  published private-area primitive, ALSA PCM CVE-2017-0861, and the generic
+  Stack Clash missing-gap premise. The shipped code contains the relevant
+  keyring reference release, `FOLL_COW`, socket locking, 64-bit
+  `tp_sizeof_priv` arithmetic, PCM open mutex, and 1 MiB inter-VMA guard-gap
+  backports despite its `4.1.27-abl` banner. The companion AF_PACKET
+  `tp_frame_nr` overflow guard is absent but remains impact- and
+  reachability-unresolved.
 - **V-013 added:** exact `snd-seq.ko` lacks CVE-2017-15265's port use-lock fix.
   A tracked benign diagnostic confirmed numeric uid/gid 65534 can open
   `/dev/snd/seq` and complete one create/delete sequence under the recovered

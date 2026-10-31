@@ -428,6 +428,25 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C28 — The published CVE-2017-7308 private-area primitive is backported, but one companion guard is absent
+
+- **Was:** the AF_PACKET review rejected two race CVEs but explicitly left other
+  TPACKET arithmetic defects unchecked.
+- **Now:** exact `af_packet.ko` performs the CVE-2017-7308
+  `BLK_PLUS_PRIV((u64)tp_sizeof_priv)` calculation in 64-bit registers before
+  comparing it with block size, matching upstream fix `2b6867c2ce76`. The
+  Project Zero private-area signedness/overflow primitive is therefore absent.
+- **Residual:** the same exact function still performs
+  `frames_per_block * tp_block_nr` in 32 bits without the companion
+  `UINT_MAX / tp_block_nr` guard from `8f8d28e4d6d8`. Its impact and runtime
+  reachability remain unproved; it is not promoted to corruption or root.
+- **Boundary:** all packet-socket paths still require `CAP_NET_RAW`, TPACKET_V3
+  reachability, and the owner's installed module identity. This does not reject
+  unrelated AF_PACKET defects.
+- **Evidence:** `evidence/vendor-kernel-af-packet-backport.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

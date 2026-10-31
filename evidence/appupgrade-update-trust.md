@@ -304,8 +304,22 @@ Later result interpretation is path- and mode-specific:
   outer results `-404/-404`; any mismatch reaches the unencrypted-image failure
   path.
 
+Exact linked-verifier semantics resolve `-404`. Wrapper `0x34870` calls verifier
+`0x121040`, whose parser at `0x11fe20` seeks to `file_size - 0x4024`, reads a
+fixed `0x4024`-byte suffix, and recognizes only suffixes beginning `TER` or
+`TE2`. A positive-size file no larger than that suffix or one with different
+magic reaches the `-404` store at `0x11ff26`; a non-positive size instead
+returns `-401` at `0x120288`, and a short read returns `-402` at `0x11ff70`.
+Therefore the marker-present contract requires both files to lack a
+recognized fixed-size encrypted/authentication trailer. It does not treat
+`-404` as successful cryptographic verification. The later 32-byte comparison
+uses distinct error `-403` at `0x120f73..0x120f7a`.
+
 The XML parser performs a separate later verifier/open sequence. No immutable
-snapshot binds it to the earlier retained result.
+snapshot binds it to the earlier retained result. Numeric-only tool
+`tools/uk_fw/appdmclient_fumo_gate_model.py` models these trailer and pair-gate
+conditions without reading or creating update material and keeps parser
+continuation distinct from cryptographic success or update acceptance.
 
 Caller and state reconstruction resolves the equal path's role:
 
@@ -438,7 +452,7 @@ The verdicts below are deliberately separate.
 | model/region eligibility | Filename syntax only in AppScomoDM; FUMO explicit section-zero vehicle check is disabled at reviewed USB calls, but P5-family and later AppUpgrade `car-variant`/target checks remain |
 | FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and is proven reachable through intended local `/update/usb/bin` relaunch state |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, while its intended local-relaunch equal path skips those repeated pair checks; signed ranges, `-404` meaning, source stability, authentication state before `force_launch=run`, and child payload binding remain incomplete |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks; signed ranges, source stability, authentication state before `force_launch=run`, and child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |

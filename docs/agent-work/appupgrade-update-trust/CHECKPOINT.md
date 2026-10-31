@@ -43,7 +43,9 @@ Date: 2026-11-01
     opens without a proved immutable snapshot;
   - two normalized lexicographic version comparisons;
   - on unequal source/destination, marker-absent retained-result contract `0/0`
-    and marker-present explicit non-encrypted contract `-404/-404`;
+    and marker-present explicit non-encrypted contract `-404/-404`; exact linked
+    verifier code now identifies `-404` as no recognized fixed-size `TER`/`TE2`
+    trailer, not successful signature verification;
   - equal pre-staged AppUpgrade path skips both contracts; caller reconstruction
     proves intended local `/update/usb/bin` relaunch reachability;
   - `slotUsbMounted` stores the mount-path `QString` at `this+0x128`, while
@@ -55,7 +57,10 @@ Date: 2026-11-01
     of that state, the preceding named authentication state, and source
     immutability remain unresolved;
   - explicit section-zero vehicle equality disabled at the reviewed USB call
-    sites, while P5-family and later target checks remain.
+    sites, while P5-family and later target checks remain;
+  - added a numeric/boolean-only model for exact trailer classification and
+    retained-result pair gates; it emits no update material and never equates
+    gate progression with update acceptance.
 - Wrote `evidence/appupgrade-update-trust.md`,
   `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
@@ -72,9 +77,8 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
 1. Finish the broader caller-state and cleanup reconstruction around AppScomoDM
    `0xc1860`; the `0xbf260` staging function and direct trust helpers are now
    complete enough for the current route verdict.
-2. Name AppDMClient verifier result `-404`, the second stored version reference,
-   and numeric boot-state values from exact code; trace the XML destination
-   helper.
+2. Name the second stored AppDMClient version reference and numeric boot-state
+   values from exact code; trace the XML destination helper.
 3. Trace source stability across initial staging, repeated verifier/parser opens,
    and the now-proven local relaunch; trace the provenance of the two local
    completion strings and name any authentication state preceding the FUMO

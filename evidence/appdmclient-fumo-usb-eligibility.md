@@ -234,6 +234,22 @@ equal `-404` (`0xfffffe6c`) at `0x80bc8` and `0x80bd6`. Any other result reaches
 the `Error unencrypted update. (Unknown image type.)` failure path at
 `0x824b0`.
 
+The exact linked verifier names that result structurally. Wrapper `0x34870`
+passes the target path and `teruten5_pub.key` bytes to verifier `0x121040`, which
+calls trailer parser `0x11fe20`. The parser seeks to `file_size - 0x4024`, reads
+one fixed `0x4024`-byte suffix, and accepts a candidate object only when the
+suffix begins `TE` and its third byte is `R` or `2` (`0x11fe97..0x11ffa2`). A
+positive-size file no larger than `0x4024` or a suffix without recognized
+`TER`/`TE2` magic reaches the `-404` store at `0x11ff26`; a non-positive size
+instead reaches `-401` at `0x120288`, and a short read reaches `-402` at
+`0x11ff70`. Thus `-404` means that
+this parser found no recognized fixed-size encrypted/authentication trailer; it
+is not a successful signature-verification result. For comparison, the later
+verification path uses `-403` (`0xfffffe6d`) at `0x120f73..0x120f7a` when its
+32-byte comparison fails. Public Gen5W research independently describes the
+same `TER`/`TE2` terminators and distinguishes integrity/signature rejection,
+but the exact recovered instructions are the authority here.
+
 The marker is a local `/update` state file, not a USB member. Its existence must
 therefore be observed or established through a separate privileged path. This
 unequal-path code proves an intentional plaintext-mode contract; the separate
@@ -291,21 +307,30 @@ interpreted conditionally later. Consequently:
 
 No verifier bypass or accepted modified update is established.
 
+## Numeric-only route model
+
+`tools/uk_fw/appdmclient_fumo_gate_model.py` encodes only the exact integer and
+boolean conditions above. It classifies fixed-suffix size/read/magic state and
+the equal/unequal retained-result contracts; it never reads or emits a firmware
+file, trailer, archive, command, or executable input. A recognized `TER`/`TE2`
+candidate is explicitly reported as continuing to later checks, never as
+cryptographic success, and outer-gate progression is never reported as update
+acceptance. The no-input deterministic summary used for review has SHA-256
+`7ea027da089d25b6dd6579705e4365d8515ac2ca204eded39dc4c0d7f211d803`.
+
 ## Remaining work
 
-1. Name verifier return `-404` from exact linked verifier semantics rather than
-   only its control-flow role and adjacent log text.
-2. Analyze source-file stability from the initial unequal staging operation,
+1. Analyze source-file stability from the initial unequal staging operation,
    through the separate XML verifier/open sequences, into the now-proven local
    relaunch; name the authentication state that precedes the progress-zero
    `force_launch=run` writes.
-3. Recover the second stored version reference and boot-state enum names.
-4. Trace the XML destination helper and prove whether encrypted XML is copied or
+2. Recover the second stored version reference and boot-state enum names.
+3. Trace the XML destination helper and prove whether encrypted XML is copied or
    transformed at each branch.
-5. Map inner AppUpgrade's `version`, `car-variant`, current-system, force-update,
+4. Map inner AppUpgrade's `version`, `car-variant`, current-system, force-update,
    and partition checks to exact accept/reject paths.
-6. Reconstruct payload digests/binding, inactive-slot writing, boot selection,
+5. Reconstruct payload digests/binding, inactive-slot writing, boot selection,
    boot-time trust, health, and mark-good.
-7. On a disconnected owner bench, capture hashes, route arguments, marker state,
+6. On a disconnected owner bench, capture hashes, route arguments, marker state,
    uid/SMACK label, effective `PATH`, staged `/update/usb/bin` identities, and
    updater state before any active test.

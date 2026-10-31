@@ -146,6 +146,18 @@ Marker present -> helper returns 0 -> 0x80bc8/0x80bd6:
   compare XmlResult with 0xfffffe6c (-404)
 Both retained outer results must equal -404; any mismatch reaches 0x824b0 and
 adjacent "Error unencrypted update. (Unknown image type.)" logging.
+Exact -404 semantics in the linked verifier:
+  0x34870 wrapper calls verifier 0x121040
+  0x121040 calls trailer parser 0x11fe20
+  0x11fe97..0x11feb9 requires file size > 0x4024 and seeks to file_size - 0x4024
+  0x11fef5..0x11ff0e reads one exact 0x4024-byte suffix
+  0x11ff10..0x11ffa2 accepts magic TE plus third byte R or 2
+  0x11ff26 stores -404 for positive too-small files or unrecognized TER/TE2 suffix magic
+  0x120288 stores -401 for a non-positive size
+  0x11ff70 stores -402 for a short/read failure path
+  0x120f73..0x120f7a uses separate -403 for a later 32-byte mismatch
+Thus -404 is no recognized fixed-size encrypted/authentication trailer, not
+successful signature verification.
 These are unequal-path mode contracts, not universal FUMO gates or a
 demonstrated USB-created bypass. The XML reader performs a separate later
 verifier call and no immutable source snapshot is proved.
@@ -159,6 +171,13 @@ First result requires base<candidate; second requires base<=candidate.
 Explicit section-zero vehicle check is disabled at these USB call sites.
 Comparator still enforces P5/non-P5 family matching and string-section
 normalization. It is lexicographic, not component-wise integer arithmetic.
+
+NUMERIC-ONLY MODEL
+path=tools/uk_fw/appdmclient_fumo_gate_model.py
+summary_sha256=7ea027da089d25b6dd6579705e4365d8515ac2ca204eded39dc4c0d7f211d803
+The model consumes integer/boolean state only. It emits no firmware file,
+trailer, archive, compressed stream, command, or executable input and does not
+equate parser continuation or outer-gate progression with update acceptance.
 
 BOUNDARY
 This is AppDMClient FUMO, not AppScomoDM SCOMO.

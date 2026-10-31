@@ -86,6 +86,18 @@ Either way there is no contradiction in practice: per-file SHA is computed over
 the file's content, encrypted inside the file, and the package-level blob is
 appended verbatim. Deciding between the readings needs one decrypted package.
 
+## Exact recovered verifier cross-check
+
+The recovered EU `260128` AppDMClient independently confirms the paper's trailer
+shape. Its linked parser at exact PIE VA `0x11fe20` seeks to
+`file_size - 0x4024`, reads exactly `0x4024` bytes, and recognizes only a suffix
+starting `TER` or `TE2`. Decimal `0x4024` is 16,420: the paper's 36-byte
+terminator/hash area plus 16,384-byte signature area. Too-small files or
+unrecognized suffix magic produce `-404` at `0x11ff26`; a later 32-byte mismatch
+uses separate result `-403` at `0x120f73..0x120f7a`. This binds the public
+format description to the exact recovered verifier without reproducing the
+paper's bypass patches or key-extraction code.
+
 ## Consequences for this programme
 
 - The "cryptographic wall" is not a wall on the device: it is a wall on

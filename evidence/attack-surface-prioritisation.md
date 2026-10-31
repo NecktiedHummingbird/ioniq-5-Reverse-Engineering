@@ -205,8 +205,10 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 - Built-in reachable code: netfilter/xtables (1,610 symbols), TCP (588),
   IPv6 (525), CAN (306, including `micom_*`), UDP (161).
 - Exact checks reject CVE-2016-0728, Dirty COW, both ranked AF_PACKET races,
-  ALSA PCM CVE-2017-0861, and the generic missing Stack Clash guard-gap premise
-  despite the old banner.
+  CVE-2017-7308's published private-area primitive, ALSA PCM CVE-2017-0861,
+  and the generic missing Stack Clash guard-gap premise despite the old banner.
+  The companion AF_PACKET frame-count multiplication guard is absent, but its
+  impact and `CAP_NET_RAW`/TPACKET_V3 runtime reachability remain unresolved.
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.
