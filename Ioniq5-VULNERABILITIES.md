@@ -1,6 +1,6 @@
 # IONIQ 5 infotainment vulnerability and remediation register
 
-Updated: 2026-11-02. Internal defensive research; no disclosure or vendor contact is implied.
+Updated: 2026-11-03. Internal defensive research; no disclosure or vendor contact is implied.
 
 ## Scope and evidence rules
 
@@ -710,6 +710,7 @@ device, subject to the listing above showing `/media/mtp` as scanned when mounte
 - CVE-2016-2384 is rejected for exact `snd-usbmidi-lib.ko` despite `CONFIG_SND_USB_AUDIO=m` and shipped generic USB-audio/MIDI modules. After raw-MIDI ownership is installed, every reviewed endpoint-creation failure returns the error without directly freeing the USB-MIDI object; the owner's private-free callback remains for legitimate teardown. See `evidence/vendor-kernel-usb-midi-backport.md`.
 - CVE-2017-11176 is rejected by exact shipped `sys_mq_notify` control flow despite `CONFIG_POSIX_MQUEUE=y`. `netlink_attachskb` drops the old socket reference before returning one, but both failed retry lookup paths bypass `netlink_detachskb` and enter skb-only cleanup. The compiler emits no explicit socket-register clear on the loop edge; branch routing provides the source fix's semantic effect. See `evidence/vendor-kernel-mq-notify-backport.md`.
 - CVE-2017-7533 is rejected despite `CONFIG_INOTIFY_USER=y` and the old `4.1.27-abl` banner. Exact `__fsnotify_parent` and `vfs_rename` take and release stable dentry-name snapshots around notification; short names are copied under the dentry lock and external names retain an owner reference. The separate inotify length/copy operations therefore do not receive the CVE-specific mutable name. See `evidence/vendor-kernel-inotify-cve-2017-7533.md`.
+- CVE-2016-9806 is rejected despite the old kernel banner. Exact `netlink_dump` saves `cb->module` and `cb->skb` while the callback mutex is held, clears `cb_running`, unlocks, and passes only the saved values to `module_put` and `consume_skb`. A new dump can reuse the callback after unlock without redirecting the completed invocation's cleanup to the new objects. See `evidence/vendor-kernel-netlink-cve-2016-9806.md`.
 - The absent AF_PACKET companion frame-count guard remains a correctness gap but is rejected as a V1/V2 frame-lookup OOB primitive: full-block-count allocation dominates publication, wrapped `frame_max` positions remain within the vector and block even at wrapped zero, and exact `vm_insert_page` rejects the separate understated-VMA path. Three syntactic signed vector-index edges begin at block count `0x80000001`, but the minimum vector produces order 23 and exact `__rmqueue`/`__alloc_pages_nodemask` reject every order above 10; `__kmalloc` therefore returns null before any edge is reachable. See `evidence/vendor-kernel-af-packet-frame-count.md`.
 - VM rendering slowness, watchdog timeouts and missing simulated CAN data are currently compatibility/integration issues, not established exploitable security defects.
 

@@ -6,6 +6,14 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## netlink dump ownership checkpoint — 2026-11-03
+
+- CVE-2016-9806 is rejected for exact recovered `vmlinux` by machine-code effects equivalent to upstream `92964c79b357efd980812c4de5c1fd2ec8bb5520`.
+- Complete exact `netlink_dump [0xffffffff814a74f7,0xffffffff814a7741)` captures `cb->module` and `cb->skb` while holding the callback mutex, clears `cb_running`, unlocks, then gives only the saved register values to exact `module_put` and `consume_skb`.
+- Post-unlock cleanup does not reload the reusable callback fields, so a new dump cannot redirect this invocation's cleanup to its objects. The old banner is not authoritative: pristine 4.1.27 source has the vulnerable reload order, while this downstream binary has the fix effects.
+- The seven-input schema-v2 model is tri-state where needed: incomplete fix facts leave the vulnerable reload premise unknown rather than asserting it. The authoritative recovered map is `work/eu-260128/kallsyms.tsv` (SHA-256 `2cfba917c1c8e7444e393e8d94ebfe367e2ba348be4f35ce10fbb331822e3c1f`), with the range also checked against the ELF's embedded address vector.
+- This rejection is limited to CVE-2016-9806. Installed identity, runtime netlink reachability, concurrency, crash, corruption, privilege and persistence remain unobserved; no socket, request, message, thread or race was created. Independent review **ACCEPT**; focused validation `9 passed, 136 subtests`; complete validation `500 passed, 135103 subtests`; public harness **PASS**.
+
 ## perf move-group race checkpoint — 2026-11-03
 
 - V-030 records the exact CVE-2017-6001 mechanism in recovered `vmlinux`: the `perf_event_open` software-group-to-hardware-context path loads `group_leader->ctx` before waiting for old/new context mutexes, then removes/migrates through the saved context without a nonzero reference, identity revalidation/retry, or post-lock move-state validation.

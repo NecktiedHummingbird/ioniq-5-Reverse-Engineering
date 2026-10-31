@@ -2799,6 +2799,25 @@ and are superseded by corrections rather than silently rewritten.
 - Added complete exact FDE evidence, the upstream patch, and an exhaustive
   Boolean-only model without creating an event, thread, race or trigger.
 
+## 2026-11-03 — netlink dump cleanup race rejected by saved identities
+
+- Complete exact `netlink_dump` code saves `cb->module` and `cb->skb` while its
+  callback mutex remains held, clears `cb_running`, unlocks, and passes only the
+  saved register values to exact `module_put` and `consume_skb`.
+- Those are the effects of upstream fix
+  `92964c79b357efd980812c4de5c1fd2ec8bb5520`; pristine 4.1.27 source still has
+  the vulnerable post-unlock callback-field reload, so this is a downstream
+  backport rather than a version-based rejection.
+- CVE-2016-9806's old-versus-new dump object-identity premise is therefore
+  absent. The conclusion does not cover unrelated netlink defects or prove the
+  installed unit's kernel identity.
+- Added exact evidence and an exhaustive Boolean-only ownership model without
+  opening a socket, sending a message, starting a dump, or creating a race.
+  Independent review corrected the model so missing fix facts remain unknown
+  rather than proving a vulnerable reload, required the authoritative recovered
+  kallsyms map to be named and hashed, then returned **ACCEPT**. The complete
+  suite passed `500 tests, 135103 subtests` and the public harness passed.
+
 ## 2026-10-31 — the parsers are older than the car
 
 - Reading link tables turned a theoretical surface into a dated one: libogg from the early 2000s, libpng from 2017,

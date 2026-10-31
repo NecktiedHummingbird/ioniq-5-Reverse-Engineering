@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.59.0 - reject CVE-2016-9806 by exact saved-object cleanup
+
+- Compared complete exact `netlink_dump` against upstream fix `92964c79b357efd980812c4de5c1fd2ec8bb5520` rather than relying on the `4.1.27-abl` banner.
+- Bound `cb->module` and `cb->skb` loads before callback-mutex release, followed by `cb_running` clear and exact `mutex_unlock`; exact `module_put` and `consume_skb` then consume only the saved register values.
+- Post-unlock cleanup never reloads the reusable callback fields, rejecting the CVE-specific race in which a new dump's skb is consumed or double-freed.
+- Added complete exact machine code, the authoritative patch, a seven-input Boolean-only schema-v2 model, and exhaustive 128-state tests. The model rejects the CVE only from complete saved-object effects; incomplete fix facts leave the vulnerable reload premise unknown rather than asserting it.
+- Bound the function range to authoritative recovered `work/eu-260128/kallsyms.tsv` and its SHA-256, and independently checked the addresses against the ELF's embedded address vector rather than using a differently transformed derived map.
+- Independent instruction/model/provenance review returned **ACCEPT**. Focused validation passed `9 tests, 136 subtests`; complete validation passed `500 tests, 135103 subtests`; the public harness passed.
+- Kept scope narrow: installed identity, runtime netlink reachability, unrelated netlink defects, corruption, privilege gain, root and persistence remain unobserved. No socket, message, dump request, thread, race, crash or target execution was created.
+
+## 1.58.0 - identify exact CVE-2017-6001 perf move-group race
+
+- Added V-030 after binding complete exact `SYSC_perf_event_open` and `perf_event_ctx_lock_nested.isra.60` machine code.
+- The software-group-to-hardware-context path reads `group_leader->ctx` before a potentially blocking double-mutex acquisition and then removes/migrates through that saved context without acquiring a live reference, revalidating identity/retrying, or checking post-lock whether another caller already moved the group.
+- The same binary's single-context helper implements the nonzero-reference, lock, identity-check, unlock/drop/retry discipline, proving those effects are compiled but do not protect the affected move-group path.
+- Bound upstream fix `321027c1fe77f892f4ea07846aeae08cefbbb290`, `CONFIG_PERF_EVENTS=y`, and exact initialized `perf_event_paranoid=1`. The installed runtime value and production PMU/event behavior remain unobserved.
+- Classified this as an exact static local privilege-escalation candidate, not observed exploitation. A winning race, stale/dead-context use, controlled corruption, credential/SMACK transition, unrestricted root and persistence remain unproved.
+- Added complete exact FDE evidence, the authoritative patch, a nine-input Boolean-only model, and exhaustive 512-state tests. No event, syscall, thread, race, crash or target execution was created.
+
 ## 1.57.0 - CVE check against the pinned versions: one hit, rejected as a false positive
 
 - Queried GitHub's advisory database for each pinned library and compared against published vulnerable ranges.
@@ -15,15 +34,6 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   the exposure signal is release date plus the privilege the parsing runs under.
 - The useful lesson is procedural: an automated CVE match is a lead, not a finding. The first one this exercise
   produced was wrong, and it would have looked authoritative in a report.
-
-## 1.58.0 - identify exact CVE-2017-6001 perf move-group race
-
-- Added V-030 after binding complete exact `SYSC_perf_event_open` and `perf_event_ctx_lock_nested.isra.60` machine code.
-- The software-group-to-hardware-context path reads `group_leader->ctx` before a potentially blocking double-mutex acquisition and then removes/migrates through that saved context without acquiring a live reference, revalidating identity/retrying, or checking post-lock whether another caller already moved the group.
-- The same binary's single-context helper implements the nonzero-reference, lock, identity-check, unlock/drop/retry discipline, proving those effects are compiled but do not protect the affected move-group path.
-- Bound upstream fix `321027c1fe77f892f4ea07846aeae08cefbbb290`, `CONFIG_PERF_EVENTS=y`, and exact initialized `perf_event_paranoid=1`. The installed runtime value and production PMU/event behavior remain unobserved.
-- Classified this as an exact static local privilege-escalation candidate, not observed exploitation. A winning race, stale/dead-context use, controlled corruption, credential/SMACK transition, unrestricted root and persistence remain unproved.
-- Added complete exact FDE evidence, the authoritative patch, a nine-input Boolean-only model, and exhaustive 512-state tests. No event, syscall, thread, race, crash or target execution was created.
 
 ## 1.56.0 - V-014: the root parsing stack is built on 2011-2017 era codec libraries
 

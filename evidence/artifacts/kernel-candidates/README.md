@@ -150,6 +150,16 @@ the mmap boundary rejection, and exact rejection of every vector large enough
 to reach a negative signed index. SHA-256:
 `f7097d97fc2e29671673aa67c0cd34df7241e60e0fb49d6d782376fca37d9994`.
 
+`kernel-netlink-cve-2016-9806.asm` retains complete embedded-kallsyms-bounded
+`netlink_dump` machine code. It binds callback-mutex ownership, pre-unlock
+capture of `cb->module` and `cb->skb`, `cb_running` clear, unlock, and exact
+post-unlock `module_put`/`consume_skb` use of the saved registers. These effects
+reject the CVE-specific mutable-callback cleanup race. SHA-256:
+`5c6e5e86076843d7844cde807f58dc3e74294749be962642ac3198597055d9ab`.
+`cve-2016-9806-fix.patch` is upstream commit
+`92964c79b357efd980812c4de5c1fd2ec8bb5520`; SHA-256:
+`89638f347ae53c86e2d346da8422ac3e33251fc25230c071376a4874a2d41680`.
+
 `kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
 `perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former
 shows the compiled reference/lock/identity/retry discipline; the affected

@@ -211,7 +211,7 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
 - Built-in reachable code: netfilter/xtables (1,610 symbols), TCP (588),
   IPv6 (525), CAN (306, including `micom_*`), UDP (161).
 - Exact checks reject CVE-2015-7613, CVE-2016-0728, physical USB-MIDI
-  CVE-2016-2384, CVE-2016-7117, CVE-2017-7533, CVE-2017-8890, CVE-2017-11176, Dirty COW,
+  CVE-2016-2384, CVE-2016-7117, CVE-2016-9806, CVE-2017-7533, CVE-2017-8890, CVE-2017-11176, Dirty COW,
   both ranked AF_PACKET races, CVE-2017-7308's published private-area
   primitive, ALSA PCM CVE-2017-0861, and the generic missing Stack Clash
   guard-gap premise despite the old banner. The three newer built-in checks
@@ -227,7 +227,9 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
   lookup routes to skb-only cleanup and cannot pass the stale socket to detach.
   CVE-2017-7533 is also rejected semantically: exact parent and rename paths
   stabilize both inline and external dentry names before the separate inotify
-  length/copy operations.
+  length/copy operations. CVE-2016-9806 is rejected by exact saved-object
+  ownership: `netlink_dump` captures the callback module and skb under its
+  mutex, then uses only those saved values for cleanup after unlock.
   The companion AF_PACKET frame-count multiplication guard is absent, but the
   exact V1/V2 consumer trace is now complete. Allocation uses the full block
   count, and every position bounded by wrapped `frame_max` remains inside the
