@@ -63,7 +63,9 @@ completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
 `/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
 `/tmp/AppUpgrade`. It passively records `/dev/ptmx` and `/dev/pts` metadata plus
 `/proc/mounts` so intended UNIX98 PTY exposure can be separated from observed
-runtime exposure before any TTY testing. Symlink metadata is recorded separately
+runtime exposure before any TTY testing. It also records `/proc/modules` and the
+exact shipped `unix.ko` hash so AF_UNIX static findings are not treated as loaded
+owner-kernel state. Symlink metadata is recorded separately
 from hash resolution.
 Missing commands/files remain explicit records. Unreadable files, failed
 reads/metadata queries/passive commands, and malformed hash output set a

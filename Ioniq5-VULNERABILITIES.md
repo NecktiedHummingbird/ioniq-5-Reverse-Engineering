@@ -382,6 +382,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `54ffccbf053b5b6ca4f6e45094b942fab92a25fc` or an exact equivalent that locks `real_tty->ctrl_lock`; validate with race and memory-safety instrumentation only on a disposable test kernel.
 - **Evidence:** `evidence/vendor-kernel-tty-pgrp-cve-2020-29661.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-tty-pgrp-cve-2020-29661.asm`; Boolean-only model `tools/uk_fw/tty_pgrp_lock_model.py`.
 
+## V-025 — AF_UNIX MSG_PEEK/garbage-collector race (EXACT CVE-2021-0920 PREMISE; UAF UNPROVEN)
+
+- **Status:** exact shipped `unix.ko` retains both pre-fix CVE-2021-0920 receive paths. Datagram and stream `MSG_PEEK` duplicate attached file lists and pass the resulting SCM cookie toward descriptor delivery without serializing against exact module-global `unix_gc_lock`. No socket, descriptor transfer, GC pass, concurrency, UAF, corruption, or privilege transition was executed.
+- **Component:** `/lib/modules/4.1.27-abl/kernel/net/unix/unix.ko`, SHA-256 `e1841632fee9f70eb8f97204cf629a2b34c9e21136fda9236a971ca2d8758ecb`, Build ID `cc807f3b2bce8d7023b7945ec2919698f1034e42`; x86-64 `ET_REL`; `CONFIG_UNIX=m`.
+- **Exact mechanism:** `unix_stream_recvmsg` `[.text+0x23a6,.text+0x2a8f)` calls relocation-bound `scm_fp_dup` at `+0x29c3`; `unix_dgram_recvmsg` `[.text+0x355b,.text+0x3824)` calls it at `+0x37b9`. Both are dominated by saved `flags & 0x2`, store the duplicate at SCM-cookie base plus eight, and pass that exact cookie to `scm_recv`. Exact `unix_gc_lock` is `.bss+0x102e`; neither interval references it directly or through an intervening callee.
+- **Reachability:** AF_UNIX is a normal local-process surface and the recovered D-Bus configuration strongly implies operational use. Runtime module load/hash, process uid, SMACK policy, resource limits, scheduling, and owner build remain unobserved. The passive bundle now records `/proc/modules` and hashes exact `unix.ko` without loading it.
+- **Impact boundary:** exact static evidence establishes missing GC serialization only. It does not establish an overlapping GC pass, candidate graph, premature free, stale use, UAF, controlled reuse, disclosure, corruption, RCE, root, policy escape, persistence, or safety impact.
+- **Remediation:** backport `cbcf01128d0a92e131bd09f1688fe032480b65ca` or equivalent post-duplication serialization against the same GC lock on both PEEK routes; validate only in a disposable instrumented kernel environment.
+- **Evidence:** `evidence/vendor-kernel-unix-peek-cve-2021-0920.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-unix-peek-cve-2021-0920.asm`; Boolean-only model `tools/uk_fw/unix_peek_gc_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

@@ -2632,3 +2632,9 @@ and are superseded by corrections rather than silently rewritten.
 - Both sides were right about the defect and wrong about nothing except reachability, which is the part that
   decides whether a bug is critical or informational. The register now carries the measurement next to the
   claim so neither can be read without the other.
+
+## 2026-11-01 — AF_UNIX MSG_PEEK reaches descriptor delivery without the GC barrier
+
+- Exact stream and datagram receive paths duplicate attached file lists and carry them into SCM delivery without touching the module-global GC lock.
+- Recovered D-Bus use makes AF_UNIX load plausible, but passive module identity remains the first bench step.
+- No socket graph, descriptor transfer, GC overlap, UAF, corruption, or root was created or proved.

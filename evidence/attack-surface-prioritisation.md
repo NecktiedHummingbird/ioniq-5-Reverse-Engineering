@@ -232,6 +232,11 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-025/CVE-2021-0920 is an exact AF_UNIX local candidate. Both MSG_PEEK
+  attached-file receive paths omit the GC serialization added upstream, and
+  recovered D-Bus usage makes runtime module loading plausible. Confirm
+  `/proc/modules`, exact module hash, uid/SMACK, and limits passively; GC overlap,
+  UAF, corruption, and root remain unproved.
 - V-024/CVE-2020-29661 is an exact local TTY candidate. Master- and slave-side
   setters update one referenced slave pgrp field under distinct object locks;
   SMP is enabled and startup intends `/dev/ptmx` mode `0666`. Runtime node,

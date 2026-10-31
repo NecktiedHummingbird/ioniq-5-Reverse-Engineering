@@ -108,6 +108,7 @@ commits:
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
 - CVE-2020-29661: `54ffccbf053b5b6ca4f6e45094b942fab92a25fc`;
+- CVE-2021-0920: `cbcf01128d0a92e131bd09f1688fe032480b65ca`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
 - CVE-2017-15265: `71105998845fb012937332fe2e806d443c09e026`;
@@ -124,6 +125,10 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`kernel-unix-peek-cve-2021-0920.asm` binds both MSG_PEEK branches, attached-file
+`scm_fp_dup` calls, SCM-cookie continuity, exact global GC-lock identity, and
+absence of a direct or indirect barrier underlying V-025.
 
 `kernel-tty-pgrp-cve-2020-29661.asm` binds target/real TTY identities,
 reciprocal UNIX98 PTY links, exact pgrp/lock offsets, and same-field updates

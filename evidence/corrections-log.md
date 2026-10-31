@@ -578,6 +578,20 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C39 — an exact AF_UNIX GC gap is not an observed object lifetime failure
+
+- **Candidate:** CVE-2021-0920 is a local AF_UNIX descriptor-passing race and
+  recovered D-Bus use makes module load plausible.
+- **Exact result:** both MSG_PEEK receive paths call exact `scm_fp_dup`, carry the
+  result to `scm_recv`, and lack direct or indirect serialization on exact
+  `.bss+0x102e` `unix_gc_lock` in that interval.
+- **Conclusion:** V-025 establishes the missing-GC-barrier premise, not runtime
+  module state, an overlapping GC candidate graph, UAF, corruption, root, or
+  persistence.
+- **Evidence:** `evidence/vendor-kernel-unix-peek-cve-2021-0920.md`.
+
+---
+
 ## C38 — intended `/dev/ptmx` plus wrong locking is not a completed UAF
 
 - **Candidate:** CVE-2020-29661 is an ordinary PTY race, and shipped startup

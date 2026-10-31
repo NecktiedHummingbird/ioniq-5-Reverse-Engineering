@@ -129,6 +129,23 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.48.0 - identify exact AF_UNIX MSG_PEEK garbage-collector gap
+
+- Audited exact shipped `unix.ko` against upstream CVE-2021-0920 fix
+  `cbcf01128d0a92e131bd09f1688fe032480b65ca`.
+- Added V-025: both datagram and stream MSG_PEEK attached-file paths call exact
+  `scm_fp_dup`, preserve the result in the SCM cookie, and reach descriptor
+  delivery without direct or indirect serialization on exact `unix_gc_lock`.
+- Bound the global lock to `.bss+0x102e`, traced every intervening call, and
+  distinguished the stream socket receive mutex from the GC lock.
+- Extended the read-only bench bundle to capture `/proc/modules` and hash exact
+  `unix.ko` without creating a socket or loading a module.
+- Kept impact bounded: no socket, descriptor transfer, GC pass, concurrency,
+  UAF, controlled reuse, corruption, root, or persistence was executed or
+  proved.
+- Added authoritative patch evidence and a reviewed Boolean-only model; both
+  semantic reviews and code review returned `ACCEPT`.
+
 ## 1.47.0 - identify exact TTY process-group wrong-object locking
 
 - Audited exact UNIX98 PTY/TIOCSPGRP semantics against upstream CVE-2020-29661

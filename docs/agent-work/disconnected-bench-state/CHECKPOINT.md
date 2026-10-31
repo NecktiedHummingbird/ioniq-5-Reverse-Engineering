@@ -22,6 +22,8 @@ re-reviewed, and locally accepted on 2026-11-01.
     any marker;
   - records `/dev/ptmx` and `/dev/pts` metadata alongside the existing mount
     capture so configured PTY exposure can be separated from runtime state;
+  - records `/proc/modules` and hashes exact `unix.ko` without loading it, so
+    AF_UNIX static findings can be compared with observed module state;
   - distinguishes absent from unreadable/read-error state and fails the terminal
     completion verdict on failed reads, metadata/link queries, passive commands,
     or malformed/empty hash output.
@@ -52,10 +54,10 @@ independently accepted.
 ## Validation
 
 ```text
-384 passed, 314 subtests passed
+390 passed, 339 subtests passed
 public harness: PASS (pass=3, info=4, no pending/blocked/fail)
 probe audit: safe=true, syntax_ok=true, violations=[]
-probe SHA-256: 14b1cf8f1db13031d34c0fdad869f7d13cc9cf5898cad8e1cee82cea6a399600
+probe SHA-256: 7ba3285f84b2bc2a84ce6a8d2640253a91df107c6ad23e9f9d9c53f8bcdd0968
 git diff --check: PASS
 py_compile: PASS
 ```
