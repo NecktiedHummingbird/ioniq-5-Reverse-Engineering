@@ -70,12 +70,17 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   absence handling, explicit contrary functional named-path and XFRM-core facts,
   separate NET_KEY scope, null runtime/impact outcomes, and exhaustive output
   assertions.
-- Focused tests, bytecode compilation, and `git diff --check` are recorded in
-  `docs/agent-work/xfrm-user-path/CHECKPOINT.md`. The complete suite, public
-  harness, and independent acceptance were not run or claimed. No recovered
-  target, socket/netlink/XFRM operation, message, attribute, packet, module
-  action, namespace, capability request, trigger, race, payload, or firmware
-  material was executed, created, or exercised.
+- Focused validation passed `8 tests, 1056 subtests`; the complete suite passed
+  `594 tests, 154302 subtests`; the public harness passed
+  `pass=3 info=4 pending=0 blocked=0 fail=0`; bytecode compilation and
+  `git diff --check` passed. An initial independent review accepted the
+  technical verdict but rejected stale validation wording, a moving integration
+  base, and missing retained public-history captures. Those package defects
+  were corrected on frozen base `7074707`; corrected independent review
+  returned **ACCEPT** with no blocking or nonblocking findings. No recovered
+  target, socket/netlink/XFRM operation, message, attribute, packet,
+  module action, namespace, capability request, trigger, race, payload, or
+  firmware material was executed, created, or exercised.
 
 ## 1.70.0 - reject CVE-2017-16995 for the exact syscall-based eBPF path
 

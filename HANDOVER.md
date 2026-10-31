@@ -6,6 +6,46 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## XFRM-user path applicability checkpoint — 2026-11-04
+
+- CVE-2017-7184 is rejected for the recovered stock package only for the
+  upstream/named `CONFIG_XFRM_USER` `XFRM_MSG_NEWAE -> xfrm_new_ae` update
+  path. Exact configuration disables `XFRM_USER`. A fresh read-only inventory
+  directly against the canonical decrypted stock archive, SHA-256
+  `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`,
+  finds 163 regular `.ko` members and no `xfrm_user.ko`; the translation
+  unit/interface is not built or shipped. The mutable extracted staging tree is
+  not used as proof of stock identity.
+- The authoritative map has no exact row for any of the complete eight-name
+  query inventory: `xfrm_new_ae`, `xfrm_replay_verify_len`,
+  `xfrm_user_rcv_msg`, `xfrm_netlink_rcv`, `xfrm_user_net_init`,
+  `xfrm_user_init`, `xfrm_dispatch`, or `xfrm_msg_min`. This bounded inventory
+  does not globally exclude every inline, renamed, or vendor-equivalent route.
+- Contrary scope is retained: `CONFIG_XFRM=y`; complete
+  `xfrm_init_replay [0xffffffff8151979d,0xffffffff815197f6)` and exact
+  state/policy/replay symbols remain; three IPv6 XFRM mode modules are shipped.
+  `CONFIG_NET_KEY` is separately disabled and is not conflated with this path.
+- Public history records introducing commit
+  `d8647b79c3b7e223ac051439d165bc8e7bbb832f`, historical incomplete verifier
+  `e2b19125e94124daaeda1ddcf9b85b04575ad86f`, and official stable 4.1.y
+  backports `438db92d7f2792e3bad17be70e6edf0f44a081f0` and
+  `171a957989c4f398adb41078dbfff73b0821e383`, both first in Linux 4.1.49
+  (22 January 2018). This is contextual only; exact absent-path evidence
+  controls. Verifier presence alone is not remediation, and both fix effects or
+  exact equivalents would be required if the path existed.
+- Added retained introducing/incomplete-verifier history, both authoritative
+  mainline fixes, both stable 4.1.y backports, the Linux 4.1.49 release and
+  changelog records, exact static artifact, dedicated assessment, and a
+  ten-input schema-v2 Boolean model. Focused validation passed `8 tests, 1056
+  subtests`; the complete suite passed `594 tests, 154302 subtests`; and the
+  public harness passed `pass=3 info=4 pending=0 blocked=0 fail=0`. An initial
+  independent review accepted the technical verdict but rejected stale
+  validation wording, a moving integration base, and missing retained history;
+  those package defects were corrected on frozen base `7074707`; corrected
+  independent review returned **ACCEPT** with no blocking or nonblocking
+  findings. Exact hashes are in the checkpoint. No recovered target or
+  prohibited target/runtime operation was used.
+
 ## BPF syscall-path applicability checkpoint — 2026-11-04
 
 - CVE-2017-16995 is rejected for exact recovered `vmlinux` only for the named

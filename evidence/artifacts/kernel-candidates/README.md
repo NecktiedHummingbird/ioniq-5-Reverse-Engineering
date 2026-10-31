@@ -122,6 +122,8 @@ commits:
 - CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2017-7533: `49d31c2f389acfe83417083e1208422b4091cd9e`;
+- CVE-2017-7184: `677e806da4d916052585301785d847c3b3e6186a`, with required
+  follow-up `f843ee6dd019bcece3e74e76ad9df0155655d0df`;
 - CVE-2017-10661: `1e38da300e1e395a15048b0af1e5305bd91402f6`;
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
@@ -200,6 +202,43 @@ claim. SHA-256:
 `cve-2017-16995-fix.patch` is upstream commit
 `95a762e2c8c942780948091f8f2a4f32fce1ac6f`; SHA-256:
 `d09d5733423b14add9cb9d9a25487a088cba449d1ca5c614b55dad307f73f557`.
+
+`kernel-xfrm-user-cve-2017-7184.asm` retains the exact configuration and
+complete `xfrm_init_replay` range, the complete eight-name XFRM-user query
+inventory, contrary XFRM-core symbols, and a direct member inventory of the
+canonical decrypted stock archive (SHA-256
+`423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`):
+163 regular `.ko` members, no `xfrm_user.ko` or `af_key.ko`, and exactly three
+XFRM-named IPv6 mode modules. `CONFIG_XFRM_USER` is disabled, so the assessment
+rejects CVE-2017-7184 only for the named
+`XFRM_MSG_NEWAE -> xfrm_new_ae` path. `CONFIG_XFRM=y` and state/policy/replay
+machinery remain, preventing a whole-XFRM absence or safety claim. Artifact
+SHA-256: `9ea9205be67b246aff6d88be2d5b00f3d022cec60a686dcf6a010974136fd34e`.
+Public history identifies introducing commit
+`d8647b79c3b7e223ac051439d165bc8e7bbb832f` and historical incomplete verifier
+commit `e2b19125e94124daaeda1ddcf9b85b04575ad86f`. The retained initial and
+required follow-up patches are mainline commits
+`677e806da4d916052585301785d847c3b3e6186a` and
+`f843ee6dd019bcece3e74e76ad9df0155655d0df`; their official stable 4.1.y
+backports are `438db92d7f2792e3bad17be70e6edf0f44a081f0` and
+`171a957989c4f398adb41078dbfff73b0821e383`, both first in Linux 4.1.49
+(22 January 2018). Version history is contextual; exact absent-path evidence
+controls, and verifier presence alone is not remediation. Both fix effects or
+exact equivalents would be required if the path existed. Retained mainline-fix
+patch SHA-256 values are
+`5d419e4862b608a9372f4c93bf27c9a3014fe6598d38f148fa8eeea71fab905e`
+and `3e0699ff6c4811470a4007bdb7bff86a72b12ddad739d01a3cc135e3b17ccd75`.
+Exact local public-history captures are also retained: introducing patch
+`64bccd3fe44942e8b100dd66b9e43c73aed1ebb6b809db868a5e41c046a73581`;
+historical-verifier patch
+`88a0a46c099de374e5ca19f5a44ca8d1aaa4e1c08538d71471bdaf2375f56d6a`;
+stable initial/follow-up patches
+`a764b411fcbaa2db8d8ea7420a38d88749dac82f7a17b2b24d997e65485f9232`
+and `de91f9ab7bc874defccec57c723740eadfc7f55923dc279a26c0ef0118da92e1`;
+Linux 4.1.49 release patch
+`344a344b15c2a05330399ce4694a82876765db1031eb1f7a7d700cd9de366963`;
+and exact official-changelog excerpts
+`be0837b5b21e32aadc17d636e5736b8f560bf570a8728f895815f96cff28f2c1`.
 
 `kernel-key-read-revoke-cve-2015-7550.asm` retains complete
 embedded-kallsyms-bounded `key_revoke`, `keyctl_revoke_key`,
