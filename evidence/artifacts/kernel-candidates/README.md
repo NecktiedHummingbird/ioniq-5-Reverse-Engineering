@@ -128,6 +128,8 @@ commits:
 - CVE-2017-7533: `49d31c2f389acfe83417083e1208422b4091cd9e`;
 - CVE-2017-7184: `677e806da4d916052585301785d847c3b3e6186a`, with required
   follow-up `f843ee6dd019bcece3e74e76ad9df0155655d0df`;
+- CVE-2017-6074 mainline: `5edabca9d4cff7f1f2b68f0bac55ef99d9798ba4`;
+  stable 4.1.y backport: `98442999b9671784e659b205be8b5b6be8e81629`;
 - CVE-2017-10661: `1e38da300e1e395a15048b0af1e5305bd91402f6`;
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
@@ -244,6 +246,27 @@ Linux 4.1.49 release patch
 and reviewed official-changelog excerpts with public maintainer email addresses
 redacted
 `f3623a119582dfe97f9132560f640763abd0c8324545762a74ef0449a421fdcb`.
+
+`kernel-dccp-cve-2017-6074.txt` retains the exact configuration, public v4.1
+Kconfig/Kbuild excerpts, complete ten-name zero-row query declaration/results,
+and direct member inventory of the canonical decrypted stock archive (SHA-256
+`423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`):
+163 regular `.ko` members and zero names containing `dccp`. The specific public
+CVE path requires DCCP core plus DCCPv6/IPv6. Under applicable public v4.1 rules,
+`CONFIG_IP_DCCP=n` excludes that whole named subtree, and the archive ships no
+canonical DCCP core or DCCPv6 module. `CONFIG_INET=y` and `CONFIG_IPV6=y`
+prevent a general networking or IPv6 absence/safety claim; IPv4-only DCCP would
+not establish the CVE path, and USER_NS is non-decisive. Mainline commit
+`5edabca9d4cff7f1f2b68f0bac55ef99d9798ba4` and stable 4.1.y backport
+`98442999b9671784e659b205be8b5b6be8e81629` are retained byte-identically with
+patch SHA-256 values
+`e5ac35f2d2b4129e3fca80a5b7d9200035bfd79f703b3045d7b28c9868179eb9` and
+`116e4a0d21907c0271cd76e45c2fda40c9c349ef8d0cb59184aba23bcc573c9c`.
+The retained official `ChangeLog-4.1.41` release commit/date records 15 June
+2017, not 18 March; no separate archive-index claim is retained. Version
+history is contextual, and no fix provenance/effect, installed identity,
+runtime behavior, corruption, root, or persistence is claimed. Artifact
+SHA-256: `79b75516533d8a1a382f2c49cd8186d9c4329d19c5b58318711d38a420a9effc`.
 
 `kernel-pipe-cve-2015-1805.asm` retains complete authoritative-map-successor-
 bounded `pipe_write`, `pipe_read`, `copy_page_from_iter`, and

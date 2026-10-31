@@ -6,6 +6,42 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## DCCPv6 path applicability correction checkpoint — 2026-11-05
+
+- CVE-2017-6074 is rejected for the exact recovered stock package only for the
+  specific public request path requiring DCCP core (`input.o`) plus DCCPv6/IPv6
+  (`ipv6.o`). Under applicable public v4.1 Kconfig/Kbuild rules, exact
+  `IP_DCCP=n` excludes the whole named DCCP subtree. A fresh read-only inventory
+  of the canonical decrypted stock archive, SHA-256
+  `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`,
+  finds 163 regular `.ko` members and no canonical DCCP core or DCCPv6 module.
+- The complete ten-name authoritative-map inventory is split into queried core
+  and DCCPv6 identities and returns zero rows. Exact queried presence would
+  establish the corresponding translation unit. IPv4-only functional evidence
+  establishes core presence but not the CVE path; positive complete DCCPv6
+  functional evidence overrides absence.
+- The corrected 15-input schema-v2 model decouples physical component/path
+  classification from the public CVE dependency. Rejection is exactly
+  dependency plus physical path absence. Incomplete states remain unknown;
+  positive component evidence takes precedence and reports conflicts.
+  `CONFIG_INET=y` and `CONFIG_IPV6=y` remain bounded contrary facts, an
+  `IPv6=n` input alone does not prove general IPv6 absence, and USER_NS is
+  non-decisive.
+- Retained byte-identical mainline fix
+  `5edabca9d4cff7f1f2b68f0bac55ef99d9798ba4` and stable 4.1.y backport
+  `98442999b9671784e659b205be8b5b6be8e81629`. The retained official
+  `ChangeLog-4.1.41` release commit/date records 15 June 2017; the unretained
+  archive-index claim was removed. History is contextual; no recovered-code fix
+  provenance/effect is claimed.
+- Focused validation passes `13 tests, 32793 subtests`; the complete suite
+  passes `617 tests, 318204 subtests`; bytecode compilation, exact static checks,
+  and `git diff --check` pass. The public harness passes with
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. Corrected independent review
+  returned **ACCEPT** with no blocking findings. Generic public research used
+  Astra; implementation provenance is `codex-router/gpt-daybreak-blue-latest`.
+  DeepSeek remained static-ready/runtime-unverified and did not run. No target
+  or named-target interaction was used.
+
 ## Pipe iterator CVE-2015-1805 applicability checkpoint — 2026-11-05
 
 - CVE-2015-1805 is rejected for exact recovered `vmlinux` by complete machine
