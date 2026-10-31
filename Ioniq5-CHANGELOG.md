@@ -24,6 +24,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.41.0 - USB-MIDI ownership has one cleanup authority
+
+- Audited physical pre-login CVE-2016-2384 against exact shipped
+  `snd-usbmidi-lib.ko`. `CONFIG_SND_USB_AUDIO=m`, generic modules, and the
+  descriptor-driven probe surface are present, so the old version was a
+  credible candidate rather than a package-label dismissal.
+- Rejected the candidate at instruction level. Once raw-MIDI installs its
+  private-free callback, every generic and alternate endpoint-creation failure
+  returns directly through the error epilogue. None performs the second direct
+  object free deleted by the upstream fix.
+- Retained exact relocations, section-relative addresses, file-offset mapping,
+  and the authoritative one-hunk patch. No USB descriptor, peripheral, module
+  load, target execution, endpoint failure, crash, or privilege transition was
+  produced.
+
 ## 1.40.0 - the missing clear was present as control flow
 
 - Audited CVE-2017-11176 against exact recovered `vmlinux`, not its

@@ -14,6 +14,8 @@ remain ignored under `work/`.
   `9a1f126d6919812d3e7c6d7c9def51a698564cdfb22b9ebc72022c6e87d19fb9`;
 - recovered `af_packet.ko` SHA-256:
   `c810265b3c22f95d2b90494cc206abd6b4e67b7710bff2adcb177ee4867f467b`;
+- recovered `snd-usbmidi-lib.ko` SHA-256:
+  `ad2180bab3d7433287288c9b8255c8f70cefb6d4ee3c6b7d95ea4826d4b434be`;
 - disassembler: Homebrew LLVM `llvm-objdump` 23.1.3, Intel syntax;
 - source module path:
   `work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko`;
@@ -21,6 +23,8 @@ remain ignored under `work/`.
   `work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/core/snd-pcm.ko`;
 - source packet module path:
   `work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/net/packet/af_packet.ko`;
+- source USB-MIDI module path:
+  `work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/usb/snd-usbmidi-lib.ko`;
 - source kernel path: `work/eu-260128/vmlinux`.
 
 The ALSA files retain complete disassemblies of the relevant module functions. The kernel files retain only the branches needed to review the
@@ -69,12 +73,16 @@ llvm-objdump -dr --x86-asm-syntax=intel \
   --start-address=0x2084 --stop-address=0x20d2 \
   work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/net/packet/af_packet.ko \
   > af-packet-cve-2017-7308.asm
+llvm-objdump -dr --x86-asm-syntax=intel \
+  --start-address=0x2034 --stop-address=0x2893 \
+  work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/usb/snd-usbmidi-lib.ko
 ```
 
 The `cve-*.patch` files are GitHub patch representations of these upstream
 commits:
 
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
+- CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
@@ -92,6 +100,11 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`snd-usbmidi-cve-2016-2384.asm` retains raw-MIDI ownership assignment,
+post-registration endpoint-failure branches, direct error returns, and the
+owner's legitimate private-free callback. The absence of the second cleanup
+after ownership transfer matches the upstream fix.
 
 `mq-notify-cve-2017-11176.asm` retains the return-one retry, failed-lookup
 cleanup, detach cleanup, and callee reference-release branches needed to review

@@ -137,8 +137,11 @@ followed by stateful service/CAN/persistence reconstruction.
   Stack Clash missing-gap premise. The shipped code contains the relevant
   keyring reference release, `FOLL_COW`, socket locking, 64-bit
   `tp_sizeof_priv` arithmetic, PCM open mutex, and 1 MiB inter-VMA guard-gap
-  backports despite its `4.1.27-abl` banner. CVE-2017-11176 is now also
-  rejected by exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
+  backports despite its `4.1.27-abl` banner. Physical USB-MIDI
+  CVE-2016-2384 is also rejected: `CONFIG_SND_USB_AUDIO=m` and both modules
+  exist, but exact endpoint failures after raw-MIDI ownership transfer return
+  without the second direct object free. CVE-2017-11176 is now also rejected by
+  exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
   rather than detaching the stale socket. The loop has no explicit register
   clear, demonstrating why opcode absence alone is not a backport test. See

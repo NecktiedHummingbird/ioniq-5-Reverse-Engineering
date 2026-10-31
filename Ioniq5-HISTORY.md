@@ -2537,3 +2537,9 @@ and are superseded by corrections rather than silently rewritten.
   this work exists to build.
 - Keeping the distinction clear matters for the record: the daemon's bug is real, unfixed, and not the thing
   standing between this project and a rendered screen.
+
+## 2026-11-01 — the USB-MIDI owner already had the only free
+
+- A second physical kernel lead was exact enough to test: generic USB Audio/MIDI is modular and shipped, while CVE-2016-2384 is reached during descriptor-driven probe before login.
+- Exact relocation and successor review found the fix effect. Raw-MIDI owns final destruction, and all post-registration endpoint failures return without the vulnerable second direct free.
+- The candidate is rejected for the recovered module. No descriptor or peripheral was created and no module or target kernel path was run.

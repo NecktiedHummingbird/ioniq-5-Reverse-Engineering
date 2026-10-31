@@ -514,6 +514,23 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C32 — Old USB-audio configuration does not imply CVE-2016-2384
+
+- **Candidate:** the recovered kernel enables `CONFIG_SND_USB_AUDIO=m` and ships
+  exact generic USB-audio and USB-MIDI modules, so descriptor-driven probe code
+  is a genuine physical pre-login surface.
+- **Exact result:** after `snd_rawmidi_new()` installs the private-free owner,
+  every reviewed endpoint-creation failure branches directly to the error
+  epilogue. None calls or inlines the second USB-MIDI object free removed by
+  upstream `07d86ca93db7e5cdf4743564d98292042ec21af7`.
+- **Conclusion:** CVE-2016-2384 is rejected for exact `snd-usbmidi-lib.ko`
+  SHA-256 `ad2180ba...b434be`. This does not remove other USB parser candidates
+  or prove production port/module state on the owner's unknown build.
+- **Evidence:** `evidence/vendor-kernel-usb-midi-backport.md` and
+  `evidence/artifacts/kernel-candidates/snd-usbmidi-cve-2016-2384.asm`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.
