@@ -494,6 +494,26 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C31 — Missing explicit `sock = NULL` opcode is not a missing CVE-2017-11176 fix
+
+- **Tempting but wrong shortcut:** exact `sys_mq_notify` loops when
+  `netlink_attachskb()` returns one without an explicit zeroing instruction for
+  its socket register. Reading only that edge would classify the old kernel as
+  pre-fix.
+- **Exact result:** the callee first drops the socket reference, but both failed
+  retry lookup paths jump directly to notification-skb cleanup at
+  `0xffffffff811b18a4`. Neither can reach socket-detach cleanup at
+  `0xffffffff811b1892` with the old pointer. That branch structure is
+  machine-code-equivalent to upstream `sock = NULL`.
+- **Conclusion:** CVE-2017-11176's stale-reference over-release is rejected for
+  recovered `vmlinux` SHA-256 `f5ee9c2f...6b102b`, even though
+  `CONFIG_POSIX_MQUEUE=y`. The conclusion does not cover unrelated mqueue or
+  netlink defects or the owner's unknown installed kernel.
+- **Evidence:** `evidence/vendor-kernel-mq-notify-backport.md` and
+  `evidence/artifacts/kernel-candidates/mq-notify-cve-2017-11176.asm`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

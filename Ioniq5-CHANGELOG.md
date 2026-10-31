@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.40.0 - the missing clear was present as control flow
+
+- Audited CVE-2017-11176 against exact recovered `vmlinux`, not its
+  `4.1.27-abl` banner. POSIX message queues are compiled in and the relevant
+  return-one retry exists, making this a credible local-escalation candidate.
+- Rejected the candidate after instruction-level data-flow review. Although the
+  loop edge has no explicit socket-register clear, failed retry `fdget` and
+  socket-lookup paths both jump to skb-only cleanup. They cannot carry the old
+  released socket into `netlink_detachskb`; this is the semantic effect of
+  upstream `sock = NULL`.
+- Added exact retained excerpts, upstream patch provenance, and a boolean-only
+  model that distinguishes explicit zeroing from compiler-equivalent cleanup
+  routing. No race, message-queue trigger, corruption attempt, target
+  executable, or privilege transition was run.
+
 ## 1.39.0 - root reaches the bus; the daemon does not
 
 - The diagnostic separates the two possibilities cleanly. From **inside the wrapper**, in the same context and

@@ -36,6 +36,15 @@ llvm-objdump -d --x86-asm-syntax=intel \
 llvm-objdump -d --x86-asm-syntax=intel \
   --start-address=0xffffffff811b6496 --stop-address=0xffffffff811b64fb \
   work/eu-260128/vmlinux > kernel-join-session-keyring-branch.asm
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff811b1694 --stop-address=0xffffffff811b1709 \
+  work/eu-260128/vmlinux
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff811b1892 --stop-address=0xffffffff811b18b1 \
+  work/eu-260128/vmlinux
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff814a8d51 --stop-address=0xffffffff814a8d70 \
+  work/eu-260128/vmlinux
 llvm-objdump -dr --x86-asm-syntax=intel \
   --start-address=0xc6c --stop-address=0xe7e \
   work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/core/snd-pcm.ko \
@@ -66,6 +75,7 @@ The `cve-*.patch` files are GitHub patch representations of these upstream
 commits:
 
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
+- CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
 - CVE-2017-15265: `71105998845fb012937332fe2e806d443c09e026`;
@@ -82,6 +92,12 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`mq-notify-cve-2017-11176.asm` retains the return-one retry, failed-lookup
+cleanup, detach cleanup, and callee reference-release branches needed to review
+the semantic backport. The missing explicit register clear is not treated as a
+missing fix: exact failed-retry branches bypass detach, which is equivalent to
+the source-level `sock = NULL` assignment.
 
 `alsa-seq-probe-result.json` is the retained machine-readable benign reachability
 result. It contains no firmware binary, proprietary module, credential, payload,

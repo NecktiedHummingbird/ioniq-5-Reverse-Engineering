@@ -2521,3 +2521,9 @@ and are superseded by corrections rather than silently rewritten.
 - Also worth noting a self-inflicted detour: my first attempt at this test used the wrong path for dbus-send
   and returned a shell error that looked like a failure to reach the bus. Checking the tool exists before
   trusting its verdict is the same discipline as checking attempts before trusting an error count.
+
+## 2026-11-01 — the branch was the backport
+
+- CVE-2017-11176 looked promising: the exact old kernel has POSIX message queues, and its `netlink_attachskb` return-one edge loops without an explicit socket-register clear.
+- Full successor tracing reversed that first impression. A failed retry cannot reach socket detach with the old released pointer; it goes directly to notification-skb cleanup. The compiler represented upstream `sock = NULL` as branch routing.
+- The candidate is rejected for the recovered kernel, with exact addresses, file offsets, upstream source comparison, retained disassembly, and a boolean-only ownership model. No race or target syscall was executed.

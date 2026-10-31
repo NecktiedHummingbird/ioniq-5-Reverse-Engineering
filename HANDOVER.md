@@ -137,7 +137,13 @@ followed by stateful service/CAN/persistence reconstruction.
   Stack Clash missing-gap premise. The shipped code contains the relevant
   keyring reference release, `FOLL_COW`, socket locking, 64-bit
   `tp_sizeof_priv` arithmetic, PCM open mutex, and 1 MiB inter-VMA guard-gap
-  backports despite its `4.1.27-abl` banner. The companion AF_PACKET
+  backports despite its `4.1.27-abl` banner. CVE-2017-11176 is now also
+  rejected by exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
+  lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
+  rather than detaching the stale socket. The loop has no explicit register
+  clear, demonstrating why opcode absence alone is not a backport test. See
+  `evidence/vendor-kernel-mq-notify-backport.md` and numeric-only
+  `tools/uk_fw/mq_notify_retry_model.py`. The companion AF_PACKET
   `tp_frame_nr` overflow guard is absent. Public follow-up found no standalone
   impact assigned to the redundant TPACKET_V3 field, but exact V1/V2 paths share
   the multiplication and retain `frame_max`; those consequences remain
