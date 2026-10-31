@@ -22,15 +22,17 @@
 
 ## Executive summary
 
-1. The Gen5W_L anti-rollback control is a **single userland version-string
-   comparison** performed by `AppSetup` after decrypting the package's
+1. The publicly documented Gen5W_L **userspace rollback gate** is a version-string
+   comparison performed by `AppSetup` after decrypting the package's
    `.lge.upgrade.xml` with `DecryptToPipe`. The public `wideopen` wiki states
    the gate verbatim: *"It will read the version from the file and then begin
    an upgrade given the version is greater than or equal to the current version
    of the HU."*
 2. The check is **per-package, not per-file**. Individual payload archives carry
    CRC-32 entries in the plaintext `.ver` manifest (no version gating and no
-   signature), so the manifest's version string is the only rollback gate.
+   signature), so the manifest's version string is the only rollback gate in
+   that documented userspace flow. Loader, fuse/OTP, and boot-stage rollback
+   policy remain unknown.
 3. The project's own `navi_extended` README documents a **downgrade method that
    works without forging anything**: download an *older* official (still
    encrypted) package, but replace its `.lge.upgrade.xml` with the one from the
@@ -47,10 +49,11 @@
    stops decrypting payloads **but still performs the version check via a
    plaintext `.lge.upgrade.xml`** — so the version string becomes fully
    attacker-controlled, making equal-version and "downgrade" installs trivial.
-6. Nothing public demonstrates a *monotonic anti-rollback counter* (fuse/OTP) on
-   this variant. Rollback protection is software-only and lives in the update
-   application, consistent with CVE-2023-26245 ("modified AppUpgrade … bypass
-   the version check … newer, older, or customized").
+6. Nothing reviewed publicly demonstrates whether this variant has a monotonic
+   anti-rollback counter (fuse/OTP). The userspace update gate is software and
+   is the mechanism described by CVE-2023-26245 ("modified AppUpgrade … bypass
+   the version check … newer, older, or customized"); loader/fuse controls
+   remain unknown.
 
 ---
 
@@ -131,9 +134,10 @@ Implications:
 - There are **two independent version-ish gates**: the `.lge.upgrade.xml`
   version string (rollback), and the Engineering-Mode SOP/`checkSOPVersion()`
   gate + AppNavi-version-dependent "Update AppNavi from USB" option (entry).
-- The rollback gate is *one* comparison in userland. There is no stated
-  monotonic counter, no per-file version check, and no bootloader-side
-  anti-rollback in the documented flow.
+- The documented userspace rollback gate is *one* comparison. There is no
+  public evidence here of a monotonic counter, per-file version check, or
+  bootloader-side anti-rollback; absence from the documented flow is not proof
+  those stages do not exist.
 
 ### 1.3 Structure of the version comparison in `.lge.upgrade.xml`
 
@@ -197,16 +201,16 @@ model/region mismatch is a second, independent gate.
 | 5 | **Model-code mismatch** | `mcode`/package-name mismatch is a separate gate; a different model's manifest is not claimed to install. | `.ver` header; local AU/EU comparison |
 | 6 | **Per-file vs per-package** | Per-package. One root-level `.lge.upgrade.xml`; payload files are only CRC-32'd in the unsigned plaintext `.ver`. No per-file version/rollback check exists. | `wideopen` wiki flow; `.ver` structure |
 | 7 | **Manifest↔payload binding** | On the Linux path the manifest is **not** cryptographically bound to the payload at install time (that is exactly why the swap works). On the *Android* Gen5W sibling the `update_info` *is* RSA-signed and binds the package. | `navi_extended` F.A.Q. vs GitLab issue #3 |
-| 8 | **Anti-rollback counter** | No public evidence of a monotonic fuse/OTP counter on `S5W_L`; rollback protection is the userland string compare only. | absence in wiki + CVE-2023-26245 wording |
+| 8 | **Anti-rollback counter** | No public evidence here establishes a monotonic fuse/OTP counter on `S5W_L`. The userspace string comparison is proven, but it cannot be called the only platform rollback control until loader/boot state is audited. | absence in wiki + CVE-2023-26245 wording |
 | 9 | **A/B slot state** | Older payload is written to the *inactive* slot and `/etc/fstab` is switched at the end; a failed attempt leaves the previous slot/navi dir, so downgrades are "safe-ish" (recoverable) rather than bricking. | `wideopen` wiki |
 
-### 1.5 Can a signed-but-older official package be installed?
+### 1.5 Can the documented userspace flow stage a signed-but-older package?
 
-**Yes, on this Linux path — with the manifest-swap primitive.** An older
-official package is still encrypted with the device key (so it decrypts
-normally), and its payload files are accepted because the version gate reads
-only the substituted newer manifest. This is the project's own downgrade
-procedure, and it requires no key material and no re-signing.
+**Public prior work says yes for the tested Linux userspace flow, using manifest
+substitution.** An older official package remains encrypted for the platform,
+and the documented version gate reads the substituted newer manifest. That
+prior procedure requires no private key or re-signing. It does not prove this
+exact build's later boot/slot acceptance or exclude loader/fuse rollback policy.
 
 What would block it:
 
@@ -219,10 +223,11 @@ What would block it:
    floor regardless of the manifest). Not documented; CVE-2023-26245's
    "older" wording suggests no such floor on the tested build.
 4. **Boot-chain anti-rollback / partition signature rejection** after the
-   write. The kernel does OEM-key verification (`oemkm`/keystore, see
-   `eu-keystore-manifest-root-of-trust.md`) but that verifies signatures of
-   boot/update artifacts, not a rollback counter; an *older official* artifact
-   is still vendor-signed and should verify.
+   write. The reviewed kernel OEM verifier uses manifest-key policy for narrow
+   keystore backup/migration consumers; it is not the boot/update artifact
+   verifier. Boot-container signatures, loader policy, userspace update gates,
+   and any rollback state remain separate. An older official artifact being
+   vendor-signed is therefore relevant but not sufficient to prove acceptance.
 5. **Entry gating** — irrelevant to the downgrade itself, but relevant to the
    *purpose* of downgrading (reaching "Update AppNavi from USB"): the SOP
    `checkSOPVersion()` gate still applies on newer `MASS_PRODUCT` builds.
@@ -248,7 +253,7 @@ touching a signed package's integrity.
 | `/app/share/AppUpgrade/AppUpgrade`, `AppSetup`, `AppDMClient` (strings + disassembly) | Locate the `>=` compare, the version-parsing routine, and the region/mcode checks. |
 | `/update/` directory — `activeNaviPath`, `activeNaviPath_new`, `activeResourcePath*`, `updateVersionInfo`, `headUnitVersionChanged`, `BKupdateCompleteTime`, `updateCompleteTime` | A/B slot state, which slot is active, and what the updater recorded. |
 | `/etc/fstab` (and the pre/post copies) | Confirm the end-of-update slot switch; identify `mmcblk0p3` vs `p5` root selection. |
-| `/proc/cmdline` | Confirm `root=` partition and `oemkm=` presence (trust anchor is loader-supplied). |
+| `/proc/cmdline` | Confirm `root=` partition and `ABL.oemkm=` presence (trust anchor is loader-supplied). |
 | Installed version file(s) / build string (e.g. `/etc/*release`, version screen backing file) | The "current version" value that the manifest is compared against. |
 | SMACK policy + systemd units for the updater services | Whether the version check could be bypassed by labelling/writes. |
 
@@ -259,7 +264,7 @@ touching a signed package's integrity.
   proves whether it is a numeric or lexicographic compare and where the region
   check sits relative to it.
 - **UART `ttyS2` 115200 8N1 boot log** (already identified in this workspace) —
-  bootloader slot selection, any anti-rollback/fuse messages, `oemkm=` injection.
+  bootloader slot selection, any anti-rollback/fuse messages, `ABL.oemkm=` injection.
 - `dmesg` / journal around an update attempt (especially a deliberately
   equal-version and a deliberately older-version manifest run, if a bench run
   is ever sanctioned).

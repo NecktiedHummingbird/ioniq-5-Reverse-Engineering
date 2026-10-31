@@ -41,7 +41,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Identified a separate feasible invalid free: after copying, `manifest_init` replaces the allocation-pointer global with `base + 0x24`; a header rejection later passes that interior cursor to `kfree`. This may crash or corrupt allocator state at boot, but controlled corruption is not established.
 - Kept impact narrow: boot-parameter and physical-memory control are unproved, and no controlled OOB write, code execution, root, update acceptance, boot acceptance, or persistence is established.
 - Added complete-function evidence plus independent fail-closed Boolean and bounded-integer models. Review caught and resolved ERR_PTR routing, conditional-read wording, no-loop/capped-walk model counterexamples, a missing device wrapper, and the previously unclassified interior free; final review returned **ACCEPT**.
-- Focused validation passed `13 tests, 546 subtests`; full validation passed `472 tests, 132890 subtests`; the public harness passed. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
+- Focused validation passed `13 tests, 2084 subtests`; full validation passed `472 tests, 134428 subtests`; the public harness passed. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
 
 ## 1.54.0 - reject the FLIC write-bounds CVE family by exact comprehensive rewrite
 
@@ -3329,8 +3329,8 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 - Extracted the exact boot-parameter contract by decompiling
   `get_apl_seed_offsets` and reading `keystore_fill_seeds`. The two parameters use
-  **different separators**: `oemkm=<hex size>@<hex phys>` and
-  `seed=<hex phys>,<hex phys>`. `keystore_fill_seeds` copies two **64-byte** seeds
+  **different separators**: external `ABL.oemkm=<hex size>@<hex phys>` and
+  `ABL.seed=<hex phys>,<hex phys>` (the parser stores internal names `oemkm` and `seed`). `keystore_fill_seeds` copies two **64-byte** seeds
   out of physical memory (device → `sec_seed`, user → keystore state) and then
   **zeroes both source regions**; an absent device seed is fatal, an absent user
   seed is tolerated.
@@ -3366,7 +3366,8 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   `keystore: d/u-seed info missing in cmdline`, `manifest: Key manifest info
   missing in cmdline` and panics with a vendor-modified message, "Invalid
   configuration from end user prevents continuing". It refuses to run rather than
-  degrading. This confirms `oemkm` is mandatory at runtime and names the second
+  degrading. This confirms the internal ABL-list entry `oemkm` (external
+  command-line form `ABL.oemkm=`) is mandatory at runtime and names the second
   required input (device/user seed material).
 - Recovered the internal build provenance from a surviving path string:
   `26RU1_001`, built 2026-01-21, branch tag `s5w.26ru1.251203`, kernel source at
@@ -3455,7 +3456,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   was contacted and nothing was published.
 - It records four candidate issues with explicit confidence levels — CRC-32 as the
   declared manifest integrity value (confirmed mechanism, unproven impact), the
-  `oemkm=` command-line trust root (confirmed), the absent capability check in
+  external `ABL.oemkm=` command-line trust-policy handoff (confirmed format), the absent capability check in
   `keystore_open` (confirmed), and the boot container's embedded modulus
   (confirmed structure, unproven pinning) — and states for each what evidence
   would make it disclosable.
@@ -3676,9 +3677,10 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 - **Corrected the previous conclusion that downgrade is blocked.** The
   anti-rollback analysis (child note 10) separates the two siblings: on the
-  **Linux `S5W_L`** path the version gate is a single userland string comparison
-  in `AppSetup`, evaluated after `DecryptToPipe` handles `.lge.upgrade.xml`, and
-  the public `navi_extended` FAQ documents a substitution method — older official
+  **Linux `S5W_L`** path the documented userspace version gate is a string
+  comparison in `AppSetup`, evaluated after `DecryptToPipe` handles
+  `.lge.upgrade.xml`; loader/fuse rollback policy remains unaudited. The
+  public `navi_extended` FAQ documents a substitution method — older official
   payloads paired with the **latest** `.lge.upgrade.xml` for the same vehicle, so
   a genuine signed newer manifest satisfies the `>=` check while older content is
   written. On the **Android Gen5W** sibling the `update_info` inside
@@ -3690,9 +3692,9 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   pre-November-2021 build, five years of package-format change away from
   `260128`; (c) the method is documented against 2021–2022 packages and is
   unconfirmed on 2026 packages.
-- Recorded that no monotonic anti-rollback counter (fuse/OTP) is publicly
-  demonstrated for this variant, so rollback protection is software-only, matching
-  CVE-2023-26245.
+- Recorded that no reviewed public evidence establishes whether this variant
+  has a monotonic anti-rollback counter (fuse/OTP). CVE-2023-26245 covers the
+  software userspace version gate; loader/fuse controls remain unknown.
 - No exploit, OEM key, decryption or device action is included.
 
 ## 0.18.0 - 2026-10-19
@@ -3846,19 +3848,22 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 
 - Recovered the keystore root of trust. `manifest_init` (boot initcall)
-  `strcmp`s the kernel parameter **`oemkm`**, parses `oemkm=<size>@<phys>` with
+  `strcmp`s the internal ABL-list name **`oemkm`**; the external command line is
+  `ABL.oemkm=<size>@<phys>`, parsed with
   `sscanf("%x@%x")`, copies a 64 MiB-bounded blob out of physical memory via
   `memcpy_from_ph`, validates only a four-field header (type word `0xe`), then
   creates `.manifest_keyring` with `prepare_kernel_cred(0)` **root credentials**.
-- Established that `oemkm=` is **absent from all six packaged command lines**, so
-  the boot loader places the manifest and injects the parameter. The OEM key is
-  therefore not in the root filesystem and not in the kernel image.
-- Consequence recorded: root on the rootfs does **not** grant signing capability.
-  The OEM public key is firmware-pinned; a signature bypass must be a userland
-  decision, matching CVE-2023-26244/26245/26246 and the `update-patcher` approach.
-- Recorded a design observation: the manifest blob is trusted implicitly and its
-  location is a plain command-line value not covered by the `ipk.` container
-  signature. Whoever controls `oemkm=` controls the trusted key set. With
+- Established that `ABL.oemkm=` is **absent from all six packaged command lines**, so
+  the boot loader places the runtime manifest in DRAM and injects the parameter.
+  The manifest's source of record and storage medium remain unknown.
+- Consequence recorded: root on the rootfs does **not** itself recover the OEM
+  private key or rewrite the already-copied policy. The demonstrated modified-
+  package bypass is userland, matching CVE-2023-26244/26245/26246 and the
+  `update-patcher` approach; loader and boot-stage routes remain separate.
+- Recorded a design observation: this kernel path trusts the copied manifest and
+  its location is loader-added after the signed packaged command line. Whether
+  the preceding loader authenticates or measures that handoff remains unknown. Whoever controls the `ABL.oemkm=` handoff and physical blob can
+  choose manifest admission policy, subject to a certificate-loading path. With
   `CONFIG_KEXEC=y` this is a research direction post-root, not a persistence path.
 - Verified **`check_usage_bits`** is a clean four-word subset test
   (`requested == allowed & requested`); a key with an all-ones mask authorises
@@ -3946,8 +3951,9 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   input, then `manifest_key_verify_digest` performs a `manifest_keyring` lookup,
   parses 16 usage-bit bytes from the key description, and calls the asymmetric
   verify op. It is reachable only from `keystore_backup` and
-  `keystore_generate_mkey` and is not exported, so **firmware trust is decided
-  in userland**, consistent with CVE-2023-26244/26245/26246.
+  `keystore_generate_mkey` and is not exported, so this verifier is not the
+  firmware/update acceptance gate. The demonstrated update-package decision is
+  in userland; loader and boot-stage trust remain separate.
 - Reviewed the 26-ioctl `/dev/keystore` boundary. It is defensively written:
   a `size < 0x319` gate against a 0x318-byte staging area ending at the canary,
   overflow-checked user pointers, matching allocation and copy lengths, and

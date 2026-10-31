@@ -49,14 +49,14 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 ## C4 — Downgrade is not blocked
 
 - **Was:** the `>=` version check blocks downgrade on the Linux path.
-- **Now:** the version gate is a single userland comparison, and the public
+- **Now:** the documented userspace version gate is a string comparison, and the public
   `navi_extended` FAQ documents substitution — older official payloads paired
   with the **latest** `.lge.upgrade.xml` for the same vehicle, so a genuine signed
   newer manifest satisfies the check. The Android sibling differs: its signed
   `update_info` binds the package, which is why the EV6 report failed.
 - **Why:** child note 10 plus the tracker evidence.
-- **Caveat:** three non-cryptographic obstacles remain (feed, target build,
-  unconfirmed on 2026 packages).
+- **Caveat:** feed, target build, unconfirmed behavior on 2026 packages, and
+  unaudited loader/fuse rollback policy remain.
 
 ## C5 — The `.ver` CRC hypothesis is weaker than first stated
 

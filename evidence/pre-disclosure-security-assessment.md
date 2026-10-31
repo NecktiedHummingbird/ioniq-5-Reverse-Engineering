@@ -42,23 +42,31 @@ decryptable payload were accepted by a stock unit.
 
 ## 2. OEM key manifest located by a command-line parameter — *Confirmed*
 
-`manifest_init` scans kernel parameters for **`oemkm`**, parses
-`oemkm=<size>@<physical-address>`, copies the blob out of physical memory, and
-validates only four header fields (a type word `0xe` and three zero fields)
-before building `.manifest_keyring` with root credentials.
+`manifest_init` scans the ABL parameter list for the internal name **`oemkm`**;
+the full command-line form is `ABL.oemkm=<size>@<physical-address>`. It copies
+the blob out of physical memory and validates only four header fields (a type
+word `0xe` and three zero fields) before creating a trusted-only
+`.manifest_keyring` with root credentials. Matching public source shows that the
+blob supplies public-key digest/usage admission policy; it does not itself
+insert certificate objects into the ring.
 
 The parameter is absent from all six packaged command lines, so the boot loader
 supplies it.
 
-**Design observation:** the root of trust is a plain-text address whose contents
-are implicitly trusted; the manifest is not self-signed or measured.
+**Design observation:** this kernel init path receives a plain-text address and
+does not authenticate or measure the copied manifest before using its policy.
+Whether the preceding loader authenticates or measures the handoff is unknown.
 
-**Why it may not matter:** the boot loader is not attacker-controlled, and the
-kernel command line is covered by the `ipk.` container signature.
+**Why it may not matter:** attacker control of the boot loader has not been demonstrated. The
+**packaged** kernel command line is covered by the `ipk.` container signature,
+but `ABL.oemkm=` is absent from that command line and added later; no evidence
+currently establishes equivalent signature coverage for the loader-added value
+or physical-memory blob.
 
 **Would become disclosable if:** a stock unit could be booted with an
-attacker-chosen `oemkm=` value (e.g. via `kexec` before the sysctl is set, or an
-alternate command-line source) such that a substituted keyring were accepted.
+attacker-chosen `ABL.oemkm=` value (e.g. via `kexec` before the sysctl is set, or an
+alternate command-line source) such that substituted manifest policy and a
+corresponding certificate-admission path were accepted.
 
 ## 3. `keystore_open` performs no capability check — *Confirmed*
 
@@ -98,8 +106,10 @@ unauthenticated root path on a road-going computer.
 
 Recorded so a report is not padded with noise:
 
-- the kernel is fully symbolised (64,923, cross-validated against `__ksymtab`)
-  and the reviewed trust-chain and keystore code showed no memory-safety defect;
+- the kernel is fully symbolised (64,923, cross-validated against `__ksymtab`);
+  the reviewed keystore ioctl staging boundary showed no length/allocation
+  mismatch, but `manifest_init` now has separately documented conditional OOB-read
+  and invalid-interior-free candidates;
 - the OTA cipher is sound for its purpose: no ECB, no keystream reuse, no
   plaintext-equality oracle across builds, no offline break;
 - the packages are complete and manifest-consistent: 35/35 files, zero unlisted,

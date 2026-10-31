@@ -27,7 +27,16 @@ remain ignored under `work/`.
   `work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/usb/snd-usbmidi-lib.ko`;
 - source kernel path: `work/eu-260128/vmlinux`.
 
-The ALSA files retain complete disassemblies of the relevant module functions. The kernel files retain only the branches needed to review the
+`kernel-keystore-secure-boot-ignore.asm` retains complete exact ranges for
+`keystore_init`, `keystore_register`, `manifest_init`, `verify_oem_signature`,
+`manifest_key_verify_digest`, `get_apl_manifest_offsets`, `__class_create`, and
+the relevant `device_create` wrappers. It establishes
+that the configured IGNORE option removes a keystore status prerequisite but
+leaves the manifest/signature chain intact. It also retains the parser length
+mismatch and interior-pointer cleanup supporting conditional boot-time OOB-read
+and invalid-free candidates, plus the class/device ERR_PTR call chain.
+
+The ALSA files retain complete disassemblies of the relevant module functions. The other kernel files retain only the branches needed to review the
 claims. They were generated with commands equivalent to:
 
 ```sh

@@ -1,6 +1,6 @@
 # IONIQ 5 infotainment vulnerability and remediation register
 
-Updated: 2026-11-01. Internal defensive research; no disclosure or vendor contact is implied.
+Updated: 2026-11-02. Internal defensive research; no disclosure or vendor contact is implied.
 
 ## Scope and evidence rules
 
@@ -28,11 +28,11 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 
 ## V-002 — Keystore test/debug/secure-boot-ignore build options
 
-- **Status:** configuration observation; security impact unvalidated.
-- **Evidence:** `work/eu-260128/kernel.config`; `Ioniq5-CHANGELOG.md` 0.39.0; `evidence/eu-keystore-manifest-root-of-trust.md`.
-- **Observation:** historical analysis records `KEYSTORE_TESTMODE`, `KEYSTORE_TEST_MIGRATION`, `KEYSTORE_DEBUG`, and `KEYSTORE_SECURE_BOOT_IGNORE` enabled. Names alone do not establish a usable bypass or disclosure.
-- **Preconditions / gaps:** trace compiled call sites, runtime gates, device-node permissions, SMACK policy, and actual debug activation. No unauthenticated reachability is established.
-- **Potential impact:** test-only operations or sensitive logging could weaken production isolation if reachable.
+- **Status:** exact status-gate semantics confirmed; security impact remains conditional.
+- **Evidence:** `work/eu-260128/kernel.config`; `evidence/eu-keystore-secure-boot-ignore.md`; `evidence/eu-keystore-manifest-root-of-trust.md`.
+- **Observation:** `KEYSTORE_TESTMODE`, `KEYSTORE_TEST_MIGRATION`, `KEYSTORE_DEBUG`, and `KEYSTORE_SECURE_BOOT_IGNORE` are enabled. Exact instructions now bind the IGNORE option narrowly: keystore initialization and kernel-client registration proceed without a platform secure-boot-status query, while seed/client setup failures and the separate OEM signature-verifier chain remain. It is not a general update or verified-boot bypass.
+- **Preconditions / gaps:** device-node permissions, SMACK policy, actual debug activation, and whether a caller gains a security-relevant operation from status-gate removal remain unknown. No unauthenticated reachability is established.
+- **Potential impact:** clients may use keystore services when the platform reports secure boot disabled; test-only operations or sensitive logging could further weaken production isolation if reachable. No signature acceptance or root transition is shown.
 - **Remediation:** disable production test/migration/debug paths unless essential; remove secret-bearing logging; verify secure-boot enforcement through the entire boot chain rather than a configuration label.
 - **Acceptance:** negative tests for test-only ioctls and secret logs; signed boot/update positive controls; demonstrate that production enforcement remains active under the intended threat model.
 
@@ -50,9 +50,10 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 
 - **Status:** confirmed format/mechanism observations; trust bypass unproven.
 - **Evidence:** `evidence/eu-boot-container-signature.md`; `evidence/eu-keystore-manifest-root-of-trust.md`; `evidence/vendor-kernel-vm.md`; corrections C12.
-- **Observation:** boot containers carry a modulus; vendor manifest initialization consumes `ABL.oemkm` physical-memory input. Synthetic VM inputs initialize subsystems, but do not demonstrate acceptance by the real bootloader.
-- **Gap:** establish authenticated binding of the manifest, command line, and verification key to a hardware-protected root. No bootloader dump or acceptance test establishes a missing binding.
-- **Potential impact:** attacker-selected trust roots only if the preceding trusted stage permits substitution.
+- **Observation:** boot containers carry a modulus; vendor manifest initialization consumes `ABL.oemkm=<size>@<physical-address>` input. The loader-supplied value is absent from the signed packaged command line. The manifest provides public-key digest/usage admission policy for a trusted-only keyring rather than automatically inserting certificates. Synthetic VM inputs initialize subsystems but do not demonstrate acceptance by the real bootloader.
+- **Additional exact candidates:** copied size accepts `1..0x4000000`; conditional header/extension reads are not fully bound to that allocation; and feasible header rejection frees `base + 0x24` rather than the allocation base. These are conditional boot-time OOB-read and invalid-free/crash-or-corruption candidates.
+- **Gap:** establish authenticated binding of the manifest, loader-added command line, and physical-memory blob to a hardware-protected root. Runtime input control, controlled allocator corruption, certificate admission, and bootloader acceptance remain unproved.
+- **Potential impact:** attacker-selected admission policy, boot crash, or kernel corruption only if the preceding trusted stage permits substitution. No controlled write, code execution, first root, or persistence is established.
 - **Remediation:** authenticate the full handoff and pin verification keys to a protected trust anchor; prevent untrusted command-line overrides.
 - **Acceptance:** reject substituted manifests/keys/command lines before use, retain known-good signed boot and recovery controls.
 

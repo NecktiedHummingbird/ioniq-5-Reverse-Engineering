@@ -22,14 +22,14 @@ python3 tools/uk_fw/bench_serial.py list
 python3 tools/uk_fw/bench_serial.py capture --port <PORT> -o work/bench/boot.log
 ```
 
-Record: boot loader banner, whether autoboot is interruptible, `oemkm=` presence,
+Record: boot loader banner, whether autoboot is interruptible, `ABL.oemkm=` presence,
 the `esinit` handoff, and the login prompt. The command line recovered from the
-package does **not** contain `oemkm=`; the boot loader appends it. Capture it.
+package does **not** contain `ABL.oemkm=`; the boot loader appends it. Capture it.
 
 If a boot loader prompt appears, stop and record `printenv` before changing
 anything.
 
-Evidence to keep: `boot.log`, a note of the exact `oemkm=` value observed.
+Evidence to keep: `boot.log`, a note of the exact `ABL.oemkm=` value observed.
 
 ### Phase 1A — one passive state bundle before active testing
 
@@ -226,6 +226,6 @@ step's evidence; do not skip the key backup.
 
 - Console: `ttyS2`, 115200 8N1; early console at MMIO `0xfc000000`.
 - Boot container: RSA-2048 / PKCS#1 v1.5 / SHA-256 over header+payload+tag.
-- OEM key manifest: firmware-provided, located by `oemkm=<size>@<phys>`.
-- Firmware trust is a userland decision; the kernel only verifies manifests.
+- OEM key manifest: firmware-provided, located by `ABL.oemkm=<size>@<phys>`.
+- Update-package acceptance is decided in userland; the reviewed kernel OEM verifier has narrow keystore backup/migration consumers, while boot-container and loader trust are separate stages.
 - Rootfs AES-encrypted; no offline key recovery.

@@ -3,20 +3,21 @@
 **Platform (this unit).** Intel **Apollo Lake** (Broxton/BXT, Goldmont), Linux
 **4.1.27** on eMMC. Kernel config fingerprints: `CONFIG_APL_SPI_BRD=y`,
 `CONFIG_LGE_BRD=y`, i915 + `bxt_dmc/guc/huc` firmware, and an LGE board driver.
-The vendor key manifest (`oemkm=<size>@<phys-addr>`) is *not* on the eMMC — it is
-handed to the kernel as a physical address and copied out of a firmware-provided
-DRAM region at boot (see `eu-keystore-manifest-root-of-trust.md`).
+The vendor key manifest reaches the kernel through
+`ABL.oemkm=<size>@<phys-addr>` and is copied from a bootloader-populated DRAM
+region (see `eu-keystore-manifest-root-of-trust.md`). Its source of record and
+storage medium are not established.
 
 **Scope.** Read-only, bench-only acquisition and parsing guidance. No write /
 flash / erase commands, no descriptor-lock bypass, no exploit code, no in-vehicle
 contact. Everything below stops at *reading and interpreting* what is already on
 the SPI NOR and in the boot log.
 
-**Why SPI matters for the `oemkm` question.** The manifest's *runtime* location
-is a reserved DRAM page populated by the boot loader. Its *source of record* is a
-flash-resident artifact (BIOS/UEFI NVRAM, a dedicated OEM region, or CSME/PTT).
-Reading the SPI NOR and the descriptor is the only way to see where that source
-lives and whether it is write-protected.
+**Why SPI may matter for the `ABL.oemkm` question.** The manifest's observed
+interface is a DRAM handoff populated by the boot loader. SPI firmware/NVRAM is
+one plausible source, but eMMC, another controller, or generated firmware state
+remain possible. A read-only SPI acquisition can test the SPI hypothesis and
+protection state; it cannot be assumed to contain the source.
 
 ---
 
@@ -61,10 +62,10 @@ which is what you should record.
 > from the FLCOMP field and from the physical part marking before trusting
 > offsets.
 
-### 1.3 Where the `oemkm` source most likely lives
+### 1.3 Candidate sources for the `ABL.oemkm` handoff
 
 The boot loader reads the key manifest from somewhere and copies it into reserved
-DRAM, then appends `oemkm=<size>@<phys>`. Candidate sources, in rough order of
+DRAM, then appends `ABL.oemkm=<size>@<phys>`. Candidate sources, in rough order of
 likelihood on an automotive LGE board:
 
 1. **BIOS-region UEFI variables / authenticated variables** — a small blob in the
@@ -74,8 +75,10 @@ likelihood on an automotive LGE board:
 4. **CSME PTT/fTPM** — less likely for a plain kernel key manifest, but possible
    if ME hands it to the host during early boot.
 
-None of these are on the eMMC, which matches the static finding that the packaged
-command line and filesystem do not contain the manifest.
+These are hypotheses only. The packaged command line and searched plaintext
+filesystem do not contain the manifest, but that does not exclude an unsearched
+eMMC partition, encrypted storage, another controller, or generation during
+boot.
 
 ---
 
@@ -335,13 +338,13 @@ For each bench unit, record:
    reads.
 4. **Region extracts:** `flashregion_*_*.bin` + per-region SHA-256.
 5. **BIOS region:** `UEFIExtract` tree, especially any NVRAM/varstore files;
-   enumerate UEFI variable names/guids (candidate `oemkm` source).
+   enumerate UEFI variable names/guids (candidate `ABL.oemkm` handoff source).
 6. **ME region:** `MEAnalyzer` report (CSME version, `$FPT` partitions, MFS
    layout) — read-only.
 7. **Boot-log cross-check:** capture the bootloader/kernel log line for the
-   `oemkm=<size>@<phys-addr>` parameter (serial console or `dmesg`/`/proc/cmdline`)
+   `ABL.oemkm=<size>@<phys-addr>` parameter (serial console or `dmesg`/`/proc/cmdline`)
    and `cat /proc/iomem` reserved ranges, to correlate the runtime manifest
-   address against the flash-resident source found in steps 5–6.
+   address against any candidate source found in steps 5–6; absence there leaves the source unresolved.
 8. **Provenance:** programmer model + voltage setting, tool versions
    (`flashrom --version`, `ifdtool --version`, `MEAnalyzer` version), date, and
    operator, so the dump is reproducible and attributable.

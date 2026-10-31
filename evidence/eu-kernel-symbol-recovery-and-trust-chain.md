@@ -74,13 +74,14 @@ from that corrected run.
 **Reachability:** `verify_oem_signature` is called only by `keystore_backup`
 and `keystore_generate_mkey`. It is **not exported**. Therefore:
 
-> Firmware/update trust is decided in **userland** (`AppUpgrade`,
-> `AppDMClient`, `.lge.upgrade.xml` handling). The kernel keystore supplies
-> primitives and protects key backup/migration, and is not the place where a
-> modified update package is accepted or rejected.
+> The demonstrated **update-package acceptance** decision is in userland
+> (`AppUpgrade`, `AppDMClient`, `.lge.upgrade.xml` handling). This kernel
+> verifier supplies keystore backup/migration authentication and is not the
+> reviewed update-package gate. Boot-container signatures, loader policy, slot
+> selection, and boot-time acceptance remain separate stages.
 
-This is consistent with CVE-2023-26244/26245/26246, which target userland
-binaries, and it explains why no kernel signature bypass would be required.
+This is consistent with CVE-2023-26244/26245/26246 targeting userland binaries.
+It does not imply that every firmware or boot-trust decision is userland-only.
 
 ### Usage-bit enforcement
 

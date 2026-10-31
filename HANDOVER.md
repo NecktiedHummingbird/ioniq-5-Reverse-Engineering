@@ -1,10 +1,25 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-11-01**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-11-02**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
+
+## Keystore status gates and boot-manifest parser checkpoint — 2026-11-02
+
+- `CONFIG_KEYSTORE_SECURE_BOOT_IGNORE=y` removes platform secure-boot-status prerequisites from exact `keystore_init` and `keystore_register`; it does not remove the separate manifest initcall or `verify_oem_signature → SHA-256 → manifest_key_verify_digest` chain.
+- Matching Intel-authored public source at vendor commit `0c9640bba6a841f524f5947d0741386792674577` confirms Kconfig intent and that the full command-line spelling is `ABL.oemkm=<size>@<physical-address>`. The target differs in registration logging/helper ABI, so exact binary evidence remains authoritative.
+- The manifest parser accepts copied size `1..0x4000000`, conditionally reads header/extension data without binding the internal length to that copy, and can reach an OOB read within its 101-entry/16-bit-stride cap.
+- A parse-error path overwrites the allocation pointer with `base + 0x24` and later passes that interior cursor to `kfree`, creating a conditional boot-time invalid-free/crash-or-corruption candidate. Runtime control of the loader parameter and physical-memory blob, controlled corruption, code execution, first root, boot acceptance, and persistence remain unproved.
+- `keystore_init` also mishandles class/device `ERR_PTR` failures as non-NULL and can return false success; this is weak state handling, not a demonstrated privilege route.
+- Independent review **ACCEPT**. Focused validation: `13 passed, 2084 subtests`; complete validation: `472 passed, 134428 subtests`; public harness **PASS**.
+
+## GStreamer FLIC backport checkpoint — 2026-11-02
+
+- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so` despite embedded GStreamer `1.8.3-r0` metadata.
+- Both complete affected FDEs contain the later comprehensive GstByteReader/GstByteWriter rewrite: bounded frame/chunk sub-readers, frame-sized output writer, checked FLI/FLC cumulative positions, checked reads/writes, and helper failure propagation to `GST_FLOW_ERROR` before publication.
+- CVE-2016-9807 remains separate and unclassified. Final independent review **ACCEPT**; commit `6ff6452`.
 
 ## GStreamer VMNC backport checkpoint — 2026-11-02
 
