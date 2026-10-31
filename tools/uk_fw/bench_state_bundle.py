@@ -581,6 +581,10 @@ begin_section storage
 capture_file fstab /etc/fstab
 capture_file partitions /proc/partitions
 capture_file mounts /proc/mounts
+for S_DEVICE in /dev/ptmx /dev/pts
+ do
+    file_meta "$S_DEVICE"
+ done
 for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo fota_status showEncryptionMenu disableEncryptionUpdate disableNaviMapSignatureCheck_20230207 force_launch system_update_complete system_update_completed firmware_update_complete scheduled_update_complete scheduled_update_complete_for_DM updateCompleteTime
  do
     capture_file update-flag "/update/$S_FLAG"

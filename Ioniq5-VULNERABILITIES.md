@@ -352,6 +352,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `eb66ae030829605d61fbef1909ce310e29f78821` or equivalent ordering that flushes every present PTE before releasing both PTLs; validate only in a disposable instrumented kernel environment.
 - **Evidence:** `evidence/vendor-kernel-mremap-cve-2018-18281.md`; reviewed excerpt `evidence/artifacts/kernel-candidates/kernel-mremap-cve-2018-18281.asm`; Boolean-only model `tools/uk_fw/mremap_tlb_order_model.py`.
 
+## V-024 — TTY process-group wrong-object lock (EXACT CVE-2020-29661 PREMISE; RACE/UAF UNPROVEN)
+
+- **Status:** exact `TIOCSPGRP` machine code retains CVE-2020-29661's wrong-object lock. Master-side and slave-side setters can update the same referenced slave pgrp field while holding distinct master/slave locks. No PTY was opened and no ioctl, concurrent interleaving, PID lifetime manipulation, UAF, corruption, or privilege transition was executed.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_TTY=y`, `CONFIG_UNIX98_PTYS=y`, `CONFIG_SMP=y`, and voluntary preemption.
+- **Exact mechanism:** `tty_ioctl` `[0xffffffff812871f8,0xffffffff81287d46)` keeps target TTY in `rbx` and substitutes linked real TTY in `r13` for a PTY master. `TIOCSPGRP` locks `rbx+0x128` at `0xffffffff8128795e`, releases/replaces the PID reference at `r13+0x1d0`, and unlocks `rbx+0x128`. `tty_get_pgrp` independently binds `+0x128` as the pgrp-protecting lock and `+0x1d0` as pgrp; `pty_unix98_install` proves distinct reciprocal peer objects at `+0x218`.
+- **Reachability:** shipped boot scripts intend `/dev/ptmx` mode `0666` and a `devpts` mount. Runtime script execution, node/mount metadata, uid, SMACK policy, controlling-terminal state, resource limits, and installed kernel remain unobserved. The passive bench bundle now records `/dev/ptmx`, `/dev/pts`, and mount state before active testing.
+- **Impact boundary:** exact static evidence establishes the wrong-lock/same-field race premise only. It does not establish a successful race, PID reference imbalance, UAF, controlled reuse, disclosure, corruption, RCE, root, SMACK escape, persistence, or safety impact.
+- **Remediation:** backport `54ffccbf053b5b6ca4f6e45094b942fab92a25fc` or an exact equivalent that locks `real_tty->ctrl_lock`; validate with race and memory-safety instrumentation only on a disposable test kernel.
+- **Evidence:** `evidence/vendor-kernel-tty-pgrp-cve-2020-29661.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-tty-pgrp-cve-2020-29661.asm`; Boolean-only model `tools/uk_fw/tty_pgrp_lock_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

@@ -165,8 +165,13 @@ followed by stateful service/CAN/persistence reconstruction.
   PTLs before the old-range TLB flush at outer exit, matching CVE-2018-18281's
   pre-fix lifetime window. No concurrent invalidation, page release/reuse,
   stale access, corruption, or root is established. See
-  `evidence/vendor-kernel-mremap-cve-2018-18281.md`. CVE-2017-11176 is also
-  rejected by
+  `evidence/vendor-kernel-mremap-cve-2018-18281.md`. V-024 retains exact
+  CVE-2020-29661 TTY wrong-object locking: a master setter writes the linked
+  slave pgrp under the master lock, while the slave setter writes that same
+  referenced field under the slave lock. Shipped startup intends world-writable
+  `/dev/ptmx`, but runtime exposure, successful concurrency, UAF, and root are
+  unobserved. See `evidence/vendor-kernel-tty-pgrp-cve-2020-29661.md`.
+  CVE-2017-11176 is also rejected by
   exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
   rather than detaching the stale socket. The loop has no explicit register

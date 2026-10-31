@@ -61,7 +61,10 @@ BusyBox, both unzip providers, those applications, `CarOption.csv`,
 `DecryptToPIPE`, and `teruten5_pub.key`. It also records the FUMO relaunch and
 completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
 `/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
-`/tmp/AppUpgrade`. Symlink metadata is recorded separately from hash resolution.
+`/tmp/AppUpgrade`. It passively records `/dev/ptmx` and `/dev/pts` metadata plus
+`/proc/mounts` so intended UNIX98 PTY exposure can be separated from observed
+runtime exposure before any TTY testing. Symlink metadata is recorded separately
+from hash resolution.
 Missing commands/files remain explicit records. Unreadable files, failed
 reads/metadata queries/passive commands, and malformed hash output set a
 nonzero terminal collection status; an incomplete or nonzero terminal marker

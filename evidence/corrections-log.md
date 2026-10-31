@@ -578,6 +578,20 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C38 — intended `/dev/ptmx` plus wrong locking is not a completed UAF
+
+- **Candidate:** CVE-2020-29661 is an ordinary PTY race, and shipped startup
+  intends a world-writable PTY multiplexer.
+- **Exact result:** master and slave setters can release/replace the same slave
+  pgrp PID reference while holding distinct master/slave `ctrl_lock` objects.
+  Reciprocal PTY links and exact field offsets are independently bound.
+- **Conclusion:** V-024 establishes the named race premise, not runtime PTY
+  exposure, a winning interleaving, PID UAF, controlled reuse, root, or
+  persistence.
+- **Evidence:** `evidence/vendor-kernel-tty-pgrp-cve-2020-29661.md`.
+
+---
+
 ## C37 — mremap flush ordering is an exact window, not demonstrated stale access
 
 - **Candidate:** public CVE-2018-18281 describes stale old-address translations

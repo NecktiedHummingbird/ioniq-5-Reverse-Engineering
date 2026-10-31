@@ -100,6 +100,8 @@ class BenchStateBundleTests(unittest.TestCase):
         self.assertNotIn('[ -r "/update/$S_FLAG" ]', script)
         self.assertIn('P_STATUS=$?', script)
         self.assertIn('U_STATUS=$?', script)
+        for pty_path in ("/dev/ptmx", "/dev/pts"):
+            self.assertIn(pty_path, script)
         self.assertIn('read_scalar interface-operstate', script)
         self.assertIn('record unreadable-file', script)
 

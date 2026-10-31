@@ -2615,3 +2615,9 @@ and are superseded by corrections rather than silently rewritten.
   synthetic event with a pre-supplied property bypasses the sanitiser that a real descriptor cannot. If so,
   their demonstration is real in the harness and not reachable from a device, which changes its severity from
   critical to informational. That distinction is the whole point of the register.
+
+## 2026-11-01 — TTY master and slave setters protect one pgrp with different locks
+
+- Exact UNIX98 PTY installation, ioctl dispatch, pgrp helper, and PID ownership flow establish CVE-2020-29661 wrong-object locking.
+- Startup intends `/dev/ptmx` mode 0666, making this a high-priority local candidate if passive runtime capture confirms exposure.
+- The result remains a race premise: no PTY operation, concurrent interleaving, PID UAF, corruption, or root was run or proved.

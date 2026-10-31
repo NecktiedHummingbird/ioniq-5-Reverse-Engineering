@@ -20,6 +20,8 @@ re-reviewed, and locally accepted on 2026-11-01.
     `force_launch`, completion markers, update-directory metadata, staged
     AppUpgrade/XML hashes, and `/tmp/AppUpgrade`) without creating or changing
     any marker;
+  - records `/dev/ptmx` and `/dev/pts` metadata alongside the existing mount
+    capture so configured PTY exposure can be separated from runtime state;
   - distinguishes absent from unreadable/read-error state and fails the terminal
     completion verdict on failed reads, metadata/link queries, passive commands,
     or malformed/empty hash output.
@@ -50,10 +52,10 @@ independently accepted.
 ## Validation
 
 ```text
-346 passed, 109 subtests passed
+384 passed, 314 subtests passed
 public harness: PASS (pass=3, info=4, no pending/blocked/fail)
 probe audit: safe=true, syntax_ok=true, violations=[]
-probe SHA-256: e5759a8410ffe4fcb1d37e2d55ecdc981e2be9794fee42bdf670897a8c78fb05
+probe SHA-256: 14b1cf8f1db13031d34c0fdad869f7d13cc9cf5898cad8e1cee82cea6a399600
 git diff --check: PASS
 py_compile: PASS
 ```

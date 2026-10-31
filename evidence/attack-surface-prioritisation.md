@@ -232,6 +232,11 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-024/CVE-2020-29661 is an exact local TTY candidate. Master- and slave-side
+  setters update one referenced slave pgrp field under distinct object locks;
+  SMP is enabled and startup intends `/dev/ptmx` mode `0666`. Runtime node,
+  mount, SMACK, job-control, successful concurrency, UAF, and root remain
+  unobserved. Capture the newly added passive PTY metadata before any testing.
 - V-023/CVE-2018-18281 is a second ordinary-MMU candidate. Exact PTE transfer
   releases both bound page-table locks before the only old-range TLB flush.
   Turning that window into stale page access requires concurrent invalidation,

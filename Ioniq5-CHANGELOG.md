@@ -112,6 +112,23 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.47.0 - identify exact TTY process-group wrong-object locking
+
+- Audited exact UNIX98 PTY/TIOCSPGRP semantics against upstream CVE-2020-29661
+  fix `54ffccbf053b5b6ca4f6e45094b942fab92a25fc`.
+- Added V-024: master-side setter writes the linked slave's referenced pgrp PID
+  while holding the master lock; slave-side setter writes that same field while
+  holding the slave lock. Exact helper and PTY installation code independently
+  bind field offsets, lock identity, and distinct reciprocal objects.
+- Bound intended exposure to shipped startup that creates `/dev/ptmx` mode
+  `0666` and mounts devpts, without treating configured intent as runtime state.
+- Extended the read-only bench bundle to collect `/dev/ptmx`, `/dev/pts`, and
+  existing mount metadata before any active TTY work.
+- Kept impact bounded: no PTY open, ioctl, concurrent interleaving, PID UAF,
+  controlled reuse, corruption, root, or persistence was executed or proved.
+- Added authoritative patch evidence and a reviewed Boolean-only model; both
+  semantic reviews and code review returned `ACCEPT`.
+
 ## 1.46.0 - bind the exact mremap stale-TLB ordering window
 
 - Audited exact ordinary-PTE `move_page_tables` semantics against upstream
