@@ -3,6 +3,31 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.39.0 - root reaches the bus; the daemon does not
+
+- The diagnostic separates the two possibilities cleanly. From **inside the wrapper**, in the same context and
+  at the same moment the daemon starts:
+
+  ```
+  MMWRAP bus socket: srw-rw-rw- 1 root root /run/dbus/system_bus_socket
+  MMWRAP env DBUS_SYSTEM_BUS_ADDRESS=unset
+  MMWRAP dbus rc=0 out=method return sender=org.freedesktop.DBus -> dest=:1.3 … string "120b9c679d9418758b1fa07300000012"
+  ```
+
+  `dbus-send --system` **succeeds** and returns the bus ID, while the daemon logs `writeToDBus` failures 37
+  times in the same boot.
+- Therefore the fault is **not** the socket, not SMACK, not the ruleset and not ordering: root can reach the
+  system bus perfectly well at that instant, and the vendor daemon's own connection is what is broken.
+- This retires the SMACK-ordering theory that the previous two entries were pursuing. Applying `smackctl
+  apply` early (rc=0) had already failed to help, and this measurement explains why: the ruleset was never the
+  obstacle.
+- Two tooling notes worth keeping: `dbus-send` lives at **`/usr/bin/dbus-send`** in this image (not `/bin`), and
+  a failed first attempt with the wrong path returned rc=127 — a "command not found" that could easily be
+  misread as a bus failure.
+- Next diagnostic is specific: run the daemon under `strace -f -e trace=connect,socket` from the wrapper and
+  print the syscall result at the moment it claims there is no connection. That will show whether it never
+  calls `connect()` at all, connects to the wrong address, or connects and then discards the socket.
+
 ## 1.38.0 - the peer is decoupled and the plugin runs; the D-Bus wall remains
 
 - The peer now runs as its own systemd unit (`micom-peer.service`) so it outlives the daemon's restart

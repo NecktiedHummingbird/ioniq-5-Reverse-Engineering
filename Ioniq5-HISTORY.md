@@ -2511,3 +2511,13 @@ and are superseded by corrections rather than silently rewritten.
   attempts.
 - With the daemon genuinely running, the exchange is happening and publication is still failing. The SMACK
   ordering theory is weakened by its own test, which is what tests are for.
+
+## 2026-10-31 — the bus works, so the theory was wrong again
+
+- One measurement ended a theory I had been building on for three rounds. The system bus is reachable from the
+  exact context the daemon runs in, at the exact moment it runs, and it still reports no connection.
+- That is a cleaner failure than the ones before it: the environment is exonerated, and what remains is the
+  vendor's own connection handling.
+- Also worth noting a self-inflicted detour: my first attempt at this test used the wrong path for dbus-send
+  and returned a shell error that looked like a failure to reach the bus. Checking the tool exists before
+  trusting its verdict is the same discipline as checking attempts before trusting an error count.
