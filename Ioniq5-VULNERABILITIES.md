@@ -342,6 +342,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2` or an equivalent 64-bit generation/removal fix; validate with vendor MM stress and memory-safety instrumentation in a disposable environment; do not exercise the wrap path on the owner unit.
 - **Evidence:** `evidence/vendor-kernel-vmacache-cve-2018-17182.md`; reviewed excerpt `evidence/artifacts/kernel-candidates/kernel-vmacache-cve-2018-17182.asm`; Boolean-only model `tools/uk_fw/vmacache_wrap_model.py`.
 
+## V-023 — Linux mremap stale-TLB lifetime window (EXACT PRE-FIX ORDER; PAGE RELEASE/REUSE UNPROVEN)
+
+- **Status:** exact `move_page_tables` retains CVE-2018-18281's ordinary-PTE ordering: source PTEs are moved, both bound PTLs are released, a deferred flag is set, and exact old-range TLB flush occurs only at outer exit. No mapping, remap, concurrent invalidation, page release/reuse, stale access, corruption, or privilege transition was executed.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_MMU=y`; transparent huge pages are disabled but the affected ordinary PTE path is present.
+- **Exact mechanism:** `move_page_tables` `[0xffffffff810f5067,0xffffffff810f54b0)` locks source and distinct destination PTLs, clears each source PTE and writes it to the destination at `0xffffffff810f53fc..0xffffffff810f5400`, then releases those same locks at `0xffffffff810f5418..0xffffffff810f542b`. Only afterward it sets a deferred flag at `0xffffffff810f5448`; outer exit calls exact `flush_tlb_mm_range` with the original old range at `0xffffffff810f5479`. Full function disassembly has no earlier TLB flush.
+- **Reachability:** the generic path uses ordinary local mappings and no user namespace, special device, optional protocol/module, or privileged helper. A useful stale access still requires concurrent invalidation and physical-page release/reuse in the unlocked interval. Runtime filesystem behavior, scheduling, resource limits, seccomp, SMACK, memory pressure, and owner-build identity are unobserved.
+- **Impact boundary:** exact static evidence establishes a stale-translation window only. It does not establish a populated stale TLB entry, released/reused target page, read/write access, controlled data, corruption, RCE, root, SMACK escape, persistence, or safety impact.
+- **Remediation:** backport `eb66ae030829605d61fbef1909ce310e29f78821` or equivalent ordering that flushes every present PTE before releasing both PTLs; validate only in a disposable instrumented kernel environment.
+- **Evidence:** `evidence/vendor-kernel-mremap-cve-2018-18281.md`; reviewed excerpt `evidence/artifacts/kernel-candidates/kernel-mremap-cve-2018-18281.asm`; Boolean-only model `tools/uk_fw/mremap_tlb_order_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

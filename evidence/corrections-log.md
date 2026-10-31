@@ -578,6 +578,20 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C37 — mremap flush ordering is an exact window, not demonstrated stale access
+
+- **Candidate:** public CVE-2018-18281 describes stale old-address translations
+  when `mremap` flushes only after dropping page-table locks.
+- **Exact result:** ordinary PTE transfer clears source and writes destination,
+  releases the same bound source/destination PTLs, and only later sets a flag
+  that reaches exact old-range `flush_tlb_mm_range` at outer exit.
+- **Conclusion:** V-023 retains the named code-level lifetime window. Concurrent
+  invalidation, page release/reuse, stale access, corruption, root, and
+  persistence remain unproved.
+- **Evidence:** `evidence/vendor-kernel-mremap-cve-2018-18281.md`.
+
+---
+
 ## C36 — vmacache is a live old-kernel candidate, not a banner inference
 
 - **Candidate:** CVE-2018-17182 applies to an ordinary MMU/thread surface and

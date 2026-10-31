@@ -2596,3 +2596,9 @@ and are superseded by corrections rather than silently rewritten.
 - Unlike many old-kernel candidates, CVE-2018-17182 needs no namespace, optional network protocol, special device, or privileged helper in its generic path.
 - Exact instructions retain every pre-fix generation-wrap semantic: two 32-bit invalidation sites, a live zero-wrap flush call, single-user no-clear return, and 32-bit lookup validation.
 - This is still a candidate, not a root result: the 2^32-state cycle, stale pointer, UAF dereference, controlled reuse, and privilege gain were not exercised.
+
+## 2026-11-01 — ordinary mremap retains the stale-TLB lifetime window
+
+- Exact PTE transfer and lock identities show source/destination page-table locks are released before the old-range TLB flush.
+- This matches CVE-2018-18281 pre-fix ordering and adds V-023 as a second generic MMU candidate.
+- The finding stops at the code-level window: no concurrent invalidation, page release/reuse, stale access, corruption, or root was run or proved.

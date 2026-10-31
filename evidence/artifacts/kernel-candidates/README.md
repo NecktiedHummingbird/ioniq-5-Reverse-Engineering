@@ -106,6 +106,7 @@ commits:
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
+- CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
 - CVE-2017-15265: `71105998845fb012937332fe2e806d443c09e026`;
@@ -122,6 +123,10 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`kernel-mremap-cve-2018-18281.asm` binds ordinary PTE transfer, exact
+source/destination PTL acquisition and release, deferred-flush state, and the
+old-range `flush_tlb_mm_range` call underlying V-023.
 
 `kernel-vmacache-cve-2018-17182.asm` retains both live 32-bit invalidation
 edges, exact zero-wrap calls, the single-user no-clear flush route, independent

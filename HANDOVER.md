@@ -160,7 +160,13 @@ followed by stateful service/CAN/persistence reconstruction.
   but a complete cycle is 2^32 states and no target wrap, stale pointer, UAF,
   corruption, or root transition was executed. See
   `evidence/vendor-kernel-vmacache-cve-2018-17182.md` and Boolean-only
-  `tools/uk_fw/vmacache_wrap_model.py`. CVE-2017-11176 is also rejected by
+  `tools/uk_fw/vmacache_wrap_model.py`. V-023 is a second exact ordinary-MMU
+  candidate: `move_page_tables` transfers PTEs and releases source/destination
+  PTLs before the old-range TLB flush at outer exit, matching CVE-2018-18281's
+  pre-fix lifetime window. No concurrent invalidation, page release/reuse,
+  stale access, corruption, or root is established. See
+  `evidence/vendor-kernel-mremap-cve-2018-18281.md`. CVE-2017-11176 is also
+  rejected by
   exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
   rather than detaching the stale socket. The loop has no explicit register

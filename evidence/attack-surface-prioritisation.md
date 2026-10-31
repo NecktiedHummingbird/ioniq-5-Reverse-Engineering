@@ -232,6 +232,12 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-023/CVE-2018-18281 is a second ordinary-MMU candidate. Exact PTE transfer
+  releases both bound page-table locks before the only old-range TLB flush.
+  Turning that window into stale page access requires concurrent invalidation,
+  page release/reuse, and suitable timing; none is observed. Prioritize exact
+  feasibility study beside V-022 in a disposable instrumented kernel, without
+  treating the static window as corruption or root.
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.

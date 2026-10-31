@@ -85,6 +85,20 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.46.0 - bind the exact mremap stale-TLB ordering window
+
+- Audited exact ordinary-PTE `move_page_tables` semantics against upstream
+  CVE-2018-18281 fix `eb66ae030829605d61fbef1909ce310e29f78821`.
+- Added V-023: exact source-PTE clearing and destination installation precede
+  release of the bound source/destination PTLs; old-range TLB flushing is
+  deferred until outer exit, with no earlier flush in the full function.
+- Kept the result bounded to a static stale-translation window. No concurrent
+  invalidation, physical-page release/reuse, stale access, corruption, code
+  execution, root, or persistence was executed or established.
+- Added authoritative patch and focused instruction evidence plus a reviewed
+  Boolean-only ordering model; both semantic reviews and model review returned
+  `ACCEPT`.
+
 ## 1.45.0 - exact vmacache wrap semantics restore a local-root candidate
 
 - Researched ordinary unprivileged 4.1-era kernel escalation candidates and
