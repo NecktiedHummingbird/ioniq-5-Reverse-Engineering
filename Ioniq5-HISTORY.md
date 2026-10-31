@@ -2420,3 +2420,32 @@ and are superseded by corrections rather than silently rewritten.
   obstacle now, and it is worth naming plainly rather than continuing to vary the code and hope.
 - The lesson is one this project keeps teaching: build the observation channel into the environment before
   the experiment, because retrofitting it under systemd is where the time goes.
+
+## 2026-11-01 — exact return codes and exact backports narrow two old theories
+
+- AppDMClient's `-404` verifier result now has a concrete meaning. The parser
+  did not find a `TER` or `TE2` candidate in the fixed `0x4024`-byte trailer;
+  it did not report successful signature verification. This sharpens the FUMO
+  mode contract without proving plaintext package acceptance.
+- A numeric-only gate model now makes the two unequal-source result contracts
+  and equal-path skip explicit without ingesting or producing update material.
+- The old kernel banner suggested CVE-2017-7308, but the exact packet module
+  tells a narrower story: its private-area arithmetic has the decisive 64-bit
+  backport, while a companion frame-count overflow check is missing. The
+  published write primitive is rejected; the remaining arithmetic gap stays an
+  impact-unresolved candidate gated by `CAP_NET_RAW` and TPACKET_V3.
+- No recovered program ran, no malformed input was built, and no target state
+  was modified.
+
+## 2026-10-31 — the vehicle link answers
+
+- After a long stretch of environment fights, the thing actually worked. The daemon read a frame from the
+  peer, and the peer answered the two boot-info asks with 35-byte payloads. For the first time the research
+  stack is holding up its end of a vendor protocol with a real vendor daemon.
+- The fix that mattered was not elegant: replace the daemon's own binary path with a wrapper. Three attempts
+  to configure the launcher politely had no effect at all, and one interception at the binary caught every
+  route at once. When a system refuses to be configured, stand where it cannot avoid you.
+- Two silent tooling failures nearly hid the result: a wrapper left without an execute bit simply never ran,
+  and debugfs's mode command needed a different form than the one I used. Both produced the same symptom —
+  nothing happens — which is exactly the symptom this project keeps having to disambiguate.
+- Read count is no longer zero. That single number has been the objective for several rounds.

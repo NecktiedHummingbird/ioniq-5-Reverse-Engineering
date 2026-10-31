@@ -3,6 +3,48 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.36.0 - the MICOM peer and the daemon are talking; boot info is answered
+
+- **Frames are finally exchanged.** The peer answered the boot-info asks:
+  `bootinfo reply to 0x01aa (35 bytes)` and `bootinfo reply to 0x02c3 (35 bytes)`, and the daemon logged
+  `READ Data( 5 ) aa 82 17 00 3f` — a correctly framed reply to request `0x0217`, with bit 15 set, length 0
+  and a valid checksum — followed by `[getRequestFromReplyQueue] … count(): 1`. Read count is no longer zero.
+- **How the interception was made to work, after three unit/drop-in/naming attempts all had zero effect:**
+  replace the vendor daemon's own path. `/app/bin/micommanager_userspace` is now a wrapper script and the
+  original binary is `/app/bin/micommanager_userspace.real`. That covers every launch route — systemd unit,
+  D-Bus activation, or anything else — and it is the change that worked.
+- The wrapper mounts devpts (the guest has none, which is why `posix_openpt` previously failed with
+  `No space left on device`), starts the peer on a pty master, symlinks `/dev/ttyS1` to the **slave**, waits
+  for a readiness marker, then `exec`s the real daemon. Verified in the boot log:
+  `MMWRAP begin`, `devpts=/dev/pts`, `pty ready: /dev/ttyS1 -> /dev/pts/0`, `listening on /dev/ttyS1`,
+  `waited=1 ready=yes link=/dev/pts/0`, and **0 bytes to the hardware tty** — the daemon is talking to the
+  peer, not to the host.
+- Two debugfs pitfalls cost a cycle each and are recorded: `sif` did not apply a mode by inode, and the file
+  stayed `0644`, which made the wrapper unexecutable and produced a silent no-start; `set_inode_field <path>
+  mode 0100755` is what works.
+- **New blocker, one layer up:** `[[writeToDBus] There is no connection.]` — the daemon read the reply
+  successfully and then could not publish the result on the bus. This boot also shows
+  `Failed to start nua.service`, `Failed to start AVN2.1 - CarPlay iAP2Service Launcher` and
+  `Failed to start Smack service loads smack rules`, so the system is degraded in a way the earlier runs were
+  not, and the bus or SMACK ruleset is the next thing to fix.
+
+## 1.36.0 - name the FUMO `-404` state and check CVE-2017-7308 exactly
+
+- Traced AppDMClient's verifier wrapper into the exact fixed-suffix parser.
+  It seeks to `file_size - 0x4024`, reads one `0x4024`-byte item, and recognizes
+  only `TER` or `TE2`; result `-404` means there is no recognized trailer
+  candidate, not that signature verification succeeded. Added a deterministic,
+  numeric/boolean-only gate model and 14 tests without reading or generating
+  firmware, trailers, archives, commands, or payloads.
+- Compared exact recovered `af_packet.ko` with authoritative CVE-2017-7308
+  fixes. The published TPACKET_V3 private-area primitive is absent because
+  `tp_sizeof_priv` arithmetic is performed in 64 bits, matching upstream
+  `2b6867c2`. The companion `tp_frame_nr` multiplication guard from
+  `8f8d28e4` is absent; its impact and `CAP_NET_RAW`/TPACKET_V3 runtime
+  reachability remain unresolved rather than being promoted to root.
+- No recovered target executable was run, no malformed input or update material
+  was created, and no target filesystem, partition, marker, or slot was changed.
+
 ## 1.35.0 - pty mode works from a shell; the systemd path is unobservable
 
 - Found two concrete bugs and fixed both: the guest has **no `/dev/pts`**, so `posix_openpt` failed with
