@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.74.0 - pre-starting appId 2 does not clear the loop; V-028 runtime line closed
+
+- Started `ApplicationManager` (appId 2) before the launcher, so the application it keeps retrying already exists.
+  Result: **20 retries of `appId[2][ApplicationManager]` still occur**, and **`appId[999]` never appears in the
+  dispatcher log** — the call is accepted by the bus and never dispatched.
+- That closes the runtime line for V-028 in this environment. Four distinct approaches have now been tried, each with a
+  better-founded premise than the last:
+  1. guessed argument types;
+  2. introspected exact signature, wrong sequencing;
+  3. exact signature, sequenced after the registry sweep, target pre-registered in `/app/bin`;
+  4. same, with the launcher's retry dependency pre-started.
+  Each produced no execution, and the last three produced no dispatch entry at all.
+- **What is established, and it is not nothing:** no SMACK denial exists anywhere in these boots, so the exec is not
+  being refused by the security module; the launcher is in a persistent `appId[2]` retry loop it does not exit even
+  when that application is already running; and calls to `launch` are accepted and silently ignored rather than
+  rejected.
+- **Conclusion for the register:** V-028 keeps its original status — exact static route, runtime execution unobserved.
+  Reproducing it needs either the vendor source, or a unit where the launcher's own startup completes without emulation
+  gaps. Nothing in this session's work weakens the static finding, and nothing here justifies calling it exploitable.
+- This thread is closed deliberately rather than left open: four attempts with four different premises is enough
+  evidence to conclude that the obstacle is environmental and vendor-internal, not a missing idea.
+
 ## 1.81.0 - the launch request is never dispatched: the launcher is stuck retrying appId 2
 
 - Instead of a fourth launch attempt, two of the three named causes were tested by reading the run's own evidence.

@@ -3065,3 +3065,12 @@ and are superseded by corrections rather than silently rewritten.
   a fix that has nothing to do with the launch call.
 - This is the better way to end a stretch: not a fourth probe, but a reading of evidence that narrows the field and
   names the next action.
+
+## 2026-10-31 — closing a line on evidence rather than hope
+
+- The fourth premise was as good as the previous three and failed the same way: the call is accepted and never
+  dispatched, while the launcher loops on an application that is now demonstrably running.
+- That combination is the strongest available signal that the obstacle is inside vendor logic we cannot see, not in
+  the emulation and not in my experimental design.
+- Recording the full list of four attempts, with what each eliminated, is the deliverable. The next person should not
+  have to rediscover that SMACK is innocent, the registry is innocent, and the dependency is innocent.
