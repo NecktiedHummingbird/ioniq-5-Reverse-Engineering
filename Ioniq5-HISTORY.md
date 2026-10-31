@@ -2449,3 +2449,31 @@ and are superseded by corrections rather than silently rewritten.
   and debugfs's mode command needed a different form than the one I used. Both produced the same symptom —
   nothing happens — which is exactly the symptom this project keeps having to disambiguate.
 - Read count is no longer zero. That single number has been the objective for several rounds.
+
+## 2026-11-01 — one cryptographic wall is a conditional inner gate
+
+- Following the FUMO mode byte into exact downstream code found a named
+  navigation-map signature decision rather than a universal package verifier.
+  Encrypted mode with a map candidate and provider starts an asynchronous NUA
+  check; nonzero results and timeouts stop that path.
+- Four states mark the gate complete without verification: its dedicated local
+  disable marker, no provider, non-encrypted mode, or no selected map. The
+  important correction is that the general FUMO encryption-disable marker sets
+  the byte used by the non-encrypted map-signature skip.
+- This advances the trust reconstruction without collapsing its boundaries.
+  Control of either local marker is still unproved, and a skipped map gate says
+  nothing by itself about descriptor, version, model, non-map digest, write,
+  slot, boot, root, or persistence acceptance.
+- A numeric-only model and passive marker capture preserve the result without
+  creating update material or changing a recovered filesystem.
+
+## 2026-10-31 — two halves working, not yet at once
+
+- The D-Bus failure was never a permission problem. It was a race that had been running since the first boot:
+  the daemon asks for the bus a hundred seconds before the security rules that permit the request exist.
+- Once the daemon waited for the ruleset, the bus errors went to zero. And once the wrapper replaced the
+  daemon's path, the MICOM exchange worked. Each half is now demonstrated.
+- They are not yet demonstrated together, and this boot shows that clearly rather than hiding it: the wrapper
+  ran twice, the peer was not serving the instance that connected, and no boot-info reply was logged.
+- The remaining work is coordination, not discovery. That is a much better place to be than the last several
+  rounds, where the question was still what was broken.

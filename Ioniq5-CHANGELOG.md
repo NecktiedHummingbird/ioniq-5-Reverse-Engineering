@@ -3,6 +3,41 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.37.0 - SMACK ordering was the D-Bus fault
+
+- **Root cause of `[writeToDBus] There is no connection` found: ordering, not permissions.** `smack.service`
+  applies the ruleset at **t=128 s**, while the daemon is started at **t=18 s**. Its bus connection is
+  attempted before the rules that permit it exist, so every write fails for the whole boot.
+- The wrapper now waits for `smack.service` to become active before `exec`ing the daemon. Result:
+  **`writeToDBus` errors dropped from 27 to 0.** The daemon reaches the bus.
+- The SMACK unit itself needed a fix first: `fstab_emmc` mounts `smackfs` at **`/sys/fs/smackfs`**, but
+  `smack.service`'s `ExecStartPre` wrote to **`/smack/netlabel`**, so the pre-start always failed and the
+  ruleset was never applied. Patching those paths made the first start succeed at t=128 s; a later restart
+  still fails, which is consistent with re-applying a ruleset that is already loaded.
+- New regression from the ordering fix, recorded plainly: this boot shows **twice** `MMWRAP begin`, no
+  `smack waited` line, and **zero bootinfo replies**. The wrapper evidently restarted, and the peer was not
+  servicing the instance that finally spoke to the bus, so the MICOM exchange that worked in the previous
+  boot did not happen here.
+- So the two halves now each work in isolation — MICOM exchange (previous boot) and D-Bus publication (this
+  boot) — and the remaining task is to have both in one boot: single wrapper instance, peer alive for the
+  lifetime of the daemon, and the daemon started after SMACK rules are applied.
+
+## 1.38.0 - trace the inner FUMO navigation-map signature gate
+
+- Reconstructed inner-FUMO function `0x128070` and its asynchronous start/result
+  polling. A dedicated disable marker, absent dynamicmenu/NUA provider,
+  non-encrypted mode, or no navigation-map candidate completes this one gate
+  without running the signature worker. Failures/timeouts stop through
+  `0x127e80`; success sets `this+0xd5` and re-enters the gate.
+- Corrected the earlier unresolved relationship: FUMO startup
+  `/update/disableEncryptionUpdate` sets the same mode byte later tested by the
+  navigation-map non-encrypted skip branch. This is a named map-signature skip,
+  not a universal package-signature, payload, write, boot, root, or persistence
+  bypass.
+- Added a numeric/boolean-only gate model with focused tests, exact retained
+  evidence, and passive disconnected-bench capture for the dedicated marker.
+  No recovered updater ran and no marker, package, partition, or slot changed.
+
 ## 1.36.0 - the MICOM peer and the daemon are talking; boot info is answered
 
 - **Frames are finally exchanged.** The peer answered the boot-info asks:
