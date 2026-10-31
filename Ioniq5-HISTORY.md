@@ -2728,3 +2728,12 @@ and are superseded by corrections rather than silently rewritten.
   like an environment variable or a mount event.
 - Stopping here rather than continuing to vary the invocation is the right call. The register is accurate about
   what is known, and the remaining work is a harness feature (simulating a mount event) rather than another guess.
+
+## 2026-10-31 — the control channel was on a different bus
+
+- The scanner refused to parse for a boring reason: its control tool speaks to a session bus, and no session bus
+  existed. With one up, the scan executes on command. That is the harness feature the previous entry said was
+  missing.
+- Two things keep this honest. A database still does not appear, so the parse output remains unproven; and a
+  timestamp-based file sweep I had run is invalid because the guest clock is 1970, which makes every file on the
+  image look newly created. That check is withdrawn rather than believed.

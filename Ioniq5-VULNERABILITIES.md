@@ -559,13 +559,25 @@ attacker-supplied bytes — was attempted **four ways** and did not run in this 
    stub** while the real 300 KB library lives in `app/lib`;
 4. the daemon driven directly, with a probe file present at `/media/usb/probe.mp3`.
 
-In every case the process ran as **uid 0** and produced **no database and no diagnostic output at all**. The
-image does ship `app/lib/lightmediascanner/plugins`, so the most likely requirements are a plugin-path variable
-or a **mount/udev event** rather than `startup-scan` in this projection.
+In every case the process ran as **uid 0** and produced **no database and no diagnostic output at all**.
 
-The parsing step is therefore **not demonstrated**, and this register does not claim it happened. What is
-established is the privilege (measured) and the scan target configuration (sourced); what is not is execution of
-the parse itself.
+**The control channel was then identified and made to work.** `lightmediascannerctl` uses the **session** bus, not
+the system bus — its first failure was literally `Could not get session bus connection … dbus-launch --autolaunch`.
+With a session bus provided (`dbus-daemon --session --print-address --fork`), the daemon registers
+`org.lightmediascanner` (verified: one matching name on the bus) and `lightmediascannerctl scan` **executes**:
+
+`Server at :1.0, try to start scan` / `Elapsed time: 0.025 seconds`
+
+So the scan is now invocable; a database still does not appear at the configured `db-path`, which points at a
+compiled-in or differently-resolved location rather than the config value in this projection.
+
+**One check in this investigation was invalid and is recorded as such:** a `find / -newer /media/usb/probe.mp3`
+sweep cannot work on this guest because the guest clock reads 1970, so every image file appears "newer". That
+result was discarded rather than interpreted.
+
+The parsing step is therefore **still not demonstrated**. Established: the privilege (measured), the scan targets
+(sourced), and the scan invocation (executed). Not established: that the scan consumed attacker-supplied bytes and
+recorded them.
 
 **Chain status.** First stage candidate confirmed at the configuration level, with the root identity now measured:
 root parser over attacker-supplied content, reachable locally via `/media`. What remains unproven is (a) that the

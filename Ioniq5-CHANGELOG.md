@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.52.0 - V-007: control channel found and scan made to execute
+
+- Identified the missing harness feature: `lightmediascannerctl` talks to the **session** bus, not the system bus
+  — its failure message was `Could not get session bus connection … dbus-launch --autolaunch`. Started a session
+  bus with `dbus-daemon --session --print-address --fork`.
+- With it, the daemon registers `org.lightmediascanner` (one matching name on the bus, verified) and
+  `lightmediascannerctl scan` **runs**: `Server at :1.0, try to start scan` / `Elapsed time: 0.025 seconds`.
+- A database still does not appear at the configured `db-path`, so the sink resolves elsewhere in this build.
+- **Correction:** the `find / -newer probe.mp3` sweep used earlier is invalid here — the guest clock reads 1970, so
+  every image file appears newer and the result is meaningless. Discarded rather than interpreted.
+- Status for V-007 is now three parts, two of them established: privilege (measured, uid 0), scan targets
+  (sourced), scan invocation (**now executes**). What remains is confirmation that the scan consumed
+  attacker-supplied bytes, which needs the sink located.
+
+## 1.55.0 - narrow secure-boot-ignore and identify manifest read-bound mismatch
+
+- Bound `CONFIG_KEYSTORE_SECURE_BOOT_IGNORE=y` to its exact machine-code effect: `keystore_init` logs that it is not checking secure-boot status and proceeds directly to `keystore_fill_seeds`; seed and device setup failures remain fatal.
+- Confirmed the option does not remove the separate `manifest_init` initcall or the surviving `verify_oem_signature → SHA-256 → manifest_key_verify_digest` chain. It is not a general package, update-signature, verified-boot, or arbitrary-firmware bypass.
+- Corrected the manifest outer-size range: `size - 1 <= 0x3ffffff` accepts `1..0x4000000` bytes inclusive.
+- Identified an exact conditional boot-time OOB-read candidate: fixed header reads are unconditional through `+0x1b`, while the internal declared length and extension walk are never bounded by the copied allocation. The 101-entry cap does not repair that missing allocation bound.
+- Kept impact narrow: boot-parameter and physical-memory control are unproved, and no OOB write, controlled corruption, code execution, root, update acceptance, boot acceptance, or persistence is established.
+- Added complete-function evidence plus independent fail-closed Boolean and bounded-integer models. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
+
 ## 1.54.0 - reject the FLIC write-bounds CVE family by exact comprehensive rewrite
 
 - Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so`, despite its embedded GStreamer `1.8.3-r0` recipe path.
