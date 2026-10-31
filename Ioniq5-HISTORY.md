@@ -2373,3 +2373,16 @@ and are superseded by corrections rather than silently rewritten.
 - The lesson from earlier in the session repeats: the instrumented channel has to be one that works in the
   failing context. kmsg looked like the universal answer and it is not, when the thing blocking the write is
   the same thing I am trying to observe.
+
+## 2026-10-31 — the plumbing was wrong, not the protocol
+
+- Three failed integration attempts, then the reason: a tty is not a loopback. I had a peer and a daemon each
+  holding the same serial line, writing outward, and wondering why neither heard the other. Nothing was
+  broken except my mental model of the device.
+- The audit trail cleared the security module outright — zero denials, and our binaries were never named in
+  it. That hypothesis is retired with evidence rather than left standing.
+- Worth recording the pattern of the failures honestly: each attempt was a reasonable variation, and none
+  could have worked, because they all shared the same wrong assumption. Changing the wrapper, the ordering
+  and the handshake were three ways of not re-examining the foundation.
+- The fix is small and known: a pty pair, with the peer on the master and the daemon's device symlinked to
+  the slave. Everything already built for the peer still applies.

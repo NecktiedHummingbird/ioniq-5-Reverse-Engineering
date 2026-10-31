@@ -94,6 +94,11 @@ int main(int argc, char **argv)
 		cfsetospeed(&tio, B115200);
 		tcsetattr(fd, TCSANOW, &tio);
 	}
+	{
+		int r = open("/tmp/micom-ready", O_CREAT | O_WRONLY, 0644);
+		if (r >= 0)
+			close(r);
+	}
 	note("listening on %s\n", dev);
 
 	for (;;) {

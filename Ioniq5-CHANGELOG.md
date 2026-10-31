@@ -3,6 +3,24 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.34.0 - why the peer never answers: a tty is one line to the host, not a loopback
+
+- A readiness handshake was added (`/tmp/micom-ready` after a successful open, wrapper waits for it before
+  exec'ing the daemon). Read count is **still 0**, with 103 writes. So the race was not the cause either.
+- **The design was wrong, and this is my error.** `/dev/ttyS1` is a single serial line to the host: what a
+  process *writes* to it goes out to the chardev, and what the chardev delivers comes *in*. Two processes
+  holding the same tty do not talk to each other — my replies were transmitted to the host, never delivered to
+  the daemon's input. That is exactly consistent with every observation: the daemon writes 103 frames, our
+  peer reads none of them (it sees no input because there is none), and its replies are captured as guest
+  output rather than consumed locally.
+- The earlier hypothesis list was therefore wrong in its first three entries, and SMACK was cleared: the audit
+  trail contains **zero denials** and our binaries never appear in it at all.
+- Correct architecture is a **pty pair inside the guest**: the peer owns the *master*, `/dev/ttyS1` is
+  replaced by a symlink to the *slave*, and the daemon then talks to the peer rather than to the host. The
+  host-side capture of guest writes is lost, which is acceptable because the peer can log what it answers.
+- Nothing about the framing, the id table or the responder's logic is invalidated; only the plumbing between
+  peer and daemon was wrong.
+
 ## 1.33.0 - responder works from a shell, still silent under systemd
 
 - Verified the responder is correct as a program: launched from a research shell it reports
