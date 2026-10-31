@@ -450,9 +450,19 @@ bring-up defect. That question is open.
 - **Component:** `/app/bin/AppDMClient`, SHA-256 `9a1fb796d7ac24fcce71c16e3dbee9306c888f43e705ee081f41b7d473978bd0`, Build ID `b2dbcc5231f444d8f1dd68eb7a2376323ce805df`; x86-64 PIE.
 - **Exact mechanism:** staging calls the verifier for AppUpgrade/XML at `0x802db`/`0x80320` and retains integers. Wrapper `[0x34870,0x34d43)` passes target-path and key bytes to linked verifier `0x121040`, destroys its local file object, and returns `%eax`. Later `0x82913..0x8296b` formats a two-path copy command and executes a separate process. XML-reader `[0xe1e90,0xe3166)` independently performs verify-then-open/parse sequences. Complete reviewed callers contain no identity token handed from verification to consumption.
 - **Reachability boundary:** the ordinary unequal staging and XML-reader code paths are static. Runtime source-filesystem mutability, directory ownership, mount policy, uid/SMACK access, update serialization, timing, and an actual verified/consumed object mismatch are unobserved. The intended equal `/update/usb/bin` relaunch remains a separate route that skips repeated pair checks but is not itself first-entry control.
-- **Impact boundary:** this establishes a conditional pathname-substitution structure, not successful substitution. It does not establish authentication bypass, successful staging or child creation, modified-update acceptance, partition writes, slot switching, boot acceptance, root, mark-good, or persistence. Later inner FUMO authentication and payload binding remain under reconstruction.
+- **Impact boundary:** this establishes a conditional pathname-substitution structure, not successful substitution. It does not establish authentication bypass, successful staging or child creation, modified-update acceptance, partition writes, slot switching, boot acceptance, root, mark-good, or persistence. V-032 finds no direct inner FUMO reauthentication of the outer executable in the reviewed signature/hash/startup/relaunch paths, but indirect/external checks and final payload binding remain under reconstruction.
 - **Remediation:** verify and consume one immutable open object; where subprocess boundaries prevent descriptor use, copy into a root-owned non-replaceable staging object and authenticate that exact staged object immediately before launch, with identity/metadata changes treated as failure.
 - **Evidence:** `evidence/appdmclient-source-identity-boundary.md`; exact retained assembly `evidence/artifacts/update-candidates/appdmclient-source-identity-boundary.asm`; Boolean-only model `tools/uk_fw/update_source_identity_model.py`.
+
+## V-032 — Inner FUMO direct trust paths do not reauthenticate the outer updater (EXACT STATIC COVERAGE; ABSOLUTE ABSENCE/EXPLOITABILITY UNPROVEN)
+
+- **Status:** a whole-`.text` direct-call inventory in the exact embedded FUMO ELF found six calls to its public-key file verifier and two calls to its file-MD5 helper. Their recovered operands are the update descriptor, firmware archive, enumerated component/resource files, or navigation files—not the staged or running `AppUpgrade` executable. Startup derives a resource directory from `argv[0]`; the worker relaunch wrapper calls `execv` without a direct pre-exec verifier/hash call. No updater, verifier, helper, target path, launch, update package, partition, slot, or target syscall was exercised.
+- **Component:** exact embedded FUMO ELF SHA-256 `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7`, Build ID `863a8730e66a1c5245a1bf458fe2554adee0351a`; x86-64 PIE.
+- **Exact mechanism:** startup `[0x125800,0x126fe4)` calls `QCoreApplication::arguments` at `0x1259e3`, removes the application-name suffix at `0x125a45..0x125a4e`, and ultimately stores the base directory at object `+0x30` in initializer `[0x8dc60,0x8dd51)`. Verifier `[0x45820,0x45d75)` reads the fixed public key and calls signed-container driver `0x18f740`; its complete direct call set is `0x7be3a,0x80095,0x802f0,0x9d1d2,0x100bb0,0x140092`. File-MD5 helper `[0x140f50,0x1413e4)` has only direct callers `0x1432f6` and `0x15170c`, both from navigation checksum paths. Relaunch wrapper `[0x6c9a0,0x6cab5)` calls `execv` at `0x6caa8` without invoking those helpers.
+- **Trust boundary:** this narrows V-031 only for the reviewed direct paths. It does not exclude unresolved virtual/indirect calls, external credential/helper behavior, loader or boot-stage enforcement. Later descriptor/archive/component authentication is real but binds different trust subjects and does not retroactively authenticate the already-running outer executable.
+- **Impact boundary:** no runtime source mutability, changed executable, successful process creation, authentication bypass, package acceptance, partition write, slot switch, boot acceptance, privilege transition, root, mark-good, or persistence is established. Payload checks may still reject unauthenticated update data even if outer executable identity divergence were later proved.
+- **Remediation:** bind pre-exec authentication to the exact immutable staged executable consumed by the launcher; independently bind every transformed payload and final partition image to authenticated metadata; keep boot acceptance and rollback enforcement as separate trust stages.
+- **Evidence:** `evidence/appfumo-authentication-coverage.md`; exact retained assembly `evidence/artifacts/update-candidates/appfumo-authentication-coverage.asm`; Boolean-only model `tools/uk_fw/fumo_auth_coverage_model.py`.
 
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
@@ -705,6 +715,28 @@ device, subject to the listing above showing `/media/mtp` as scanned when mounte
 - **Remediation direction:** update the codec stack to maintained versions; parse in a sandboxed, unprivileged,
   seccomp-confined helper and pass only metadata back; treat `libmagic` sniffing as untrusted input handling; and
   stop running media parsing under root at all, which fixes this class regardless of library age.
+
+## V-007 / V-014 — bounded malformed-input test (negative, weak instrument)
+
+Two sets of deliberately malformed files were pushed through the demonstrated root parsing path.
+
+- **Images are not reachable through this configuration.** Five malformed PNGs placed in `/media/mtp` produced
+  `processed=0`: the scan directory is typed `audio:/media/mtp/`, so image parsers never run on that path. That
+  corrects an implicit assumption — the reachable parsers are the **audio** ones (`id3`, `ogg`, `flac`, `mp4`), not
+  `png`/`jpeg`.
+- **Five malformed audio files did not crash the daemon.** Truncation at half and at 200 bytes, a 300-byte bit-flip
+  run, 512 bytes of random data after the header, and a synthetic `ID3` header with a 2 GB declared size. Result:
+  `commit=1, uptodate=5, errors=0`, the scanner process unchanged before and after (`pid 720` both times), and
+  **zero segfaults in `dmesg`**.
+
+**How much this is worth.** Very little, and it is recorded that way. Truncation and bit-flips are the crudest
+possible mutations; a parser that survives them tells you almost nothing about memory safety, because the defects
+that matter require structurally valid containers with hostile field values. A real answer needs structured
+generation (valid container, mutated length/offset fields) or a coverage-guided harness driving the plugin
+libraries directly — neither of which was attempted here.
+
+**Status unchanged:** V-007's reachability stands (demonstrated), V-014's ageing-exposure framing stands. No parser
+vulnerability is claimed, and this test does not move either entry.
 
 ## Rejected / out-of-scope items
 

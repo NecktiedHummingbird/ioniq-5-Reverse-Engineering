@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.63.0 - malformed-input probe: a negative result with a weak instrument, recorded as such
+
+- **Images are not reachable on this path.** Five malformed PNGs in `/media/mtp` gave `processed=0`, because the
+  scan directory is typed `audio:/media/mtp/`. So the reachable parsers are the **audio** ones (`id3`, `ogg`,
+  `flac`, `mp4`) — not `png`/`jpeg` as the V-014 inventory implies. That is a useful correction to the surface.
+- Five malformed **audio** files (half truncation, 200-byte truncation, a 300-byte bit-flip run, 512 random bytes
+  after the header, and a synthetic `ID3` header declaring 2 GB) were processed with `commit=1, uptodate=5,
+  errors=0`; the daemon survived (`pid 720` before and after) and `dmesg` recorded **zero segfaults**.
+- **Recorded as worth very little.** Truncation and bit-flips are the crudest mutations available; surviving them
+  says almost nothing about memory safety, since the defects that matter need structurally valid containers with
+  hostile field values. A real answer needs structured generation or a coverage-guided harness driving the plugin
+  libraries — neither attempted.
+- Neither V-007 nor V-014 moves on this. No parser vulnerability is claimed.
+
+## 1.65.0 - bound inner FUMO authentication coverage to its actual trust subjects
+
+- Bound exact embedded FUMO identity, startup path derivation, verifier `[0x45820,0x45d75)`, file-MD5 helper `[0x140f50,0x1413e4)`, and worker relaunch `[0x6c9a0,0x6cab5)`.
+- A whole-`.text` direct-call inventory found six file-verifier calls and two MD5-helper calls. Their operands are the descriptor, archive, enumerated firmware/components, resources, or navigation files—not the staged/running outer updater executable.
+- Startup reduces `argv[0]` to a base directory used for resources. The worker `execv` wrapper contains no direct executable verifier/hash step. This narrows V-031 but does not exclude indirect, external, loader, or boot-stage checks.
+- Added V-032, retained exact assembly, a dedicated evidence report, and a thirteen-input schema-v2 Boolean model. Complete reviewed negative coverage is required before reporting direct reauthentication absent; incomplete coverage remains `null`, and absolute absence remains `null` unless indirect/external checks are separately excluded.
+- Focused validation passed `10 tests, 8203 subtests`. No updater, verifier, helper, target path, recovered executable, launch request, package, archive, partition, slot, boot state, target syscall, root action, or persistence mechanism was exercised.
+
 ## 1.62.0 - interposition is structurally blocked; the shim approach is retired
 
 - Moved the hook to `wl_proxy_marshal_array` (non-variadic, exported, correct `void` signature for this

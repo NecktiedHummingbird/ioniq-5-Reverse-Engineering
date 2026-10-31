@@ -2961,3 +2961,13 @@ and are superseded by corrections rather than silently rewritten.
   more useful to whoever picks this up than another evening of attempts.
 - This is the fourth time in this thread that a silent zero turned out to be an instrument problem rather than a
   target problem. The pattern is now well documented, which is its own deliverable.
+
+## 2026-10-31 — a test that produced almost nothing, and says so
+
+- Feeding junk at a root parser is the obvious next move and it produced the obvious non-answer: no crash, which
+  means nothing at all. Recording it as worthless is more honest than dressing five truncated files up as a fuzzing
+  campaign.
+- One real thing came out of it: images never reach a parser on this path, because the scan directory is typed for
+  audio. The inventory in V-014 implied a broader surface than the configuration actually exposes.
+- The instrument was the problem again, in a new form: crude mutations cannot find bugs that require valid
+  structure. The next attempt needs a generator, not more bit flips.
