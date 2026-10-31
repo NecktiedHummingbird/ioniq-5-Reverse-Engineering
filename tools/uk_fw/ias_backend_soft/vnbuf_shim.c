@@ -1,128 +1,123 @@
-#include <dlfcn.h>
-/* vnbuf_shim — research adaptor for a client that commits surfaces without
- * ever attaching a buffer.
+/* vnbuf_shim — research adaptor for a client that commits surfaces without ever
+ * attaching a buffer.
  *
- * Measured on AppHomeScreen in this build: five wl_surface.commit calls and zero
- * wl_surface.attach calls of any kind, so the compositor has a view whose surface
- * has no contents and correctly renders black. Attaching is therefore intercepted
- * at commit, not at attach: on the first commit for a surface, a known shm buffer
- * is attached first.
+ * Measured on AppHomeScreen in this build: commits with zero wl_surface.attach
+ * calls, so the compositor has a view whose surface has no contents and correctly
+ * renders black.
  *
- * Purpose: prove the emulation stack end to end (backend, CRTC, IAS shell,
- * renderer, capture) and isolate the client's omission as the only remaining
- * defect. This is a shim, not vendor behaviour.
+ * Interposition point: wl_proxy_marshal_array, NOT wl_surface_commit. The latter
+ * is a static inline wrapper in wayland-client's generated header, so clients never
+ * reference the exported symbol and hooking it does nothing (verified: the object was
+ * mapped into a committing client and never called). All client requests funnel
+ * through the array marshaller, which is non-variadic and therefore safe to wrap.
+ *
+ * On a wl_surface commit (opcode 6) that has not yet seen an attach, a known opaque
+ * magenta ARGB8888 buffer is attached (opcode 1) first.
+ *
+ * This is a shim, not vendor behaviour: it proves the emulation stack end to end and
+ * isolates the client's omission as the remaining defect.
  */
-#define _GNU_SOURCE
-#include <wayland-client-core.h>
-#include <wayland-util.h>
-
-/* Every libwayland symbol is resolved at runtime. Linking against the guest's
- * libwayland-client is not possible from this cross build, and leaving them
- * undefined makes LD_PRELOAD fail eagerly at load time. */
-struct wl_registry *(*p_wl_display_get_registry)(struct wl_display *);
-int (*p_wl_registry_add_listener)(struct wl_registry *, const void *, void *);
-void *(*p_wl_registry_bind)(struct wl_registry *, uint32_t, const struct wl_interface *, uint32_t);
-int (*p_wl_display_roundtrip)(struct wl_display *);
-struct wl_shm_pool *(*p_wl_shm_create_pool)(struct wl_shm *, int32_t, int32_t);
-struct wl_buffer *(*p_wl_shm_pool_create_buffer)(struct wl_shm_pool *, int32_t, int32_t, int32_t, int32_t, uint32_t);
-void (*p_wl_shm_pool_destroy)(struct wl_shm_pool *);
-
-static void resolve(void)
-{
-	p_wl_display_get_registry = dlsym(RTLD_DEFAULT, "wl_display_get_registry");
-	p_wl_registry_add_listener = dlsym(RTLD_DEFAULT, "wl_registry_add_listener");
-	p_wl_registry_bind = dlsym(RTLD_DEFAULT, "wl_registry_bind");
-	p_wl_display_roundtrip = dlsym(RTLD_DEFAULT, "wl_display_roundtrip");
-	p_wl_shm_create_pool = dlsym(RTLD_DEFAULT, "wl_shm_create_pool");
-	p_wl_shm_pool_create_buffer = dlsym(RTLD_DEFAULT, "wl_shm_pool_create_buffer");
-	p_wl_shm_pool_destroy = dlsym(RTLD_DEFAULT, "wl_shm_pool_destroy");
-}
-
-struct wl_registry_listener { void (*global)(void *, struct wl_registry *, uint32_t, const char *, uint32_t); void (*global_remove)(void *, struct wl_registry *, uint32_t); };
+#include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <sys/mman.h>
+#include <stdlib.h>
 #include <stdarg.h>
+#include <sys/mman.h>
+#include <wayland-client-core.h>
+#include <wayland-util.h>
 
-#define WIDTH 1920
+#define WIDTH  1920
 #define HEIGHT 720
-#define LOG "/dev/ttyS0"
+#define MAX_SURFACES 64
+
+#define WL_SURFACE_ATTACH 1u
+#define WL_SURFACE_COMMIT 6u
+
 #ifndef WL_SHM_FORMAT_ARGB8888
 #define WL_SHM_FORMAT_ARGB8888 0
 #endif
 
-static struct wl_display *g_display;
+struct reg_listener {
+	void *global;
+	void *global_remove;
+};
+
 static struct wl_shm *g_shm;
 static struct wl_buffer *g_dummy;
-static struct wl_surface *seen[64];
-static int seen_n;
-static int attached_n;
-static int log_fd = -1;
+static struct wl_proxy *g_attached[MAX_SURFACES];
+static int g_attached_n;
+static int g_log = -1;
+static int g_bind_tried;
+static int g_calls, g_commits;
 
 static void say(const char *fmt, ...)
 {
-	va_list ap;
 	char buf[256];
+	va_list ap;
 
-	if (log_fd < 0)
-		log_fd = open(LOG, O_WRONLY);
-	if (log_fd < 0)
-		return;
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
-	dprintf(log_fd, "vnbuf: %s", buf);
+	fprintf(stderr, "vnbuf: %s", buf);
+	if (g_log < 0)
+		g_log = open("/dev/ttyS0", O_WRONLY);
+	if (g_log >= 0)
+		dprintf(g_log, "vnbuf: %s", buf);
 }
 
+static struct wl_display *(*p_get_display)(struct wl_proxy *);
+static struct wl_registry *(*p_get_registry)(struct wl_display *);
+static int (*p_registry_add_listener)(struct wl_registry *, const void *, void *);
+static void *(*p_registry_bind)(struct wl_registry *, uint32_t, const void *, uint32_t);
+static int (*p_roundtrip)(struct wl_display *);
+static struct wl_shm_pool *(*p_create_pool)(struct wl_shm *, int32_t, int32_t);
+static struct wl_buffer *(*p_create_buffer)(struct wl_shm_pool *, int32_t, int32_t, int32_t, int32_t, uint32_t);
+static void (*p_pool_destroy)(struct wl_shm_pool *);
+static const char *(*p_get_class)(struct wl_proxy *);
+static void (*p_marshal_array)(struct wl_proxy *, uint32_t, union wl_argument *);
 
-static void reg_global(void *d, struct wl_registry *r, uint32_t name,
-		       const char *iface, uint32_t ver)
+static void resolve(void)
 {
-	(void)d; (void)ver;
-	if (strcmp(iface, "wl_shm") == 0) {
-		/* Resolved at runtime: a data symbol in the preloaded object would
-		 * otherwise have to be resolved eagerly and fails at load time. */
-		const struct wl_interface *iface_ptr =
-			(const struct wl_interface *) dlsym(RTLD_DEFAULT, "wl_shm_interface");
-		if (!iface_ptr) {
-			say("wl_shm_interface not found\n");
-			return;
-		}
-		g_shm = p_wl_registry_bind(r, name, iface_ptr, 1);
-		say("bound wl_shm\n");
-	}
+	p_get_display = dlsym(RTLD_DEFAULT, "wl_proxy_get_display");
+	p_get_registry = dlsym(RTLD_DEFAULT, "wl_display_get_registry");
+	p_registry_add_listener = dlsym(RTLD_DEFAULT, "wl_registry_add_listener");
+	p_registry_bind = dlsym(RTLD_DEFAULT, "wl_registry_bind");
+	p_roundtrip = dlsym(RTLD_DEFAULT, "wl_display_roundtrip");
+	p_create_pool = dlsym(RTLD_DEFAULT, "wl_shm_create_pool");
+	p_create_buffer = dlsym(RTLD_DEFAULT, "wl_shm_pool_create_buffer");
+	p_pool_destroy = dlsym(RTLD_DEFAULT, "wl_shm_pool_destroy");
+	p_get_class = dlsym(RTLD_DEFAULT, "wl_proxy_get_class");
+	p_marshal_array = dlsym(RTLD_NEXT, "wl_proxy_marshal_array");
 }
-static void reg_remove(void *d, struct wl_registry *r, uint32_t n) { (void)d; (void)r; (void)n; }
-static const struct wl_registry_listener reg_listener = { reg_global, reg_remove };
 
-struct wl_display *wl_display_connect(const char *name)
+static void on_global(void *data, struct wl_registry *reg, uint32_t name,
+		      const char *iface, uint32_t version)
 {
-	static struct wl_display *(*real)(const char *);
-	struct wl_display *d;
-	struct wl_registry *reg;
+	const void *iface_ptr;
 
-	if (!real)
-		real = dlsym(RTLD_NEXT, "wl_display_connect");
-	d = real(name);
-	if (d && !g_display) {
-		g_display = d;
-		resolve();
-		reg = p_wl_display_get_registry(d);
-		p_wl_registry_add_listener(reg, &reg_listener, NULL);
-		p_wl_display_roundtrip(d);
-		say("connected, shm=%p\n", (void *) g_shm);
-	}
-	return d;
+	(void)data; (void)version;
+	if (strcmp(iface, "wl_shm") != 0)
+		return;
+	iface_ptr = dlsym(RTLD_DEFAULT, "wl_shm_interface");
+	if (!iface_ptr)
+		return;
+	g_shm = p_registry_bind(reg, name, iface_ptr, 1);
+	say("bound wl_shm\n");
 }
+static void on_global_remove(void *d, struct wl_registry *r, uint32_t n)
+{
+	(void)d; (void)r; (void)n;
+}
+static const struct reg_listener listener = {
+	(void *) on_global, (void *) on_global_remove,
+};
 
 static int make_dummy(void)
 {
-	int stride = WIDTH * 4;
-	int size = stride * HEIGHT;
+	int stride = WIDTH * 4, size = stride * HEIGHT;
 	char tmpl[] = "/tmp/vnbuf-XXXXXX";
 	int fd = mkstemp(tmpl);
 	struct wl_shm_pool *pool;
@@ -134,46 +129,74 @@ static int make_dummy(void)
 	if (ftruncate(fd, size) < 0) { close(fd); return -1; }
 	p = mmap(NULL, (size_t) size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) { close(fd); return -1; }
-	/* Solid, unmistakable colour: opaque magenta. */
 	for (int i = 0; i < WIDTH * HEIGHT; i++)
 		p[i] = 0xFFFF00FFu;
 	munmap(p, (size_t) size);
 
-	pool = p_wl_shm_create_pool(g_shm, fd, size);
-	g_dummy = p_wl_shm_pool_create_buffer(pool, 0, WIDTH, HEIGHT, stride,
-					    WL_SHM_FORMAT_ARGB8888);
-	p_wl_shm_pool_destroy(pool);
+	pool = p_create_pool(g_shm, fd, size);
+	g_dummy = p_create_buffer(pool, 0, WIDTH, HEIGHT, stride, WL_SHM_FORMAT_ARGB8888);
+	p_pool_destroy(pool);
 	close(fd);
-	say("created dummy buffer %p (%dx%d)\n", (void *) g_dummy, WIDTH, HEIGHT);
+	say("dummy buffer created\n");
 	return g_dummy ? 0 : -1;
 }
 
-void wl_surface_commit(struct wl_surface *surface)
+static int ensure_shm(struct wl_proxy *proxy)
 {
-	static void (*real_commit)(struct wl_surface *);
-	static void (*real_attach)(struct wl_surface *, struct wl_buffer *, int32_t, int32_t);
-	int known = 0;
+	struct wl_display *display;
+	struct wl_registry *reg;
 
-	if (!real_commit)
-		real_commit = dlsym(RTLD_NEXT, "wl_surface_commit");
-	if (!real_attach)
-		real_attach = dlsym(RTLD_NEXT, "wl_surface_attach");
+	if (g_shm)
+		return 0;
+	if (g_bind_tried)
+		return -1;
+	g_bind_tried = 1;
+	display = p_get_display(proxy);
+	if (!display)
+		return -1;
+	reg = p_get_registry(display);
+	p_registry_add_listener(reg, &listener, NULL);
+	p_roundtrip(display);
+	say("registry done, shm=%p\n", (void *) g_shm);
+	return g_shm ? 0 : -1;
+}
 
-	for (int i = 0; i < seen_n; i++)
-		if (seen[i] == surface)
-			known = 1;
+void wl_proxy_marshal_array(struct wl_proxy *proxy, uint32_t opcode,
+			    union wl_argument *args)
+{
+	const char *cls;
 
-	if (!known && g_shm) {
-		if (seen_n < (int) (sizeof seen / sizeof seen[0]))
-			seen[seen_n++] = surface;
-		if (!g_dummy)
-			make_dummy();
-		if (g_dummy) {
-			real_attach(surface, g_dummy, 0, 0);
-			attached_n++;
-			say("attached dummy to surface %p (n=%d)\n",
-			    (void *) surface, attached_n);
+	if (!p_marshal_array)
+		resolve();
+	if (!p_marshal_array)
+		return;
+
+	if (++g_calls <= 3)
+		say("marshal call %d class=%s opcode=%u\n", g_calls,
+		    p_get_class ? p_get_class(proxy) : "?", opcode);
+
+	cls = p_get_class ? p_get_class(proxy) : NULL;
+	if (cls && strcmp(cls, "wl_surface") == 0 && opcode == WL_SURFACE_COMMIT) {
+		g_commits++;
+		int known = 0;
+		for (int i = 0; i < g_attached_n; i++)
+			if (g_attached[i] == proxy)
+				known = 1;
+		if (!known && ensure_shm(proxy) == 0) {
+			if (g_attached_n < MAX_SURFACES)
+				g_attached[g_attached_n++] = proxy;
+			if (!g_dummy)
+				make_dummy();
+			if (g_dummy) {
+				union wl_argument a[3];
+				memset(a, 0, sizeof a);
+				a[0].o = (struct wl_object *) g_dummy;
+				a[1].i = 0;
+				a[2].i = 0;
+				p_marshal_array(proxy, WL_SURFACE_ATTACH, a);
+				say("attached dummy before commit #%d\n", g_commits);
+			}
 		}
 	}
-	real_commit(surface);
+	p_marshal_array(proxy, opcode, args);
 }

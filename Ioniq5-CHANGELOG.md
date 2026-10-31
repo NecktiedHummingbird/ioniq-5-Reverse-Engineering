@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.62.0 - interposition is structurally blocked; the shim approach is retired
+
+- Moved the hook to `wl_proxy_marshal_array` (non-variadic, exported, correct `void` signature for this
+  libwayland). Built cleanly (18,944 bytes, symbol exported) and tested against `weston-simple-shm`, a client that
+  definitely commits. Result: **still no hook call, zero output.**
+- The explanation is a structural one. In client code, requests go through the **variadic `wl_proxy_marshal`**
+  inline wrapper, and libwayland's own `wl_proxy_marshal` forwards to `wl_proxy_marshal_array` **by a direct
+  intra-library call**, which does not traverse the PLT and therefore cannot be interposed by `LD_PRELOAD`.
+  Interposing the outer variadic form is impossible to do generically, because forwarding an unknown `va_list`
+  to a variadic callee cannot be expressed in C.
+- Verified along the way: the object **is** mapped into the client (4 mappings in `/proc/<pid>/maps`), and
+  `libwayland-client.so.0` has **no `.gnu.version_d`**, so symbol versioning was never the obstacle.
+- **The shim approach is retired.** Three interposition points were tried — exported `wl_surface_commit` (never
+  called: inline wrapper), `wl_proxy_marshal_array` (intra-DSO call), and a connect-time hook (killed the client).
+  None can work from outside the process.
+- Realistic alternatives, for the record: (a) rebuild `ias-shell`/the client with an explicit buffer-supply path —
+  not possible without vendor source; (b) patch the client binary to attach before commit — heavy but feasible
+  given its DWARF; (c) accept that the black frame is the client's behaviour in this environment and stop.
+- Recorded plainly: this line of attack is closed rather than merely slow.
+
 ## 1.64.0 - prove AppDMClient's pathname/object-identity boundary
 
 - Bound verifier wrapper `[0x34870,0x34d43)`, staging `[0x7ff60,0x830e4)`, and XML reader `[0xe1e90,0xe3166)` in exact recovered AppDMClient machine code.

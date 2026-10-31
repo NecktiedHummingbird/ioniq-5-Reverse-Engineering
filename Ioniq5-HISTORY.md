@@ -2951,3 +2951,13 @@ and are superseded by corrections rather than silently rewritten.
   leaves runtime substitution feasibility unknown absent explicit mutability or
   immutability evidence. No updater, pathname race, launch request, package,
   target execution, partition or slot operation was exercised.
+
+## 2026-10-31 — some doors are closed, and saying so is the work
+
+- Three interposition points, three structural reasons they cannot work. The last one is the interesting one: the
+  function that must be hooked is variadic, and C cannot forward an unknown argument list. That is not a missing
+  idea, it is a language limit.
+- The valuable output of this stretch is the closed list: what was tried, why each failed, what remains. That is
+  more useful to whoever picks this up than another evening of attempts.
+- This is the fourth time in this thread that a silent zero turned out to be an instrument problem rather than a
+  target problem. The pattern is now well documented, which is its own deliverable.
