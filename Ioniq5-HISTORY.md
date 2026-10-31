@@ -3027,3 +3027,13 @@ and are superseded by corrections rather than silently rewritten.
   been blocking this work from the start was satisfied by an adaptor we built, not by anything from the vendor.
 - Naming three candidate reasons for the remaining gap is more useful than another blind attempt, and each is
   checkable in one run.
+
+## 2026-10-31 — a matrix that only half ran
+
+- Three variants were queued and only one reached the log, so the honest label is inconclusive rather than negative.
+  Reading the surrounding output explains it: the launcher spends that window walking /app/bin to build its registry,
+  which is precisely the table that decides what a launch means.
+- The practical lesson is sequencing: waiting a fixed number of seconds was fine for registration but wrong for
+  issuing requests, and the correct signal is the registry sweep completing.
+- Also worth recording: our displacement of the vendor daemon works but provokes systemd to restart it and log a
+  registration failure. Functional, not tidy.

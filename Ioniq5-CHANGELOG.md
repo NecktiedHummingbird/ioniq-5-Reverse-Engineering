@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.70.0 - launch matrix inconclusive; the launcher builds its registry first
+
+- Ran a three-variant matrix over the exact signature: (A) appid 999 with `/tmp/probe.sh`, false/false;
+  (B) appid 999 with `/app/bin/probe.sh`, true/true; (C) appid 5 with `/app/bin/probe.sh`, true/true.
+- **Only call A appears in the log, and no marker was created for any variant.** Calls B and C are absent, so the
+  matrix did not execute as written — this is recorded as **inconclusive**, not as three negative results.
+- What the log does show is why the timing is hard: at that moment the launcher was **enumerating `/app/bin`** to build
+  its application registry — a long `dir info [...]` sweep over dozens of binaries — so the calls landed while it was
+  still constructing the very table that decides launches. Sequencing against that enumeration, rather than a fixed
+  `sleep`, is required.
+- Also observed, and expected: displacing the vendor daemon makes systemd restart it, and it then logs
+  `Cannot register service :` because our adaptor owns the name. The displacement is functional but not tidy; a
+  cleaner arrangement would have the adapter own the name from the start of the boot.
+- V-028 runtime execution: still unobserved. The three candidate causes from the previous entry remain untested —
+  the matrix must be re-run after the registry sweep completes.
+
 ## 1.69.0 - exact `launch` signature obtained; the bypass still does not execute
 
 - Introspection of `com.lge.avn.applauncher` `/Request` now works (the name is registered), and it yields the exact
@@ -90,12 +106,16 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   escalation, but broad pipe/iov-iterator safety, every vendor-equivalent defect
   absence, installed identity, runtime policy, successful triggering,
   corruption, root and persistence are not established. Focused validation
-  passed `10 tests, 131109 subtests`; bytecode compilation, exact
-  patch/disassembly/hash checks, and scoped `git diff --check` passed. Exact
-  hashes are recorded in the checkpoint; no full suite/public harness or
-  independent acceptance is claimed. No recovered target or prohibited pipe,
-  vector-copy, fault, race, grooming, payload, or exploit operation was used or
-  created.
+  passed `10 tests, 131109 subtests`; the complete suite passed `604 tests,
+  285411 subtests`; bytecode compilation, exact patch/disassembly/hash checks,
+  and scoped `git diff --check` passed. The public harness passed after public
+  maintainer email addresses in a previously committed XFRM changelog excerpt
+  were redacted, with the complete source hash and all non-email content
+  retained. Independent read-only review accepted the technical verdict with no
+  blocking findings; its moving-base bookkeeping note was integrated. Exact
+  hashes are recorded in the checkpoint. No recovered target or prohibited
+  pipe, vector-copy, fault, race, grooming, payload, or exploit operation was
+  used or created.
 
 ## 1.71.0 - reject CVE-2017-7184 for the named XFRM-user update path
 
