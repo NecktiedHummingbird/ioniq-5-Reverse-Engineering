@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <time.h>
+#include <stdarg.h>
 
 #define BOOTINFO_LEN 35
 
@@ -45,6 +46,23 @@ static int wants_bootinfo(unsigned int id)
 	return id == 0x01aa || id == 0x02c3;
 }
 
+/* Log to /dev/kmsg as well as stderr: under systemd init there is no console shell,
+ * so kmsg is the only channel that reaches the serial log. */
+static int kmsg = -1;
+
+static void note(const char *fmt, ...)
+{
+	va_list ap;
+	char buf[256];
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "%s", buf);
+	if (kmsg >= 0)
+		dprintf(kmsg, "micom-responder: %s", buf);
+}
+
 int main(int argc, char **argv)
 {
 	const char *dev = argc > 1 ? argv[1] : "/dev/ttyS1";
@@ -62,7 +80,8 @@ int main(int argc, char **argv)
 		cfsetospeed(&tio, B115200);
 		tcsetattr(fd, TCSANOW, &tio);
 	}
-	fprintf(stderr, "micom-responder: listening on %s\n", dev);
+	kmsg = open("/dev/kmsg", O_WRONLY);
+	note("listening on %s\n", dev);
 
 	for (;;) {
 		unsigned char hdr[4], pay[256], cs;
@@ -91,7 +110,7 @@ int main(int argc, char **argv)
 			if (len)
 				memcpy(chk + 4, pay, len);
 			if (xor_sum(chk, 4 + len) != cs) {
-				fprintf(stderr, "micom-responder: bad checksum id=0x%04x\n", id);
+				note("bad checksum id=0x%04x\n", id);
 				continue;
 			}
 		}
@@ -106,8 +125,7 @@ int main(int argc, char **argv)
 			memset(out + o, 0, n);	/* plausible, all-zero boot info */
 			o += n;
 			bootinfo++;
-			fprintf(stderr, "micom-responder: bootinfo reply to 0x%04x (%u bytes)\n",
-				id, n);
+			note("bootinfo reply to 0x%04x (%u bytes)\n", id, n);
 		} else {
 			out[o++] = 0xAA;
 			out[o++] = (unsigned char) (rid >> 8);
@@ -120,7 +138,6 @@ int main(int argc, char **argv)
 			fprintf(stderr, "micom-responder: short write\n");
 		answered++;
 		if ((answered % 32) == 0)
-			fprintf(stderr, "micom-responder: %u answered, %u bootinfo\n",
-				answered, bootinfo);
+			note("%u answered, %u bootinfo\n", answered, bootinfo);
 	}
 }

@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.32.0 - the daemon counts its own failures: 103 writes, 0 reads
+
+- Ran the authentic systemd boot with the responder wired in via a drop-in on
+  `dbus-com.lge.car.micom.service`. `micom_serial_bytes` is **1056**, confirming the daemon transmits.
+- The daemon's own DLT output on the console settles the question precisely:
+  `[Total write count : 103 read count : 0]`, with repeated
+  `[[makeErrorReply] connectioTimeOut CMD( 0x829d )]`. So **nothing is being read back** — the peer is not
+  answering, and the daemon times out every request.
+- **No `micom-responder` kmsg lines appear at all**, so the peer most likely never got as far as opening the
+  port. Its failure path writes to stderr (`perror`), which reaches nothing under systemd, so a failed open
+  is currently invisible — a deliberate gap in the instrumentation, not an ambiguous result.
+- Also confirmed on this boot: the daemon really does speak only under systemd (103 writes here versus zero
+  on every research-init run), and the console shows `Started System service for micommanager` at 20.5 s.
+- Next iteration is small and specific: make the responder log its open failure to `/dev/kmsg`, retry the
+  open until `/dev/ttyS1` exists, and re-run. If the port is being taken first, that will now say so instead
+  of failing silently.
+
 ## 1.32.0 - stock USB updater reaches CVE-2015-9261 before authentication
 
 - Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new

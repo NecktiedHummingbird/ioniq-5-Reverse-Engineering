@@ -2335,3 +2335,12 @@ and are superseded by corrections rather than silently rewritten.
   update is claimed.
 - The same review corrected archive selection from "last match" to one first iterator result and extended the
   passive collector to record symlink metadata plus allowlisted effective process `PATH` evidence.
+
+## 2026-10-31 — the daemon told us exactly what is wrong
+
+- The systemd boot gave two facts that matter more than any inference: the daemon wrote 103 frames, and it
+  read zero. It is talking into a void.
+- The peer produced no output at all, which under systemd means its errors went to stderr and vanished. That
+  is a self-inflicted blind spot: the very failure mode I needed to see was the one I had routed nowhere.
+- The lesson is small and repeatable: instrument the failure path before the success path, because the
+  failure path is the one you will need when nothing appears.
