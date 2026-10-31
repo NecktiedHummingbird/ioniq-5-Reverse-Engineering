@@ -24,7 +24,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Bound complete exact `get_task_ioprio`, `SyS_ioprio_get`, and `exit_io_context` machine code against upstream fix `8ba8682107ee2ca3347354e018865d8e1967c5f4` rather than the `4.1.27-abl` banner.
 - Getter acquires `task +0x630` before reading `task->io_context +0x678` and `io_context->ioprio +0x12`, then unlocks. Exit acquires the same lock, loads and clears the same pointer field, unlocks, and only then releases the old object.
 - Added exact machine code, the authoritative patch, an eight-input Boolean-only schema-v2 model, and exhaustive 256-state tests. Incomplete fix facts remain unknown unless an unlocked read is explicit.
-- Kept installed identity, runtime syscall policy, task permissions, concurrency, stale access, crash, corruption, privilege gain, root and persistence unobserved. No syscall, process, thread, race, allocation pressure, crash, or target execution was created.
+- Kept installed identity, runtime syscall policy, task permissions, concurrency, stale access, crash, corruption, privilege gain, root and persistence unobserved. No target or ioprio syscall, process, thread, race, allocation pressure, crash, or target execution was created.
 
 ## 1.60.0 - reject CVE-2016-7910 by exact block iterator cleanup
 

@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## ioprio task-lock checkpoint — 2026-11-03
+
+- CVE-2016-7911 is rejected for exact recovered `vmlinux` by same-lock effects matching upstream `8ba8682107ee2ca3347354e018865d8e1967c5f4`; the stripped binary does not establish commit provenance.
+- Exact `get_task_ioprio [0xffffffff811f5e7b,0xffffffff811f5ec0)` locks `task +0x630`, then reads `task->io_context +0x678` and `io_context->ioprio +0x12`, and unlocks afterward. Exact `exit_io_context [0xffffffff811eab51,0xffffffff811eab95)` uses the same lock while loading/clearing the pointer and releases the object only after unlock.
+- Complete `SyS_ioprio_get [0xffffffff811f616a,0xffffffff811f6371)` contains three direct getter calls. This proves static caller binding, not runtime syscall policy, task permissions, concurrency, or installed identity.
+- The eight-input schema-v2 model leaves incomplete fix facts unknown absent an explicit unlocked-read fact. No target or ioprio syscall, task, thread, race, allocation pressure, crash, or target execution was created. Focused validation passed `8 tests, 267 subtests`; the full suite passed `518 tests, 135637 subtests`, and the public harness passed with `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent review returned **ACCEPT** after correction and re-review.
+
 ## block seq-iterator lifetime checkpoint — 2026-11-03
 
 - CVE-2016-7910 is rejected for exact recovered `vmlinux` by the same cleanup-side compiled effect as upstream `77da160530dd1dc94f6ae15a981f24e5f0021e84`. The stripped binary cannot distinguish a direct cherry-pick, the stable backport, or an independently applied identical source change.

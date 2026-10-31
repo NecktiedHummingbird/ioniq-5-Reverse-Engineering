@@ -113,6 +113,7 @@ commits:
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2016-7910: `77da160530dd1dc94f6ae15a981f24e5f0021e84`;
+- CVE-2016-7911: `8ba8682107ee2ca3347354e018865d8e1967c5f4`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
@@ -172,6 +173,17 @@ binary does not establish commit provenance. SHA-256:
 `cve-2016-7910-fix.patch` is upstream commit
 `77da160530dd1dc94f6ae15a981f24e5f0021e84`; SHA-256:
 `701c7be0854836b8c7f2f4ff21e8e3d4a932809c2d32fe572215bdd5b03bcff0`.
+
+`kernel-ioprio-cve-2016-7911.asm` retains complete embedded-kallsyms-bounded
+`get_task_ioprio`, `SyS_ioprio_get`, and `exit_io_context` machine code. Getter
+and exit paths use the same `task + 0x630` lock around the `task + 0x678`
+I/O-context pointer; priority is read at `io_context + 0x12` before unlock, and
+exit clears the pointer before unlocking and releasing the object. These effects
+reject the CVE-specific unlocked UAF-read premise. SHA-256:
+`c2ad1649793759124b1f65553194727cc39082a09c4d7c1f2ca82b41a76641d7`.
+`cve-2016-7911-fix.patch` is upstream commit
+`8ba8682107ee2ca3347354e018865d8e1967c5f4`; SHA-256:
+`35c7a6a530095ed0424987d820e46db341a250820ed88ce1b1a89ec30acabd67`.
 
 `kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
 `perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former

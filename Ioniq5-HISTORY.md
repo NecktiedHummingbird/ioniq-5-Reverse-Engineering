@@ -2853,8 +2853,8 @@ and are superseded by corrections rather than silently rewritten.
   permissions, syscall filtering, installed identity, concurrent exit and every
   impact outcome remain separate unobserved gates.
 - Added exact evidence and an exhaustive Boolean-only model without issuing a
-  syscall, creating a task/thread, inducing a race or allocation pressure, or
-  executing target code.
+  target or ioprio syscall, creating a task/thread, inducing a race or
+  allocation pressure, or executing target code.
 
 ## 2026-10-31 — the parsers are older than the car
 
