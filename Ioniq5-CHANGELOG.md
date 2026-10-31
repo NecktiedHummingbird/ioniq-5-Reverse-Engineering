@@ -3,6 +3,63 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.73.0 - the launch request is never dispatched: the launcher is stuck retrying appId 2
+
+- Instead of a fourth launch attempt, two of the three named causes were tested by reading the run's own evidence.
+- **SMACK is weakened, not confirmed.** Across the whole boot there are **zero** SMACK denials (`count: 0`) and not one
+  SMACK line naming `AppLauncher`, in an image that audits its decisions extensively (`action=granted` lines
+  throughout). A denied exec would very likely have left a trace; none exists.
+- **The dispatcher never saw our request.** Every dispatch line in the log is its own startup traffic:
+  `getAppProcessByAppId appId[2][ApplicationManager]` repeating every ~1.7 s, plus one `appId[400]
+  [UserProfileManager]`. There is **no `appId[999]` and no mention of `AppProbe`** anywhere. The D-Bus call was
+  delivered without error and was simply never acted on.
+- That reframes the problem completely: the launcher is **stuck in a retry loop trying to start ApplicationManager
+  (appId 2)**, and our request never reaches the dispatcher behind it. It is not a signature, SMACK, or registry
+  question at this point — it is that the launcher itself is occupied with an application it cannot launch.
+- Next step is therefore clear and unrelated to V-028: make `ApplicationManager` (appId 2) start successfully — we can
+  start it ourselves, as was done earlier when it published its shared-memory segments — and see whether the retry
+  loop clears. If it does, dispatch resumes and the V-028 call becomes worth repeating.
+- V-028 remains "static route, runtime unobserved". What changed is that the reason is now visible in the launcher's
+  own log rather than guessed at.
+
+## 1.74.0 - reject Broadcom BSA SDP small-maximum physical OOB mechanism
+
+- Bound CVE-2017-13255 and CVE-2017-13256 to both PCB-selectable exact BSA
+  images: `vbtd-51` SHA-256 `55e21d...c9e0`, Build ID
+  `12175aa88ccff70cc56498e0208c9a51aac0c9e9`, and `vbtd-63` SHA-256
+  `c56b68...b26b9`, Build ID `04141ed222ee8f150c0eb0e46fdb73624d168920`.
+  Complete handler-range review confirms that both lack the public fix's
+  source-like `max_list_len < 4` early rejection.
+- Independently traced service-attribute and service-search-attribute handlers
+  through initial and continuation states for requested maxima 0..3. Initial
+  state reaches no higher than scratch offset 2; maxima 0..2 therefore retain a
+  logical requested-limit exceedance. Continuation construction is bounded by
+  the supplied maximum and does not rewrite the outer initial header.
+- Proved the decisive allocator/caller difference rather than relying on the
+  absent guard: all four scratch call sites pass remote MTU, both
+  `GKI_getbuf[_r]` implementations select capacity greater than or equal to the
+  request, allocation failure is checked, and both exact initializers set pool
+  0 user capacity to `0x40`. Every successful small-maximum write extent is at
+  most 3 within at least 64 user bytes. This rejects only the public physical
+  OOB-write mechanism, not general SDP safety.
+- Retained byte-identical public fix
+  `f0edf6571d2d58e66ee0b100ebe49c585d31489f`, patch SHA-256
+  `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`,
+  plus a focused exact-static excerpt and assessment. Added a pure finite model
+  with explicit UTF-8/LF, fail-closed all-or-none CLI, exact evidence bindings,
+  no operational message material, and exhaustive assertions for every emitted
+  classification field.
+- Focused validation passed `8 tests`; the required complete suite passed `625
+  tests, 318254 subtests`; bytecode compilation, LLVM static regeneration,
+  identity/hash/address checks, patch byte comparison, and `git diff --check`
+  passed. The public harness passed with
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. No recovered target, Bluetooth
+  adapter/radio/channel, endpoint, packet/PDU, malformed fixture, controlled
+  execution, or exploit material was used or created. Runtime reachability,
+  adapter/channel/security policy, negotiated-MTU/allocator edge cases, other
+  SDP or vendor-equivalent behavior, impact, and owner-device applicability
+  remain unknown; no acceptance is claimed.
+
 ## 1.72.0 - registry hypothesis tested and did not produce execution
 
 - Placed `/app/bin/AppProbe` (a script writing `/tmp/L_probe`) **before** the launcher started, so its startup sweep

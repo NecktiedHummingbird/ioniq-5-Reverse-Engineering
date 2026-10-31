@@ -3056,3 +3056,12 @@ and are superseded by corrections rather than silently rewritten.
   needs a real unit to observe, or a dispatch precondition buried in vendor logic we cannot see.
 - Being clear that the static finding stands while the runtime claim is unmade is the whole discipline of this
   register. A plausible route is not an exploit, and three failed reproductions are the evidence for saying so.
+
+## 2026-10-31 — reading the log beat another attempt
+
+- Two of the three candidate causes were resolved by inspection instead of experiment: no SMACK denial exists anywhere
+  in the boot, and our request never appears in the dispatcher's log at all.
+- The launcher is visibly stuck retrying appId 2 every 1.7 seconds, which explains both silences at once and points at
+  a fix that has nothing to do with the launch call.
+- This is the better way to end a stretch: not a fourth probe, but a reading of evidence that narrows the field and
+  names the next action.
