@@ -9,10 +9,14 @@ conditionally rejects only CVE-2017-13255/13256's public small-maximum physical
 OOB-write mechanism in both variants: their SDP scratch allocations use remote
 MTU and successful GKI user capacity is at least 64 bytes. On a feasible
 ordinary response-building path, effective internal maxima 0..2 can still
-exceed their logical limits by reaching scratch offset 2. Adapter
-state, security policy, accepted channels, physical delivery, runtime behavior,
-RCE, and owner-device applicability remain unproven. Other Android/Bluedroid
-CVEs are not transferred to BSA without exact code proof.**
+exceed their logical limits by reaching scratch offset 2. A separate complete-
+FDE review rejects CVE-2017-0785's named continuation-offset underflow/OOB
+handle-read mechanism in both variants: an unsigned current-result-count bound
+and an independent current CCB expected-offset check both dominate subtraction
+and later handle indexing. Adapter state, security policy, accepted channels,
+physical delivery, runtime behavior, disclosure, RCE, and owner-device
+applicability remain unproven. Other Android/Bluedroid CVEs are not transferred
+to BSA without exact code proof.**
 
 Target: recovered European Gen5W Linux
 `NE_E.EUR.S5W_L.001.001.260128`. Static instruction, filesystem, policy, and
@@ -90,6 +94,35 @@ See
 [`broadcom-bsa-sdp-small-max-cves.md`](broadcom-bsa-sdp-small-max-cves.md), the
 [retained exact-static excerpt](artifacts/network-candidates/broadcom-bsa-sdp-small-max-exact-static.txt),
 and the [byte-identical public patch](artifacts/network-candidates/f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch).
+
+## CVE-2017-0785: named SDP continuation mechanism rejected
+
+The public fix `226ea26684d4cd609a5b456d3d2cc762453c2d75` adds a
+current-result-count bound before subtracting the parsed continuation offset;
+the existing current CCB expected-offset equality check remains independently
+required. Both exact `process_service_search` FDEs have the same decisive
+effects.
+
+In `vbtd-51 [0x841a40,0x841dbe)`, successful-result count is bound to BP and
+the parsed continuation offset to R13W. `cmpw %bp,%r13w; ja` at
+`0x841b54..0x841b58` rejects exactly unsigned offset greater than current count;
+`cmpw %cx,%r13w; jne` at `0x841b5a..0x841b5e` separately rejects mismatch with
+the CCB `+0xb6` expected offset. Both converge on the code-5 error call at
+`0x841bc0`. Only dual-check fallthrough reaches subtraction at `0x841b65` and
+the later indexed handle read at `0x841cc8`. `vbtd-63` has equivalent effects at
+`0x842344..0x84234e`, code-5 call `0x8423b0`, subtraction `0x842355`, and
+indexed read `0x8424b0` within FDE `[0x842230,0x8425a6)`.
+
+The unsigned branch does not reject equality: equality yields zero remaining
+handles and the loop-entry guard skips indexing. Thus the named continuation-
+offset unsigned-underflow/OOB information-disclosure mechanism is rejected for
+these exact functions. This fix-shaped behavior does not prove direct upstream
+cherry-pick provenance or general SDP safety. SDP code and configured
+`vbtd.service` do not establish installed identity, handler/channel
+reachability, adapter/security policy, malformed-input behavior, or actual
+disclosure. See
+[`broadcom-bsa-sdp-continuation-cve-2017-0785.md`](broadcom-bsa-sdp-continuation-cve-2017-0785.md)
+and the [sanitized exact-static excerpt](artifacts/network-candidates/broadcom-bsa-sdp-continuation-exact-static.txt).
 
 ## V-019 / CVE-2017-0782: exact pre-fix BNEP parser in both variants
 
@@ -172,7 +205,7 @@ comparison targets, but an AOSP CVE is not automatically a BSA finding:
 |---|---|---|
 | CVE-2017-0781 | BT_HDR allocation sizing across AVDT/BNEP/L2CAP/MCAP; fix `c513a8ff5cfdcc62cc14da354beb1dd22e56be0e` plus `1e0bb31f6a809b49014483dc118b9d9ad31ade68` | Related protocol code exists; exact BSA GKI allocator and affected call-site semantics are incomplete. **Not accepted.** |
 | CVE-2017-0783 | PAN role-interaction information disclosure; fix `1e77fefc8b9c832239e1b32c6a6880376065e24e` | PAN/BNEP exists; exact role-policy comparison and practical disclosure are incomplete. **Not accepted.** |
-| CVE-2017-0785 | SDP continuation-state information disclosure; fix `226ea26684d4cd609a5b456d3d2cc762453c2d75` | SDP server exists; exact `num_rsp_handles < cont_offset` comparison is incomplete. **Not accepted.** |
+| CVE-2017-0785 | SDP continuation-state information disclosure; fix `226ea26684d4cd609a5b456d3d2cc762453c2d75` | Both exact FDEs bind current result count and parsed offset, reject unsigned offset greater than count, separately require current CCB expected-offset equality, and route both failures to code 5 before subtraction and later indexing. Equality yields zero and skips indexing. **Named mechanism rejected; runtime exposure and general SDP safety unknown.** |
 | CVE-2017-13262 | missing BNEP extension-length decrement; fix `a50e70468c0a8d207e416e273d05a08635bdd45f` | The exact receive loops decrement remaining length before calling the extension parser (`vbtd-51` `0x8c0b1b`; `vbtd-63` `0x8c2ef3`), matching the named mechanism's fix. The separate parser-field defect remains V-019. **Rejected for the exact missing-decrement mechanism.** |
 | CVE-2018-9355 | `bta_dm_sdp_result()` 32×16-byte local UUID-list overflow; fix `99a263a7f04c5c6f101388007baa18cf1e8c30bf` | The named function exists, but target `vbtd-51` uses a `0x28`-byte frame and global search state rather than the AOSP 512-byte local UUID array. No equivalent write was established. **Not transferred/accepted.** |
 | CVE-2018-9588 | `avdt_scb_hdl_report()` AVDT reporting bounds; fix `bf9ff0c5215861ab673e211cd06e009f3157aab2` | The native function exists in both daemons; exact field-by-field fix comparison is incomplete. Requires an active AVDTP reporting channel. **Not accepted.** |
@@ -217,6 +250,13 @@ VM must remain radio-free.
 - Byte-identical SDP public patch:
   `evidence/artifacts/network-candidates/f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch`,
   SHA-256 `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`
+- CVE-2017-0785 continuation assessment:
+  `evidence/broadcom-bsa-sdp-continuation-cve-2017-0785.md`
+- CVE-2017-0785 exact-static excerpt:
+  `evidence/artifacts/network-candidates/broadcom-bsa-sdp-continuation-exact-static.txt`
+- Byte-identical CVE-2017-0785 public patch:
+  `evidence/artifacts/network-candidates/226ea26684d4cd609a5b456d3d2cc762453c2d75.patch`,
+  SHA-256 `6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721`
 - Reviewed exact BNEP excerpt:
   `evidence/artifacts/network-candidates/vbtd-cve-2017-0782-bnep-evidence.txt`,
   SHA-256 `2eb54a9c6328597226478a69ca2f23f616fc622ac64ed824e2a7ad3746428f44`

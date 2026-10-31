@@ -6,6 +6,73 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Broadcom BSA SDP CVE-2017-0785 continuation checkpoint — 2026-11-05
+
+- Integration base and analysis HEAD remained
+  `a790800dba1e292a2aa27eae3e3a52c316643c9b`. Existing unrelated MICOM/IAS
+  residue was neither inspected nor modified. Nothing was staged, committed, or
+  pushed.
+- Both exact FDE-bounded `process_service_search` functions have the public
+  CVE-2017-0785 fix's decisive effect. In `vbtd-51 [0x841a40,0x841dbe)`, BP is
+  the current recomputed successful-result count, R13W is the parsed
+  continuation offset, `cmpw %bp,%r13w; ja` at `0x841b54..0x841b58` rejects
+  exactly unsigned offset greater than count, and the independent CCB `+0xb6`
+  expected-offset comparison follows at `0x841b5a..0x841b5e`. Both failures
+  reach the code-5 call at `0x841bc0`; only dual-check fallthrough reaches
+  subtraction `0x841b65` and later indexed read `0x841cc8`.
+- `vbtd-63 [0x842230,0x8425a6)` has equivalent effects at
+  `0x842344..0x84234e`, code-5 call `0x8423b0`, subtraction `0x842355`, and
+  later indexed read `0x8424b0`. Equality is intentionally accepted by the
+  unsigned-above check, yields zero remaining handles, and skips indexing.
+  Both checks therefore dominate subtraction and later continuation handle
+  indexing in both functions.
+- Exact raw FDE hashes are `vbtd-51`
+  `c91b38ace847bee71d0ab971c7f90d5d3fe5d5347296991b6961e91780cae5f4`
+  (894 bytes) and `vbtd-63`
+  `c35ecefa9aa2f28268df0c697c79e31c4fe000a1fc56c6ab9aff004dd1a36ef7`
+  (886 bytes). ELF SHA-256 and Build IDs remain
+  `55e21d...c9e0` / `12175aa88ccff70cc56498e0208c9a51aac0c9e9` and
+  `c56b68...b26b9` / `04141ed222ee8f150c0eb0e46fdb73624d168920`.
+- Added `evidence/broadcom-bsa-sdp-continuation-cve-2017-0785.md`, sanitized
+  static artifact, byte-identical public patch, and
+  `tools/uk_fw/bluetooth_sdp_continuation_model.py`. The model exhausts 24
+  bounded Boolean/state cases, keeps current-result bound and expected-offset
+  match independent, fails closed on key/type/state errors, and emits explicit
+  deterministic UTF-8/LF JSON through `sys.stdout.buffer`.
+- Final SHA-256 values: model
+  `0e158d1d9eb75f4113113bd9fc8542e89cd5ca8b22d0d8c30c14bb404b13ab19`;
+  tests `7e479fefec209b213544b2cd379aaf3eefbc65fba4cd7051675639c44cafe88b`;
+  assessment
+  `814811c34a6fe84b7b981f4a859dc50cd6f4a2f971aed89b02fd52c4a3e04704`;
+  exact-static artifact
+  `0416dd1ac691d0870f5bc4c1b4053a760c24563035b6c050966ebd85419df4c4`;
+  retained patch
+  `6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721`;
+  deterministic default report
+  `d7db08cc11dd1affbf5bfd086bdbac166c28854ff419b49cebe6717aefeb04ec`.
+- Validation passed focused `11 tests, 56 subtests`, required full suite
+  `637 tests, 318312 subtests`, `py_compile`, 45 exact-static/report assertions,
+  retained-patch byte comparison, deterministic output/hash checks,
+  `git diff --check`, and public harness
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent narrow read-only
+  package review returned **ACCEPT** with no blocking findings. Test subprocesses
+  were host Python processes only; no recovered target was executed.
+- The named continuation-offset unsigned-underflow/OOB information-disclosure
+  mechanism is rejected for these exact functions. Direct fix-shaped behavior
+  does not establish upstream cherry-pick provenance. General SDP safety,
+  installed identity, service startup, runtime handler/channel reachability,
+  adapter and security policy, malformed-input behavior, actual disclosure,
+  code execution, unrestricted root, persistence, and owner-device
+  applicability remain unknown. SDP code and configured `vbtd.service` do not
+  resolve those runtime boundaries.
+- Implementation and self-review ran in parent-assigned Daybreak child thread
+  `06b3775a-bbc2-4080-8ffd-ecbda0b5d874`. Its attempted configured DeepSeek
+  Flash worker dispatch was rejected as an unknown model, so no DeepSeek worker
+  ran and no substitute provider/model was used. Parent root review and a
+  separate read-only Daybreak worker review followed.
+- No Bluetooth endpoint, radio, packet/PDU, malformed fixture, payload, or
+  exploit material was used or created.
+
 ## Broadcom BSA SDP small-maximum checkpoint — 2026-11-05
 
 - Exact analysis started at `0a9a7f2fd1cb3b25d928fe9f32fe65cac055d121`;
@@ -1423,3 +1490,47 @@ self-signed image, or hardware flashing has been demonstrated here.
 ## Public visibility follow-up — 2026-10-28
 
 The sanitized `main` is `ea3fb24fb3af398963ebf17febbef392bb8bd6c3` on the verified `JaredReabow/Ioniq-5` remote. Current remote tree has no owner USB export, upstream raw dump, or frozen Council packet paths; the repository remains private. GitHub still resolves old raw commits `e98e2c8cd1fe477c735907b12c4c0b25976d19c4` and `692eccd380f3a791d800bb6c0ac6dc621af2585a` by SHA. GitHub Support ticket [#4916475](https://help.github.com/ticket/personal/0/4916475) requests server-side cached-view and object cleanup for both. Once GitHub confirms cleanup, verify both old commit IDs no longer resolve, rerun the public harness and unit suite, recheck the explicit remote tree and visibility, then make this same repository public and read back `PUBLIC`. Preserve the existing uncommitted local research and ignored private raw files; do not merge the old Git history into the sanitized branch.
+
+## VM bring-up session — 2026-10-31
+
+State at the end of a long bring-up session, so the next person starts from here rather than from the beginning.
+
+### What runs
+
+- **Authentic boot chain**: `init=/lib/systemd/esinit` reaches **Multi-User System**. Two ordinary defects had to be
+  fixed in a CoW clone, and both are vendor bugs worth separating from harness issues: `check-mount.sh` ships mode
+  `0644` (no execute bit), and eleven `fstab` entries demand `mmcblk0pN` partitions the projection does not have
+  (replaced with self-binds).
+- **Our own Weston backend** (`ias-backend-soft.so`): vendor weston runs it with `ias-shell.so`, publishes
+  `ias_crtc`/`ias_mode`, and `wrandr` reports `CRTC = 1, 1920x720 @ 60000`. The vendor's struct layouts differ from
+  upstream 1.10 by `0x18` bytes in `weston_output`; `vendor-abi.patch` restores them. **Never build against upstream
+  headers without it.**
+- **EGL**: the image ships no software rasteriser at all. Injecting Debian `swrast_dri.so` + `libLLVM-3.9` and setting
+  `LIBGL_DRIVERS_PATH`/`MESA_LOADER_DRIVER_OVERRIDE=swrast` is what makes GL work.
+- **Capture**: `ias-shot` (weston_screenshooter) plus a backend framebuffer dump; `--use-pixman` is mandatory, since
+  the default renderer cannot read pixels back.
+- **MICOM adaptor** (`micom-service`): owns `com.lge.car.micom` and answers the vehicle asks. This is what finally let
+  `com.lge.avn.applauncher` register — the unit now logs `Started HKMC Preminum AVN 2.1 -Launcher`, which no earlier
+  boot achieved.
+
+### What is closed, and why
+
+- **Rendered HMI**: the client commits surfaces and **never attaches a buffer**. Three interposition attempts failed for
+  structural reasons: `wl_surface_commit` is a static inline wrapper nobody calls; `wl_proxy_marshal_array` is reached
+  by an intra-DSO call that bypasses the PLT; and an `LD_PRELOAD` that hooks `wl_display_connect` kills the client.
+  This needs vendor source or a binary patch, not another shim.
+- **V-028 runtime execution**: four attempts (guessed signature, exact introspected signature, sequencing after the
+  registry sweep with a pre-registered target, and with `ApplicationManager` pre-started) produced **no dispatch entry
+  at all** — `appId[999]` never appears while the launcher loops on `appId[2]`. Established along the way: **no SMACK
+  denial exists** in these boots. The static route stands; the runtime claim does not.
+
+### Traps this session kept falling into
+
+- A **zero** usually meant the code path never ran. Confirm the path was reached before reading the number.
+- Guest writes do not persist (the drive is `snapshot=on`); move files out over a `-chardev file` serial port, which
+  is the only lossless channel (console base64 corrupts above ~8 KB; the socket capture drops bytes).
+- `debugfs` needs `set_inode_field <path> mode 0100755`; write mode is not preserved and an unexecutable wrapper fails
+  silently.
+- The launch path for a vendor service may be **D-Bus activation**, not its systemd unit. Intercepting the binary's own
+  path covers every route at once — that is what finally worked for `micommanager_userspace`.
+- The register is edited by several workstreams: cite entries by **title as well as number**.

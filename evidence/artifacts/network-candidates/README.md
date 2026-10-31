@@ -45,3 +45,13 @@ access, or applicability to the owner's installed firmware.
 - `f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch`: byte-for-byte retained
   public Android fix shared by CVE-2017-13255 and CVE-2017-13256, SHA-256
   `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`.
+- `broadcom-bsa-sdp-continuation-exact-static.txt`: exact FDE identities,
+  result-count/continuation-offset register bindings, unsigned branch polarity,
+  independent CCB expected-offset comparison, shared code-5 error routing,
+  subtraction and later-indexing dominance, equality handling, and claim
+  boundaries for CVE-2017-0785 in both PCB-selectable daemons. It contains no
+  complete proprietary disassembly, Bluetooth packet/PDU, malformed fixture,
+  trigger, payload, or exploit material.
+- `226ea26684d4cd609a5b456d3d2cc762453c2d75.patch`: byte-for-byte retained
+  public CVE-2017-0785 Android fix, SHA-256
+  `6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721`.

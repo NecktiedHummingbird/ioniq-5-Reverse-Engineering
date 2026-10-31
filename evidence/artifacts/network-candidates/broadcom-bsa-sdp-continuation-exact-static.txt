@@ -1,0 +1,219 @@
+Broadcom BSA SDP continuation exact-static excerpt
+CVE-2017-0785 named mechanism only
+Review date: 2026-11-05
+
+SCOPE AND SAFETY
+
+This is a sanitized static excerpt. It contains no complete proprietary
+function dump, Bluetooth message, packet/PDU bytes, malformed-input fixture,
+endpoint operation, radio action, target execution, payload, or exploit. The
+recovered ELFs were read as files only. Host-side LLVM tools and host Python
+were used for static metadata, disassembly, byte-range hashing, and tests.
+
+The result is bounded to the named continuation-offset unsigned-underflow and
+subsequent out-of-bounds handle-read mechanism in the two exact FDEs below. It
+does not establish general SDP safety, runtime reachability, installed identity,
+adapter/channel policy, malformed-input behavior, actual disclosure, code
+execution, unrestricted root, persistence, or owner-device applicability.
+
+TOOLS AND REPRODUCTION COMMANDS
+
+Static tools:
+  /opt/homebrew/opt/llvm/bin/llvm-objdump
+  /opt/homebrew/opt/llvm/bin/llvm-readelf
+  /Users/leo/.platformio/penv/bin/python3
+
+The bounded disassemblies were regenerated with:
+  llvm-objdump -d --no-show-raw-insn \
+    --start-address=0x841a40 --stop-address=0x841dbe vbtd-51
+  llvm-objdump -d --no-show-raw-insn \
+    --start-address=0x842230 --stop-address=0x8425a6 vbtd-63
+
+ELF identity and FDE boundaries were checked with:
+  llvm-readelf -h -n -l vbtd-51
+  llvm-readelf --unwind vbtd-51
+  llvm-readelf -h -n -l vbtd-63
+  llvm-readelf --unwind vbtd-63
+
+The relevant executable PT_LOAD in each ELF has file offset equal to image
+virtual address over these ranges (offset 0, virtual address 0). Raw range
+hashes were therefore computed by reading the ELF file and hashing the exact
+half-open byte slices [start:end]; no bytes were executed or emitted.
+
+EXACT IDENTITIES AND BOUNDS
+
+vbtd-51
+  recovered path:
+    work/decrypted-eu-260128/extracted-safe/mango-rootfs/app/bin/vbtd-51
+  installed path represented by the recovered filesystem: /app/bin/vbtd-51
+  ELF type: ET_DYN (x86-64 PIE)
+  SHA-256:
+    55e21d077082e97f56fb113a1d3b216c0f2e63aa02fc4cd754a6593bc6cec9e0
+  Build ID: 12175aa88ccff70cc56498e0208c9a51aac0c9e9
+  unwind FDE: initial_location 0x841a40, address_range 0x37e,
+    half-open [0x841a40,0x841dbe)
+  raw FDE bytes: 894
+  raw FDE SHA-256:
+    c91b38ace847bee71d0ab971c7f90d5d3fe5d5347296991b6961e91780cae5f4
+
+vbtd-63
+  recovered path:
+    work/decrypted-eu-260128/extracted-safe/mango-rootfs/app/bin/vbtd-63
+  installed path represented by the recovered filesystem: /app/bin/vbtd-63
+  ELF type: ET_DYN (x86-64 PIE)
+  SHA-256:
+    c56b68fdd35b16b95688ab54a48ffb9f18034d925c057e86f8b9fe304f8b26b9
+  Build ID: 04141ed222ee8f150c0eb0e46fdb73624d168920
+  unwind FDE: initial_location 0x842230, address_range 0x376,
+    half-open [0x842230,0x8425a6)
+  raw FDE bytes: 886
+  raw FDE SHA-256:
+    c35ecefa9aa2f28268df0c697c79e31c4fe000a1fc56c6ab9aff004dd1a36ef7
+
+The nearest exported-symbol label printed by llvm-objdump is not used as proof
+of the recovered static function name. Function identity and scope come from
+the complete FDE, caller/context semantics, and comparison with the historical
+source. Missing exact local names would not alter the instruction effects.
+
+PUBLIC FIX BINDING
+
+Retained public patch:
+  evidence/artifacts/network-candidates/
+    226ea26684d4cd609a5b456d3d2cc762453c2d75.patch
+Public commit: 226ea26684d4cd609a5b456d3d2cc762453c2d75
+Patch SHA-256:
+  6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721
+
+The public source change extends the continuation validation from expected CCB
+offset inequality alone to the logical OR of:
+
+  continuation offset != current CCB expected offset
+  current recomputed result count < continuation offset
+
+and returns the invalid-continuation-state error before computing remaining
+handles as result count minus continuation offset. The historical comparative
+source at work/online-bluetooth-sdp-20261105/
+sdp_server-android-4.4.4_r2.c has the expected-offset-only form. The patch and
+source are comparative public evidence; neither proves target genealogy or a
+direct upstream cherry-pick.
+
+VBtd-51 INSTRUCTION EFFECTS
+
+Result-count binding:
+  0x841ade initializes the successful-result loop index in R15D to zero.
+  0x841b09 copies the current loop index to EBP before each database call.
+  A successful call reaches 0x841af2, which sets EBP to R15D + 1, then the
+  successful handle is stored and R15 is incremented. Loop exit therefore
+  leaves BP equal to the count of successfully stored current results. The
+  zero-maximum route at 0x841db2 explicitly zeros EBP. This is positive operand
+  binding, not an inference from a recovered variable name.
+
+Continuation-offset binding:
+  0x841b36 loads the first continuation-offset octet into R13D.
+  0x841b3b copies it to EAX.
+  0x841b3e loads the second octet into R13D.
+  0x841b43 shifts the first value left by eight.
+  0x841b46 adds it to R13D.
+  Thus R13W is the parsed 16-bit continuation offset.
+
+Independent checks and branch polarity:
+  0x841b4d loads the zero-extended 16-bit CCB field at +0xb6 into ECX.
+  0x841b54: cmpw %bp, %r13w
+  0x841b58: ja 0x841bb0
+
+In AT&T operand order, cmp source,destination computes destination minus source.
+The compare therefore sets flags for unsigned R13W - BP. JA requires CF=0 and
+ZF=0, so it branches exactly when unsigned continuation offset is greater than
+unsigned current result count. Equality sets ZF and does not branch.
+
+  0x841b5a: cmpw %cx, %r13w
+  0x841b5e: jne 0x841bb0
+
+This separate compare branches when the parsed continuation offset differs
+from the current CCB expected offset. Result-count bounding and expected-offset
+matching are different predicates; satisfying one does not imply the other.
+
+Shared error and dominated subtraction:
+  0x841bb0 begins the shared invalid-continuation-state route.
+  0x841bb7 loads error code 5.
+  0x841bc0 calls sdpu_build_n_send_error.
+  That route exits and has no edge to the subtraction or handle-copy loop.
+
+Only fallthrough from both checks reaches:
+  0x841b60: movl %ebp, %ebx
+  0x841b65: subl %r13d, %ebx
+
+Consequently EBX receives current result count minus continuation offset only
+after both checks accept. Both branches dominate this continuation-path
+subtraction.
+
+Later handle indexing:
+  Accepted control reaches the response-count calculation at 0x841c09.
+  0x841c1b compares the available response capacity with BX and either retains
+  or caps the current count. At 0x841c9c the accepted continuation offset is
+  copied to ECX; 0x841ca4 adds the selected count to form the loop end. The
+  loop-entry comparison at 0x841cbd-0x841cc0 skips the body when start equals
+  end. Only the body at 0x841cc8 reads a handle using ECX as the index.
+
+There is no continuation-path edge from either code-5 error branch to that
+read. Both independent checks therefore dominate later continuation handle
+indexing as well as subtraction. If continuation offset equals current result
+count, the unsigned bound accepts, subtraction yields zero, start equals end,
+and 0x841cc8 is skipped. Equality is safe for the named underflow mechanism.
+
+VBTD-63 INSTRUCTION EFFECTS
+
+The second complete FDE has the same independent effects:
+
+Result-count binding:
+  0x8422ce initializes R15D; 0x8422f9 copies the pre-call index to EBP;
+  0x8422e2 sets EBP to R15D + 1 on a successful result before the store and
+  increment; 0x84259a explicitly handles zero maximum. BP is the successful
+  current result count.
+
+Continuation-offset binding:
+  0x842326-0x842336 assembles the two parsed values into R13W using the same
+  load/copy/load/left-shift/add sequence.
+
+Independent checks and branch polarity:
+  0x84233d loads the CCB +0xb6 expected offset into ECX.
+  0x842344: cmpw %bp, %r13w
+  0x842348: ja 0x8423a0
+  This unsigned JA rejects exactly R13W > BP; equality is not taken.
+  0x84234a: cmpw %cx, %r13w
+  0x84234e: jne 0x8423a0
+  This separately rejects expected-offset mismatch.
+
+Shared error and dominated subtraction:
+  0x8423a0 begins the shared error route; 0x8423a7 loads code 5 and
+  0x8423b0 calls sdpu_build_n_send_error. Only dual-check fallthrough reaches
+  0x842350 (EBX = EBP) and 0x842355 (EBX -= R13D).
+
+Later handle indexing:
+  Accepted continuation control reaches the count/cap logic at 0x8423f9.
+  0x842480 loads the accepted offset as the start index; 0x842488 forms the
+  end from offset plus selected count; 0x8424a1-0x8424a4 skips an empty range;
+  only 0x8424b0 reads a handle by that index. The code-5 route has no edge to
+  it. Both checks dominate the continuation-path read. Equality produces zero
+  remaining handles and skips 0x8424b0.
+
+BOUNDED CONCLUSION
+
+Both exact FDEs contain the public fix's decisive instruction effect: unsigned
+continuation offset greater than the current recomputed successful-result count
+routes to the same code-5 continuation-state error used by expected-offset
+mismatch, before subtraction. The current CCB expected-offset equality check is
+also present and independent. Dual-check acceptance dominates subtraction and
+later handle indexing. Equality is accepted by the bound, yields zero remaining,
+and skips indexing.
+
+Therefore the named CVE-2017-0785 continuation-offset unsigned-underflow /
+out-of-bounds information-disclosure mechanism is rejected for these two exact
+functions. This is direct fix-shaped behavior, not proof that either binary is a
+direct cherry-pick of the public commit.
+
+SDP code exists and the recovered vbtd.service is configured, but those facts
+do not establish installed binary identity, process startup, SDP registration,
+remote handler/channel reachability, adapter state, discoverability,
+pairing/authentication/authorization policy, or preservation of any malformed
+input. No disclosure or dynamic impact was attempted or observed.

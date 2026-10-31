@@ -3,6 +3,43 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.82.0 - reject the exact Broadcom BSA CVE-2017-0785 continuation mechanism
+
+- Bound both recovered `process_service_search` functions by complete unwind
+  FDE and raw bytes: `vbtd-51 [0x841a40,0x841dbe)` SHA-256
+  `c91b38...ae5f4`, and `vbtd-63 [0x842230,0x8425a6)` SHA-256
+  `c35ece...a36ef7`, under the existing exact ELF hashes and Build IDs.
+- Proved positive operand and branch semantics rather than relying on local
+  names. BP is the current recomputed successful-result count; R13W is the
+  parsed continuation offset. `cmpw %bp,%r13w; ja` rejects exactly unsigned
+  offset greater than count. The separate CCB `+0xb6` comparison requires the
+  current expected offset. Both failures converge on code-5 error handling and
+  dominate subtraction and later handle indexing in both functions.
+- Preserved equality correctly: offset equal to result count does not take the
+  unsigned-above branch, subtraction yields zero, and the handle-loop entry
+  guard skips indexing. The named continuation-offset unsigned-underflow/OOB
+  information-disclosure mechanism is therefore rejected for these exact
+  functions.
+- Retained public fix
+  `226ea26684d4cd609a5b456d3d2cc762453c2d75` byte-for-byte, patch SHA-256
+  `6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721`,
+  and added a sanitized exact-static excerpt, focused assessment, and a pure
+  24-case finite model. The model rejects missing/unknown keys and invalid
+  types, emits deterministic explicit UTF-8/LF JSON, and contains no
+  operational Bluetooth or target material.
+- Validation passed focused `11 tests, 56 subtests`, required full suite
+  `637 tests, 318312 subtests`, bytecode compilation, 45 exact-static/report
+  checks, retained-patch byte comparison, deterministic report hashing,
+  `git diff --check`, and the public harness with
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent narrow read-only
+  package review returned **ACCEPT** with no blocking findings.
+- This is a mechanism-specific exact-static result, not proof of direct
+  cherry-pick provenance, general SDP safety, installed identity, runtime
+  handler/channel reachability, adapter/security policy, malformed-input
+  behavior, disclosure, code execution, unrestricted root, persistence, or
+  owner-device applicability. No recovered target, Bluetooth endpoint/radio,
+  packet/PDU, malformed fixture, or exploit material was used or created.
+
 ## 1.74.0 - pre-starting appId 2 does not clear the loop; V-028 runtime line closed
 
 - Started `ApplicationManager` (appId 2) before the launcher, so the application it keeps retrying already exists.
