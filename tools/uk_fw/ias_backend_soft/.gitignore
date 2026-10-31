@@ -1,8 +1,7 @@
-headless-probe.so
-*.so
-ias-shot
-ias-shot
 *.ppm
+*.so
+headless-probe.so
+ias-shot
 ihu-shim
 micom-responder
-ias-shot
+micom-service

@@ -6,6 +6,60 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## CVE-2018-9568 socket clone creator checkpoint — 2026-11-07
+
+- Work began and remained on baseline/current HEAD
+  `78aa695145745370e839e3911338fcb9b6d0fe49`. Protected unrelated modified
+  `tools/uk_fw/ias_backend_soft/micom_service.c` and untracked
+  `tools/uk_fw/ias_backend_soft/micom-service` were not edited, staged, reset,
+  stashed, removed, committed, or pushed.
+- The exact recovered EU `260128` kernel has the direct upstream patch shape
+  for CVE-2018-9568. Complete `sk_clone_lock
+  [0xffffffff814787f9,0xffffffff81478abd)` allocates through source current
+  `sk_prot` at `+0x28`, performs one variable copy from `+0x78` for
+  `obj_size-0x78`, then reloads source `+0x28` at `0xffffffff81478862` and
+  stores it to child `sk_prot_creator +0x1a0` at `0xffffffff81478867`.
+- Exact `tcp_prot` object size `0x780` and `tcpv6_prot` size `0x840` both make
+  the variable copy creator-overwriting. The fixed first copy is only `0x60`
+  bytes. No later creator-overwriting copy or `+0x1a0` store occurs. The reset
+  precedes the only observed in-function post-copy `sk_free` at
+  `0xffffffff81478a12`; later `tcp_v4_syn_recv_sock` cleanup can occur only
+  after a non-null corrected child returns.
+- Complete allocator/free binding confirms `sk_alloc` initializes current and
+  creator together, `sk_prot_alloc` selects protocol slab `+0xf8` and object
+  size `+0x100`, and `__sk_free` at `0xffffffff814784ea` selects final cache
+  through creator. The address-form option-1 branch can rewrite current
+  protocol to exact `tcp_prot` without rewriting creator. The compiled child
+  path is `tcp_v4_syn_recv_sock -> tcp_create_openreq_child ->
+  inet_csk_clone_lock -> sk_clone_lock`.
+- Exact identities remain vmlinux SHA-256 `f5ee9c...b102b`, Build ID
+  `273378887b4cf563c10862fdf18b2292765df781`, map SHA-256
+  `2cfba9...e3c1f`, and configuration SHA-256 `987268...dad56` with NET, INET,
+  IPV6, and SLUB enabled and USER_NS disabled. All ten supplied raw function
+  hashes independently match.
+- Retained byte-identical mainline commit `9d538fa60bad...` patch SHA-256
+  `c1f738...d085d` (parent `b32ca44a88de...`) and stable commit
+  `0a11ea32304f...` patch SHA-256 `756c97...d8ba`. Exact-static artifact
+  SHA-256 is `ce0ff16ade4b09d37757f1a2f33f4a974ddd0e636ffa0b697d56558a85660bc9`.
+- Added a 15-input Boolean-only schema-v2 classifier that separates direct
+  patch shape, equivalent fix, vulnerable semantics, absent route, and
+  indeterminate evidence. Incomplete/conflicting evidence fails closed. The
+  full 32,768-state domain asserts every classification field; key/type/CLI
+  tests reject missing, unknown, duplicate, abbreviated, and non-Boolean input.
+  Output is deterministic sorted UTF-8 through `sys.stdout.buffer` with exactly
+  one LF independent of `PYTHONIOENCODING`; default report SHA-256 is
+  `bde9b1683f53494d9bfbb6f9521d0a236eb22312a05032450eae794d86189a13`.
+- The named mismatch is rejected for this exact kernel. Machine-code shape does
+  not establish direct cherry-pick provenance. Installed/running identity,
+  runtime policy/route, wrong-cache free, corruption, privilege escalation,
+  unrestricted root, persistence, broad socket/allocator safety, and every
+  vendor-equivalent defect remain unobserved or unresolved.
+- Validation status and final path hashes are recorded in
+  `docs/agent-work/socket-clone-creator/CHECKPOINT.md`. No recovered target was
+  executed; no socket, address-form operation, clone, listener, traffic,
+  malformed input, trigger, exploit, privilege action, or persistence action
+  was created or performed.
+
 ## Broadcom BSA SDP CVE-2017-0785 continuation checkpoint — 2026-11-05
 
 - Integration base and analysis HEAD remained
@@ -1348,20 +1402,20 @@ Every mutation has a copy-on-write checkpoint and `e2fsck -fn` log under
 
 ## Historical 2026-10-21 VM instructions (superseded for HMI work)
 
-From `/Users/researcher/Documents/ChatGPT/reverse engineering/ioniq research`:
+From `<repo>`:
 
 ```sh
 # Interactive serial research shell
-/opt/homebrew/bin/python3.13 tools/uk_fw/vm_boot.py run \
+python3.13 tools/uk_fw/vm_boot.py run \
   --workspace work/vm/bootable --sdhci-compat --interactive --timeout 0
 
 # Windowed diagnostic ONLY; R/G/B change colour, Q returns to the shell
-/opt/homebrew/bin/python3.13 tools/uk_fw/vm_boot.py run \
+python3.13 tools/uk_fw/vm_boot.py run \
   --workspace work/vm/graphics --sdhci-compat \
   --display cocoa --cmd /bin/vm-display --interactive --timeout 0
 
 # Automated keyboard and pixel verification
-/opt/homebrew/bin/python3.13 tools/uk_fw/vm_boot.py run \
+python3.13 tools/uk_fw/vm_boot.py run \
   --workspace work/vm/graphics --sdhci-compat --graphics-smoke
 ```
 
@@ -1406,9 +1460,9 @@ impossibility**.
 
 ## Useful local resources
 
-- EU: `/Users/researcher/Downloads/NaU/IONIQ5_EU`, version
+- EU: `<downloads>/NaU/IONIQ5_EU`, version
   `NE_E.EUR.S5W_L.001.001.260128`, model `101489`.
-- AU: `/Users/researcher/Downloads/NaU/2021_22_IONIQ_5_AU`, version
+- AU: `<downloads>/NaU/2021_22_IONIQ_5_AU`, version
   `NE_E.AUS.S5W_L.001.001.260319`.
 - Supported boot container: EU `HU/images/iasImage_1280_sub`, SHA-256
   `55e9a31be5ca734a7af111613ae6ce83cdc579b27138c5f54700f78263056eb0`.
@@ -1416,15 +1470,15 @@ impossibility**.
   Use `kallsyms.tsv` / `kallsyms_apply.tsv`, **not** the obsolete mispaired
   `kallsyms_fixed.tsv`. About 70 selected functions were decompiled, not the
   entire kernel.
-- Existing static BusyBox: `work/vm/busybox`; QEMU: `/opt/homebrew/bin/qemu-system-x86_64`;
-  e2fsprogs and LLVM under `/opt/homebrew/opt/`.
-- Harness Python: `/opt/homebrew/bin/python3.13`. Full-test Python:
-  `/Users/researcher/.platformio/penv/bin/python3` (includes `cryptography`). Do not
+- Existing static BusyBox: `work/vm/busybox`; QEMU: `qemu-system-x86_64`;
+  e2fsprogs and LLVM under `<brew-prefix>/opt/`.
+- Harness Python: `python3.13`. Full-test Python:
+  `<platformio-env>/bin/python3` (includes `cryptography`). Do not
   assume the default Homebrew `python3` works.
 
 ```sh
 mkdir -p work/test-tmp
-TMPDIR="$PWD/work/test-tmp" /Users/researcher/.platformio/penv/bin/python3 \
+TMPDIR="$PWD/work/test-tmp" <platformio-env>/bin/python3 \
   -m unittest discover -s tests -p 'test_*.py' -v
 ```
 

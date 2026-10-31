@@ -3,6 +3,47 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.83.0 - reject exact CVE-2018-9568 socket clone creator mismatch
+
+- Bound the exact EU `260128` kernel by SHA-256
+  `f5ee9c...b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`,
+  authoritative-map SHA-256 `2cfba9...e3c1f`, and configuration SHA-256
+  `987268...dad56`. NET, INET, IPV6, and SLUB are enabled; USER_NS is disabled.
+  All ten supplied complete raw function hashes independently match.
+- Proved allocation/free identity from complete machine code: `sk_alloc`
+  initializes current protocol at `sock+0x28` and creator at `sock+0x1a0` from
+  the same protocol; `sk_prot_alloc` selects slab `proto+0xf8` and object size
+  `proto+0x100`; final `__sk_free` selects the cache through creator.
+- Proved the decisive complete `sk_clone_lock` ordering. Clone allocation uses
+  source current protocol. Its fixed first copy is only `0x60` bytes; its one
+  creator-overwriting copy starts at `+0x78` and spans `obj_size-0x78`. Exact
+  TCP/TCPv6 sizes `0x780`/`0x840` include creator. The function then reloads
+  source current protocol at `0xffffffff81478862` and stores it to child
+  creator at `0xffffffff81478867`, with no later overwrite.
+- Distinguished cleanup precisely: the creator correction dominates the only
+  observed in-function post-copy `sk_free` at `0xffffffff81478a12` and every
+  return. Later TCP caller cleanup is possible only after the corrected non-null
+  clone returns. Complete address-form code can rewrite current protocol to
+  `tcp_prot` without creator rewrite, and the compiled child route is
+  `tcp_v4_syn_recv_sock -> tcp_create_openreq_child -> inet_csk_clone_lock ->
+  sk_clone_lock`.
+- Retained byte-identical mainline `9d538fa60bad...` and stable 4.1.y
+  `0a11ea32304f...` patches (SHA-256 `c1f738...d085d` and
+  `756c97...d8ba`) plus complete exact-static artifact SHA-256
+  `ce0ff16...60bc9`. The exact result is direct patch shape and rejects the
+  named mismatch semantics, but does not prove direct cherry-pick provenance.
+- Added a strict 15-input Boolean-only classifier separating direct patch shape,
+  equivalent fix, vulnerable semantics, absent route, and indeterminate. It
+  fails closed on incomplete/conflicting state, exhausts all 32,768 Boolean
+  states while asserting every classification field, rejects missing/unknown
+  keys and non-Boolean types, and emits deterministic UTF-8 with one LF through
+  `sys.stdout.buffer` independently of `PYTHONIOENCODING`.
+- No target execution, sockets, address-form operation, clones, listeners,
+  traffic, malformed input, trigger, exploit, privilege action, or persistence
+  action occurred. Installed identity, runtime route/policy, wrong-cache free,
+  corruption, privilege escalation, root, persistence, broad socket/allocator
+  safety, and every vendor-equivalent defect remain unobserved or unresolved.
+
 ## 1.82.0 - reject the exact Broadcom BSA CVE-2017-0785 continuation mechanism
 
 - Bound both recovered `process_service_search` functions by complete unwind
@@ -3216,7 +3257,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   scoped resize adapter rather than the authentic hide path.
 - Recorded transparently: this reverses the correction I made two turns ago, and the
   withdrawn reasoning is preserved in the analysis report rather than deleted.
-- Two method notes: the DWARF dump needed `/opt/homebrew/opt/llvm/bin/llvm-dwarfdump`
+- Two method notes: the DWARF dump needed `llvm-dwarfdump`
   with a byte-window scan, and several of my earlier greps silently matched nothing
   because `objdump` separates columns with tabs, not spaces.
 
@@ -4102,7 +4143,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   located. Recorded so the next attempt starts from that point.
 - Recorded an environment fault: Homebrew Python 3.14 became unusable mid-session
   (`posix_spawn` error) and `python3` now resolves to it; all tools still run
-  under `/opt/homebrew/bin/python3.13`.
+  under `python3.13`.
 - No exploit, key, decryption or device action is included.
 
 ## 0.36.0 - 2026-10-19

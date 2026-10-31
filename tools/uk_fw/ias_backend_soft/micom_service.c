@@ -157,10 +157,24 @@ static int on_message(DBusConnection *conn, DBusMessage *msg, void *user)
 	if (strcmp(member, "AskSysBootinfo") == 0) {
 		reply_ay(conn, msg, bootinfo, BOOTINFO_LEN);
 		say("AskSysBootinfo -> %d bytes\n", BOOTINFO_LEN);
+	} else if (strcmp(member, "AskNaviOutermostRegion") == 0) {
+		unsigned char v[8] = { 1, 0, 0, 0, 0, 0, 0, 0 };
+		reply_ay(conn, msg, v, sizeof v);
+		say("AskNaviOutermostRegion -> 8 bytes\n");
+	} else if (strcmp(member, "AskCustomSetting") == 0) {
+		unsigned char v[16];
+		memset(v, 0, sizeof v);
+		reply_ay(conn, msg, v, sizeof v);
+		say("AskCustomSetting -> 16 bytes\n");
+	} else if (strcmp(member, "AskSettingInfoValue") == 0) {
+		unsigned char v[8] = { 0, 0, 0, 0, 0, 0, 0, 1 };
+		reply_ay(conn, msg, v, sizeof v);
+		say("AskSettingInfoValue -> 8 bytes\n");
 	} else {
-		reply_ay(conn, msg, NULL, 0);
-		if (answered < 8)
-			say("answered %s with empty ay\n", member);
+		unsigned char v[4] = { 0, 0, 0, 0 };
+		reply_ay(conn, msg, v, sizeof v);
+		if (answered < 20)
+			say("answered %s with 4 bytes\n", member);
 	}
 	answered++;
 	return HANDLED;
