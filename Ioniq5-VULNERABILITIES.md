@@ -760,16 +760,21 @@ vulnerability is claimed, and this test does not move either entry.
   security consequence for this project's work, not a memory-safety or privilege issue.
 - **What happens:** once `com.lge.avn.applauncher` is registered, the launcher loops on
   `ApplicationLauncher::getAppProcessByAppId appId[2][ApplicationManager]` roughly every 1.7 s and does not exit that
-  loop — **twenty occurrences in one boot, including after `ApplicationManager` was started and running**. While the
-  loop persists, **no external request is dispatched at all**: in the same bosss, a well-formed `launch` call was
-  accepted by the bus and produced **zero** `appId[999]` dispatch entries.
+  loop — **twenty occurrences in one boot**. While the loop persists, **no external request is dispatched at all**: in
+  the same boot, a well-formed `launch` call was accepted by the bus and produced **zero** `appId[999]` dispatch
+  entries.
+- **A correction to an earlier version of this entry.** It stated that the loop persisted "after `ApplicationManager`
+  was started and running". That was **not verified**: `ApplicationManager` was launched before the launcher in that
+  boot, but the `pidof` value was obscured in the captured console by a systemd progress line, and no exit or crash was
+  recorded either way. The accurate statement is that the loop persisted *with the application launched*, and its
+  liveness at that moment is unconfirmed.
 - **Why it matters beyond the emulation:** the launcher's dispatch path is what V-028 relies on, so this loop is the
   demonstrated reason V-028's runtime execution could not be reproduced here. Anything that prevents
   `ApplicationManager` from being observed as running — a crash, a missing dependency, or withholding it — plausibly
   keeps the launcher in this loop indefinitely, which is a local availability effect on the HMI.
-- **What is *not* established:** that the loop is unconditional on hardware, that it persists after a successful
-  `ApplicationManager` start (it did here, which is the interesting part), or that any privileged action is denied
-  rather than merely deferred. No security impact is claimed.
+- **What is *not* established:** that the loop is unconditional on hardware; that it persists when `ApplicationManager`
+  is *confirmed* running (the capture cannot show this either way — see the correction above); or that any privileged
+  action is denied rather than merely deferred. No security impact is claimed.
 - **Relevance to V-028:** recorded as the specific, observed obstacle to reproducing V-028 at runtime. If this loop is
   cleared on a unit, the V-028 runtime test becomes meaningful; until then its negative results say more about this
   defect than about V-028 itself.

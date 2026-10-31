@@ -3084,3 +3084,12 @@ and are superseded by corrections rather than silently rewritten.
   path, and now the register says so in both places rather than leaving me to remember it.
 - The honest part is the boundary: observed in emulation, not characterised on hardware, no security impact claimed —
   and yet still the most useful thing learned about the launcher all session.
+
+## 2026-10-31 — the better sentence was the wrong one
+
+- I wrote that the launcher's retry loop persisted "even when its dependency is running". It is a stronger finding than
+  what I actually measured, and I reached for it because it was stronger.
+- The measurement could not support it: the process check was lost behind a systemd spinner and no exit was recorded, so
+  liveness is simply unknown. The entry now says that, and so does its list of what is not established.
+- This is the same failure this whole session kept producing, in its smallest form: preferring a satisfying reading to a
+  supported one. At least this time it was caught before it left the building.

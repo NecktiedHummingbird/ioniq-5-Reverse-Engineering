@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.76.0 - correction inside V-036: the dependency's liveness was never confirmed
+
+- Verifying my own newest entry found an overstatement in it. V-036 said the `appId[2]` loop persisted "after
+  `ApplicationManager` was started and running"; **that was not verified.** The application *was* launched before the
+  launcher, but the `pidof` value in that boot was obscured by a systemd progress line in the captured console, and no
+  exit or crash was recorded either way.
+- The entry now says what the evidence supports: the loop persisted **with the application launched**, and its liveness
+  at that moment is **unconfirmed**. The corresponding "not established" bullet is corrected to match, rather than
+  continuing to assert the more interesting version of the claim.
+- Worth naming: the appeal of that sentence was exactly the problem. "Persists even when its dependency is satisfied" is
+  a much better finding than "persists while a dependency is unverified", and I wrote the better one without the
+  measurement to support it. Corrected within minutes of committing it, which is the only acceptable outcome.
+- Also verified while checking: the register has **36 numbered entries, no duplicates, zero host paths**, and the
+  worktree is clean.
+
 ## 1.75.0 - recorded V-036: the launcher's dispatch stalls behind an unstartable appId 2
 
 - The open item flagged at the end of the last entry is now characterised and registered. In a boot where
