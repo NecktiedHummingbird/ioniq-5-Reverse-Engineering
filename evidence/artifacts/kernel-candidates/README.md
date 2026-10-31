@@ -92,6 +92,9 @@ commits:
 
 - CVE-2015-7613: `b9a532277938798b53178d5a66af6e2915cb27cf`;
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
+- CVE-2016-2545: `ee8413b01045c74340aa13ad5bdf905de32be736`;
+- CVE-2016-2546: `af368027a49a751d6ff4ee9e3f9961f35bb4fede`;
+- CVE-2016-2547: `b5a663aa426f4884c71cd8580adae73f33570f0d`;
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
@@ -118,6 +121,11 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 `kernel-inet-csk-cve-2017-8890.asm` retain the initialization/publication,
 socket-release, and multicast-child field effects needed to reject those three
 version-derived local-kernel candidates.
+
+`snd-timer-2016-backports.asm` retains the list initialization, per-user ioctl
+mutex, slave-active singleton lock, timer lock, and complete ack/active unlink
+effects needed to reject CVE-2016-2545 through CVE-2016-2547 for exact
+`snd-timer.ko`.
 
 `snd-usbmidi-cve-2016-2384.asm` retains raw-MIDI ownership assignment,
 post-registration endpoint-failure branches, direct error returns, and the

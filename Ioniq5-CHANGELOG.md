@@ -46,6 +46,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.43.0 - ALSA timer race fixes are present
+
+- Bound exact shipped `snd-timer.ko` to SHA-256 and Build ID and retained
+  section-relative instruction evidence with relocations.
+- Rejected CVE-2016-2545: non-auto expiry calls exact `list_del_init` on the
+  current timer instance's active link.
+- Rejected CVE-2016-2546: open initializes a per-user mutex shared by the sole
+  ioctl dispatcher and release; all returning ioctls unlock and release holds
+  it through timer close before freeing the user object.
+- Rejected CVE-2016-2547: slave attach, master close, delayed start, and stop
+  contain the upstream nested global/timer locking and complete ack/active
+  unlink effects.
+- No module load, device open, ioctl, thread, race, corruption attempt, or
+  privilege transition was performed.
+
 ## 1.42.0 - three ordinary local paths are backported too
 
 - Audited three high-priority unprivileged kernel candidates that do not depend

@@ -2558,3 +2558,9 @@ and are superseded by corrections rather than silently rewritten.
 - Public triage identified three unusually relevant local-kernel candidates: SysV publication races, `recvmmsg` post-release access, and inherited IPv4 multicast state. None needs a user namespace or special device in the generic path.
 - Exact instructions rejected all three. SysV state is initialized before publication, the socket error precedes `fput_light`, and the cloned child multicast pointer is cleared before return.
 - A boolean-only matrix records the semantic gates without running a target syscall, object, packet, race, or corruption attempt.
+
+## 2026-11-01 — ALSA timer races survived triage, not disassembly
+
+- Shipped `snd-timer.ko` and permissive-looking static-node policy made three 2016 timer races plausible on version/configuration evidence.
+- Exact relocatable-module semantics showed all three repairs: list reinitialization on expiry, one ioctl/release mutex, and coherent global/timer locking with complete slave unlinking.
+- The result is an identity-bound rejection, not a runtime claim; no module or timer interface was exercised.

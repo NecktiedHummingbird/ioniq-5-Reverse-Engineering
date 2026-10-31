@@ -548,6 +548,21 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C34 — shipped ALSA timer code is not enough to inherit three 2016 races
+
+- **Candidate:** `CONFIG_SND_TIMER=m`, exact `snd-timer.ko`, and intended static
+  `/dev/snd/timer` policy made CVE-2016-2545 through CVE-2016-2547 credible
+  local candidates despite unknown runtime load and access.
+- **Exact result:** interrupt expiry uses `list_del_init`; open initializes one
+  mutex used by every ioctl and release; and slave attach, master close,
+  delayed start, and stop carry the complete nested lock-and-unlink effects.
+- **Conclusion:** all three named primitives are rejected for exact module
+  SHA-256 `3b2fa4e7...ac46a91`. This is not a claim about other ALSA timer bugs
+  or the owner's installed module.
+- **Evidence:** `evidence/vendor-kernel-alsa-timer-backports.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

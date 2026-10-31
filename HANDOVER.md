@@ -145,7 +145,12 @@ followed by stateful service/CAN/persistence reconstruction.
   boolean-only `tools/uk_fw/kernel_backport_matrix.py`. Physical USB-MIDI
   CVE-2016-2384 is also rejected: `CONFIG_SND_USB_AUDIO=m` and both modules
   exist, but exact endpoint failures after raw-MIDI ownership transfer return
-  without the second direct object free. CVE-2017-11176 is now also rejected by
+  without the second direct object free. Exact `snd-timer.ko` also rejects
+  CVE-2016-2545, CVE-2016-2546, and CVE-2016-2547: expiry reinitializes active
+  links, ioctl/release share one initialized mutex, and all four slave/master
+  lock-and-unlink effects are present. See
+  `evidence/vendor-kernel-alsa-timer-backports.md`. CVE-2017-11176 is now also
+  rejected by
   exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
   rather than detaching the stale socket. The loop has no explicit register

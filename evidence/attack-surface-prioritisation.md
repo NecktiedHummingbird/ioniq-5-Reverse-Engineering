@@ -210,7 +210,9 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   primitive, ALSA PCM CVE-2017-0861, and the generic missing Stack Clash
   guard-gap premise despite the old banner. The three newer built-in checks
   establish pre-publication SysV initialization, pre-`fput` `recvmmsg` error
-  storage, and child multicast-list clearing. CVE-2016-2384's
+  storage, and child multicast-list clearing. Exact `snd-timer.ko` also carries
+  CVE-2016-2545/2546/2547 list-state, ioctl-serialization, and slave-locking
+  fixes. CVE-2016-2384's
   modules and physical probe surface exist, but exact post-registration endpoint
   failures return without the second object free. CVE-2017-11176 is a
   semantic-control-flow result: the
