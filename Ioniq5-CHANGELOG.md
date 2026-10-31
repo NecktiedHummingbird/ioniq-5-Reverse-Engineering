@@ -46,6 +46,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.42.0 - three ordinary local paths are backported too
+
+- Audited three high-priority unprivileged kernel candidates that do not depend
+  on user namespaces, setuid binaries, special device nodes, or optional DCCP,
+  N_HDLC, or BPF-syscall support.
+- Rejected CVE-2015-7613: effective credentials and all reviewed message/shared
+  memory state are initialized before IDR/IPC publication.
+- Rejected CVE-2016-7117: the delayed `recvmmsg` socket-error store precedes
+  exact `fput_light`, eliminating the named post-release dereference.
+- Rejected CVE-2017-8890: accepted children clear `inet_sock.mc_list`; exact
+  multicast teardown corroborates the cleared field offset.
+- Added minimal instruction excerpts, authoritative patches, and a boolean-only
+  semantic matrix. No socket traffic, multicast operation, IPC object, race,
+  target syscall, or privilege transition was executed.
+
 ## 1.41.0 - USB-MIDI ownership has one cleanup authority
 
 - Audited physical pre-login CVE-2016-2384 against exact shipped

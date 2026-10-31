@@ -204,10 +204,13 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `RUN_TESTS` path. Device-node mode and label are inside the encrypted rootfs.
 - Built-in reachable code: netfilter/xtables (1,610 symbols), TCP (588),
   IPv6 (525), CAN (306, including `micom_*`), UDP (161).
-- Exact checks reject CVE-2016-0728, physical USB-MIDI CVE-2016-2384,
-  CVE-2017-11176, Dirty COW, both ranked AF_PACKET races, CVE-2017-7308's
-  published private-area primitive, ALSA PCM CVE-2017-0861, and the generic
-  missing Stack Clash guard-gap premise despite the old banner. CVE-2016-2384's
+- Exact checks reject CVE-2015-7613, CVE-2016-0728, physical USB-MIDI
+  CVE-2016-2384, CVE-2016-7117, CVE-2017-8890, CVE-2017-11176, Dirty COW,
+  both ranked AF_PACKET races, CVE-2017-7308's published private-area
+  primitive, ALSA PCM CVE-2017-0861, and the generic missing Stack Clash
+  guard-gap premise despite the old banner. The three newer built-in checks
+  establish pre-publication SysV initialization, pre-`fput` `recvmmsg` error
+  storage, and child multicast-list clearing. CVE-2016-2384's
   modules and physical probe surface exist, but exact post-registration endpoint
   failures return without the second object free. CVE-2017-11176 is a
   semantic-control-flow result: the

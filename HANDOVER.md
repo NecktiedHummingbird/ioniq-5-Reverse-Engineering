@@ -137,7 +137,12 @@ followed by stateful service/CAN/persistence reconstruction.
   Stack Clash missing-gap premise. The shipped code contains the relevant
   keyring reference release, `FOLL_COW`, socket locking, 64-bit
   `tp_sizeof_priv` arithmetic, PCM open mutex, and 1 MiB inter-VMA guard-gap
-  backports despite its `4.1.27-abl` banner. Physical USB-MIDI
+  backports despite its `4.1.27-abl` banner. Three more unprivileged built-in
+  candidates are rejected: CVE-2015-7613's SysV state is initialized before
+  publication, CVE-2016-7117's delayed socket error is stored before
+  `fput_light`, and CVE-2017-8890's cloned child clears the multicast-list field
+  used by teardown. See `evidence/vendor-kernel-socket-ipc-backports.md` and
+  boolean-only `tools/uk_fw/kernel_backport_matrix.py`. Physical USB-MIDI
   CVE-2016-2384 is also rejected: `CONFIG_SND_USB_AUDIO=m` and both modules
   exist, but exact endpoint failures after raw-MIDI ownership transfer return
   without the second direct object free. CVE-2017-11176 is now also rejected by

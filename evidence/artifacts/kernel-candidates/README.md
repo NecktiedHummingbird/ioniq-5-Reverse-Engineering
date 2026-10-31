@@ -49,6 +49,15 @@ llvm-objdump -d --x86-asm-syntax=intel \
 llvm-objdump -d --x86-asm-syntax=intel \
   --start-address=0xffffffff814a8d51 --stop-address=0xffffffff814a8d70 \
   work/eu-260128/vmlinux
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff81475c1d --stop-address=0xffffffff81475e13 \
+  work/eu-260128/vmlinux
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff814d22f5 --stop-address=0xffffffff814d23ab \
+  work/eu-260128/vmlinux
+llvm-objdump -d --x86-asm-syntax=intel \
+  --start-address=0xffffffff811aa199 --stop-address=0xffffffff811aa294 \
+  work/eu-260128/vmlinux
 llvm-objdump -dr --x86-asm-syntax=intel \
   --start-address=0xc6c --stop-address=0xe7e \
   work/decrypted-eu-260128/extracted-safe/mango-rootfs/lib/modules/4.1.27-abl/kernel/sound/core/snd-pcm.ko \
@@ -81,8 +90,11 @@ llvm-objdump -dr --x86-asm-syntax=intel \
 The `cve-*.patch` files are GitHub patch representations of these upstream
 commits:
 
+- CVE-2015-7613: `b9a532277938798b53178d5a66af6e2915cb27cf`;
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
+- CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
+- CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
@@ -100,6 +112,12 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`kernel-sysvipc-cve-2015-7613.asm`,
+`kernel-recvmmsg-cve-2016-7117.asm`, and
+`kernel-inet-csk-cve-2017-8890.asm` retain the initialization/publication,
+socket-release, and multicast-child field effects needed to reject those three
+version-derived local-kernel candidates.
 
 `snd-usbmidi-cve-2016-2384.asm` retains raw-MIDI ownership assignment,
 post-registration endpoint-failure branches, direct error returns, and the

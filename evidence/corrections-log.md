@@ -531,6 +531,23 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C33 — Three ordinary local-kernel paths also carry semantic backports
+
+- **Candidates:** CVE-2015-7613, CVE-2016-7117, and CVE-2017-8890 need no user
+  namespace or special device in their generic upstream routes, and the
+  recovered kernel compiles in SysV IPC, sockets, IPv4 and multicast.
+- **Exact result:** credentials and object state dominate SysV IDR publication;
+  `recvmmsg` writes delayed `sk_err` before exact `fput_light`; and cloned
+  accepted sockets clear child `mc_list` before return. Exact
+  `ip_mc_drop_socket` independently binds the cleared offset to multicast
+  teardown.
+- **Conclusion:** all three named primitives are rejected for recovered
+  `vmlinux` SHA-256 `f5ee9c2f...6b102b`. This does not cover other defects or
+  the owner's unknown installed kernel.
+- **Evidence:** `evidence/vendor-kernel-socket-ipc-backports.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

@@ -2552,3 +2552,9 @@ and are superseded by corrections rather than silently rewritten.
   attack. Whether it draws is now a separate question, and one that a single counter can answer.
 - Three times today a zero has meant "nothing ran" rather than "nothing failed", and the third time was caught
   in the same turn it was produced. That is the format working: record the run, then check it was a run.
+
+## 2026-11-01 — three more old banners lost to exact ordering
+
+- Public triage identified three unusually relevant local-kernel candidates: SysV publication races, `recvmmsg` post-release access, and inherited IPv4 multicast state. None needs a user namespace or special device in the generic path.
+- Exact instructions rejected all three. SysV state is initialized before publication, the socket error precedes `fput_light`, and the cloned child multicast pointer is cleared before return.
+- A boolean-only matrix records the semantic gates without running a target syscall, object, packet, race, or corruption attempt.
