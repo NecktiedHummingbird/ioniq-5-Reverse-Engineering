@@ -2574,3 +2574,9 @@ and are superseded by corrections rather than silently rewritten.
   project rather than a lesson to relearn: check the path was reached before believing the count.
 - The shim's naming work is still correct — two independent samples agreed — but correctness of a name is not
   the same as a usable segment, and the difference is the next thing to find.
+
+## 2026-11-01 — the ALSA timer backport is incomplete at an information boundary
+
+- Follow-up separated two superficially similar stack initializations: the params and general callback records are fully cleared, while `snd_timer_user_tinterrupt` clears only a separate timestamp object.
+- Exact queue and read copies preserve all 32 record bytes, leaving two four-byte ABI padding regions as a conditional CVE-2016-4578 disclosure path (V-021). No bytes were collected and no root impact is claimed.
+- Exact sequencer locking rejected CVE-2016-2544, prior cleanup semantics also reject CVE-2016-2548, and CVE-2016-2549 is unavailable because the ALSA hrtimer provider is absent.

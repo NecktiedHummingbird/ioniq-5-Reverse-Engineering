@@ -2,7 +2,7 @@
 
 ## Goal
 
-Assess CVE-2016-2545, CVE-2016-2546, and CVE-2016-2547 against exact recovered
+Assess CVE-2016-2545 through CVE-2016-2548 against exact recovered
 `snd-timer.ko` without loading the module, opening a node, issuing an ioctl, or
 running a race.
 
@@ -13,7 +13,7 @@ running a race.
 2. Confirm expiry uses `list_del_init` on the same current active-list object.
 3. Confirm one initialized per-user mutex covers all ioctl returns and timer
    close during release.
-4. Confirm all four CVE-2016-2547 global/timer lock-and-unlink effects with
+4. Confirm all CVE-2016-2547/2548 global/timer lock-and-unlink effects with
    exact lock and object identity.
 5. Retain authoritative upstream patches and reviewed instruction excerpts.
 

@@ -5,9 +5,9 @@ Target: recovered EU `260128` Linux `4.1.27-abl` ALSA timer module
 
 ## Result
 
-CVE-2016-2545, CVE-2016-2546, and CVE-2016-2547 are **rejected for the exact
-recovered `snd-timer.ko`**. The module contains the upstream list-state,
-ioctl/release serialization, and slave/timer lock-and-unlink effects.
+CVE-2016-2545 through CVE-2016-2548 are **rejected for the exact recovered
+`snd-timer.ko`**. The module contains the upstream list-state, ioctl/release
+serialization, and complete slave/timer lock-and-unlink effects.
 
 This is not a version conclusion. `CONFIG_SND_TIMER=m`, the module is shipped,
 and installed udev policy requests static `/dev/snd/timer` state with intended
@@ -80,7 +80,7 @@ The published missing-ioctl-serialization premise is absent.
 Authoritative fix:
 <https://git.kernel.org/linus/af368027a49a751d6ff4ee9e3f9961f35bb4fede>.
 
-## CVE-2016-2547 — slave/master timer list races
+## CVE-2016-2547 and CVE-2016-2548 — slave/master timer list races
 
 Upstream commit `b5a663aa426f4884c71cd8580adae73f33570f0d` adds four coordinated
 effects: timer locking while attaching a slave, lock coverage and explicit
@@ -113,8 +113,8 @@ before a nested timer lock:
    (`+0x80`) links at `0xf6e` and `0xf7a`. The ordinary stop branch contains the
    same pair at `0xfea` and `0xff6`.
 
-The exact missing-lock/missing-unlink premise addressed by CVE-2016-2547 is
-absent.
+The exact missing-lock premise addressed by CVE-2016-2547 and retained-list
+premise addressed by CVE-2016-2548 are absent.
 
 Authoritative fix:
 <https://git.kernel.org/linus/b5a663aa426f4884c71cd8580adae73f33570f0d>.
@@ -131,7 +131,7 @@ Exact LLVM disassembly is authoritative; no source-version inference is used.
 
 ## Claim boundary
 
-The result rejects only the three named primitives for this module identity. It
+The result rejects only the four named primitives for this module identity. It
 does not establish the owner's installed module, runtime load, device-node
 mode, uid/group membership, SMACK label, or absence of unrelated ALSA timer
 bugs. No module was loaded; no timer node was opened; and no ioctl, parallel

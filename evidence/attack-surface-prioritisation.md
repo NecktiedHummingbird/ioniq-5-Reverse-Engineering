@@ -210,9 +210,10 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   primitive, ALSA PCM CVE-2017-0861, and the generic missing Stack Clash
   guard-gap premise despite the old banner. The three newer built-in checks
   establish pre-publication SysV initialization, pre-`fput` `recvmmsg` error
-  storage, and child multicast-list clearing. Exact `snd-timer.ko` also carries
-  CVE-2016-2545/2546/2547 list-state, ioctl-serialization, and slave-locking
-  fixes. CVE-2016-2384's
+  storage, and child multicast-list clearing. Exact `snd-seq.ko` rejects
+  CVE-2016-2544, and exact `snd-timer.ko` carries CVE-2016-2545 through
+  CVE-2016-2548 list-state, ioctl-serialization, and slave-locking fixes;
+  CVE-2016-2549's provider is absent. CVE-2016-2384's
   modules and physical probe surface exist, but exact post-registration endpoint
   failures return without the second object free. CVE-2017-11176 is a
   semantic-control-flow result: the
@@ -226,6 +227,12 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.
+- V-021 is an exact conditional local information disclosure: one
+  `snd_timer_user_tinterrupt` path omits initialization of eight ABI padding
+  bytes that the queue and read code copy in full. Intended DAC is `0644`, but
+  module load, effective SMACK, provider/event generation, and owner-build
+  identity remain unobserved. It is a possible information-leak component, not
+  root or code execution.
 - ALSA sequencer CVE-2018-1000004 lacks the official ioctl serialization, but
   the published pool sequence requires a write-capable sequencer fd and
   recovered intended policy grants ordinary users no write permission.

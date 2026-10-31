@@ -65,6 +65,26 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.44.0 - one ALSA timer padding disclosure survives a partial backport
+
+- Extended the ALSA review to CVE-2016-2544, CVE-2016-2548, CVE-2016-2549,
+  CVE-2016-4569, and CVE-2016-4578 using exact relocatable-module semantics.
+- Rejected CVE-2016-2544: sequencer queue deletion holds `q->timer_mutex`
+  across exact timer stop and close.
+- Named CVE-2016-2548 separately: the previously proven slave stop/close paths
+  reinitialize both ack and active links. CVE-2016-2549's hrtimer provider is
+  not compiled or shipped.
+- Rejected CVE-2016-4569 and the general CVE-2016-4578 callback because each
+  clears all 32 record bytes before queueing.
+- Added V-021: `snd_timer_user_tinterrupt` clears a separate timestamp but not
+  either four-byte padding region in its 32-byte event record. Exact queue and
+  read paths copy all 32 bytes, supporting a conditional eight-byte-per-record
+  kernel-stack padding disclosure. Runtime event reachability and actual bytes
+  remain unobserved; this is not root or code execution.
+- Added a reviewed Boolean-only flow model and retained authoritative upstream
+  fixes. No module, node, ioctl, timer, event, read, target byte, or privilege
+  transition was exercised.
+
 ## 1.43.0 - ALSA timer race fixes are present
 
 - Bound exact shipped `snd-timer.ko` to SHA-256 and Build ID and retained

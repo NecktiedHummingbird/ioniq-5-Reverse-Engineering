@@ -92,9 +92,15 @@ commits:
 
 - CVE-2015-7613: `b9a532277938798b53178d5a66af6e2915cb27cf`;
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
+- CVE-2016-2544: `3567eb6af614dac436c4b16a8d426f9faed639b3`;
 - CVE-2016-2545: `ee8413b01045c74340aa13ad5bdf905de32be736`;
 - CVE-2016-2546: `af368027a49a751d6ff4ee9e3f9961f35bb4fede`;
-- CVE-2016-2547: `b5a663aa426f4884c71cd8580adae73f33570f0d`;
+- CVE-2016-2547/2548: `b5a663aa426f4884c71cd8580adae73f33570f0d`;
+- CVE-2016-2549: `2ba1fe7a06d3624f9a7586d672b55f08f7c670f3`;
+- CVE-2016-4569: `cec8f96e49d9be372fdb0c3836dcf31ec71e457e`;
+- CVE-2016-4578: `9a47e9cff994f37f7f0dbd9ae23740d0f64f9fe6`,
+  `e4ec8cc8039a7063e24204299b462bd1383184a5`, and completeness follow-up
+  `a8c006aafead3c45ae5d5601e3717055bccf41bc`;
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
@@ -124,8 +130,13 @@ version-derived local-kernel candidates.
 
 `snd-timer-2016-backports.asm` retains the list initialization, per-user ioctl
 mutex, slave-active singleton lock, timer lock, and complete ack/active unlink
-effects needed to reject CVE-2016-2545 through CVE-2016-2547 for exact
+effects needed to reject CVE-2016-2545 through CVE-2016-2548 for exact
 `snd-timer.ko`.
+
+`snd-seq-queue-cve-2016-2544.asm` retains the queue timer-mutex region around
+stop and close. `snd-timer-padding-cve-2016-4569-4578.asm` retains the complete
+32-byte queue/read copies, fixed params/general-callback initialization, and
+unfixed timer-interrupt padding paths underlying V-021.
 
 `snd-usbmidi-cve-2016-2384.asm` retains raw-MIDI ownership assignment,
 post-registration endpoint-failure branches, direct error returns, and the

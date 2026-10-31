@@ -548,18 +548,33 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
-## C34 — shipped ALSA timer code is not enough to inherit three 2016 races
+## C34 — shipped ALSA timer code is not enough to inherit four 2016 flaws
 
 - **Candidate:** `CONFIG_SND_TIMER=m`, exact `snd-timer.ko`, and intended static
-  `/dev/snd/timer` policy made CVE-2016-2545 through CVE-2016-2547 credible
+  `/dev/snd/timer` policy made CVE-2016-2545 through CVE-2016-2548 credible
   local candidates despite unknown runtime load and access.
 - **Exact result:** interrupt expiry uses `list_del_init`; open initializes one
   mutex used by every ioctl and release; and slave attach, master close,
   delayed start, and stop carry the complete nested lock-and-unlink effects.
-- **Conclusion:** all three named primitives are rejected for exact module
+- **Conclusion:** all four named primitives are rejected for exact module
   SHA-256 `3b2fa4e7...ac46a91`. This is not a claim about other ALSA timer bugs
   or the owner's installed module.
 - **Evidence:** `evidence/vendor-kernel-alsa-timer-backports.md`.
+
+---
+
+## C35 — ALSA timer fixes are callback-specific, not module-wide
+
+- **Earlier boundary:** the first ALSA timer pass correctly rejected the
+  list/ioctl races but did not yet inspect later padding-disclosure fixes.
+- **Exact result:** params and `snd_timer_user_ccallback` clear complete 32-byte
+  records. `snd_timer_user_tinterrupt` clears only a separate 16-byte timestamp;
+  both event branches leave two four-byte padding regions untouched while exact
+  queue/read code copies all 32 bytes.
+- **Conclusion:** CVE-2016-4569 is rejected and one CVE-2016-4578 callback is
+  fixed, but V-021 records a residual conditional information disclosure. It is
+  not a root or code-execution finding.
+- **Evidence:** `evidence/vendor-kernel-alsa-timer-follow-up.md`.
 
 ---
 
