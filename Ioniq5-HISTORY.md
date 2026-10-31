@@ -2737,3 +2737,12 @@ and are superseded by corrections rather than silently rewritten.
 - Two things keep this honest. A database still does not appear, so the parse output remains unproven; and a
   timestamp-based file sweep I had run is invalid because the guest clock is 1970, which makes every file on the
   image look newly created. That check is withdrawn rather than believed.
+
+## 2026-10-31 — found the sink, could not fill it
+
+- The scanner's database exists, is root-owned, and is created by the root daemon on command. That is measurable
+  proof the pipeline runs with full privilege.
+- What will not happen in this harness is a file from /media appearing in it. Two probes, including a genuine MP3,
+  produced nothing, which points at a mount-event registration the projection never emits.
+- Stopping at eight attempts is deliberate. The configuration finding is confirmed and recorded with its exact
+  boundary; continuing to vary inputs would generate activity rather than knowledge.

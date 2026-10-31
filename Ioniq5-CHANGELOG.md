@@ -3,6 +3,19 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.53.0 - V-007: database sink located and measured; indexing of /media still unproven
+
+- Located the artefact: `lightmediascannerd` writes `<HOME>/.config/lightmediascannerd/db.sqlite3` — measured at
+  **155,648 bytes, `0600`, `root:root`**, created by the root daemon after `lightmediascannerctl scan`. The
+  pipeline is real and its output is root-only.
+- **Indexing of `/media` still not demonstrated.** Two probes in `/media/usb` — a text file named `.mp3` and a
+  genuine MP3 copied from the image as `attacker.mp3` — produced zero rows in that database.
+- Working hypothesis, stated as such: the daemon indexes paths registered by a **mount/udev event** rather than
+  re-walking `directory=` on demand, and this projection never emits one.
+- V-007 final status: privilege measured, targets sourced, invocation executes, sink measured and root-owned;
+  consumption of attacker bytes unproven. The configuration defect is confirmed and the reachability claim stops
+  one harness feature short. Eight attempts have been made; the thread is closed here rather than varied further.
+
 ## 1.52.0 - V-007: control channel found and scan made to execute
 
 - Identified the missing harness feature: `lightmediascannerctl` talks to the **session** bus, not the system bus
@@ -19,12 +32,16 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 ## 1.55.0 - narrow secure-boot-ignore and identify manifest read-bound mismatch
 
-- Bound `CONFIG_KEYSTORE_SECURE_BOOT_IGNORE=y` to its exact machine-code effect: `keystore_init` logs that it is not checking secure-boot status and proceeds directly to `keystore_fill_seeds`; seed and device setup failures remain fatal.
+- Bound `CONFIG_KEYSTORE_SECURE_BOOT_IGNORE=y` to its exact machine-code effect: `keystore_init` logs that it is not checking secure-boot status and proceeds directly to `keystore_fill_seeds`; `keystore_register` likewise proceeds to client derivation without a status query. Ordinary seed, device-number, cdev, client-ID, derivation, and allocation failures remain.
+- Identified separate weak error handling: `__class_create` and `device_create` return `ERR_PTR`, but `keystore_init` checks only for NULL and can report success after those failures. This does not establish signature bypass or privilege gain.
 - Confirmed the option does not remove the separate `manifest_init` initcall or the surviving `verify_oem_signature → SHA-256 → manifest_key_verify_digest` chain. It is not a general package, update-signature, verified-boot, or arbitrary-firmware bypass.
+- Located matching Intel-authored public Linux 4.1 source at vendor commit `0c9640bba6a841f524f5947d0741386792674577`. It confirms the full command-line spelling is `ABL.oemkm=<size>@<physical-address>`; bare `oemkm` is only the internal ABL-list entry.
 - Corrected the manifest outer-size range: `size - 1 <= 0x3ffffff` accepts `1..0x4000000` bytes inclusive.
-- Identified an exact conditional boot-time OOB-read candidate: fixed header reads are unconditional through `+0x1b`, while the internal declared length and extension walk are never bounded by the copied allocation. The 101-entry cap does not repair that missing allocation bound.
-- Kept impact narrow: boot-parameter and physical-memory control are unproved, and no OOB write, controlled corruption, code execution, root, update acceptance, boot acceptance, or persistence is established.
-- Added complete-function evidence plus independent fail-closed Boolean and bounded-integer models. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
+- Identified an exact conditional boot-time OOB-read candidate: declared-length/type reads lack copied-size checks; later header reads can conditionally reach `+0x1b`; and the internal declared length/extension walk are never directly bounded by the copied allocation. The arithmetic model accounts for the 101-entry/16-bit-stride cap and does not classify unreachable beyond-copy extents.
+- Identified a separate feasible invalid free: after copying, `manifest_init` replaces the allocation-pointer global with `base + 0x24`; a header rejection later passes that interior cursor to `kfree`. This may crash or corrupt allocator state at boot, but controlled corruption is not established.
+- Kept impact narrow: boot-parameter and physical-memory control are unproved, and no controlled OOB write, code execution, root, update acceptance, boot acceptance, or persistence is established.
+- Added complete-function evidence plus independent fail-closed Boolean and bounded-integer models. Review caught and resolved ERR_PTR routing, conditional-read wording, no-loop/capped-walk model counterexamples, a missing device wrapper, and the previously unclassified interior free; final review returned **ACCEPT**.
+- Focused validation passed `13 tests, 546 subtests`; full validation passed `472 tests, 132890 subtests`; the public harness passed. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
 
 ## 1.54.0 - reject the FLIC write-bounds CVE family by exact comprehensive rewrite
 

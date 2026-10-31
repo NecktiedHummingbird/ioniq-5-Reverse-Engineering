@@ -575,9 +575,20 @@ compiled-in or differently-resolved location rather than the config value in thi
 sweep cannot work on this guest because the guest clock reads 1970, so every image file appears "newer". That
 result was discarded rather than interpreted.
 
-The parsing step is therefore **still not demonstrated**. Established: the privilege (measured), the scan targets
-(sourced), and the scan invocation (executed). Not established: that the scan consumed attacker-supplied bytes and
-recorded them.
+**The database sink was then located.** `lightmediascannerd` creates `<HOME>/.config/lightmediascannerd/db.sqlite3`
+— measured at **155,648 bytes, mode `0600`, owner `root:root`**, produced by the root daemon after
+`lightmediascannerctl scan`. So the pipeline is real and the artefact is root-owned: a parsing defect here runs with
+full privilege and writes a root-only database.
+
+**Indexing of `/media` content remains undemonstrated.** Two probe files were placed in `/media/usb` — one plain
+text named `.mp3`, one genuine MP3 (`system/new_gui/ringtone/media_7.mp3` copied in as `attacker.mp3`) — and neither
+appeared in the database. Working hypothesis: the daemon indexes paths registered through a **mount/udev event**
+rather than re-walking `directory=` on demand, which this projection does not simulate.
+
+**Final status for V-007.** Established: privilege (measured, uid 0), scan targets (sourced), scan invocation
+(executes on command), database sink (measured, root-owned). Not established: that attacker-supplied bytes in
+`/media` are actually consumed and recorded. The configuration defect is confirmed; the parsing reachability stops
+one harness feature short, and this register claims no further.
 
 **Chain status.** First stage candidate confirmed at the configuration level, with the root identity now measured:
 root parser over attacker-supplied content, reachable locally via `/media`. What remains unproven is (a) that the
