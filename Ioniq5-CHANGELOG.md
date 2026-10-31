@@ -129,6 +129,21 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.49.0 - identify exact timerfd cancellation context-lock gap
+
+- Audited exact built-in timerfd code against CVE-2017-10661 fix
+  `1e38da300e1e395a15048b0af1e5305bd91402f6`.
+- Added V-026: same-file operations resolve one live context, while membership
+  setup/removal changes `might_cancel` outside the narrow global-list lock and
+  without a common context-derived lock.
+- Proved the later waitqueue lock does not dominate the transition and creation
+  lacks an equivalent second-lock initialization.
+- Kept impact conservative: no timerfd, shared descriptor, concurrency, list
+  corruption, UAF, crash, root, or persistence was executed or established;
+  public privilege impact is less certain than denial of service.
+- Added authoritative patch evidence and a reviewed Boolean-only model; both
+  semantic reviews and code review returned `ACCEPT`.
+
 ## 1.48.0 - identify exact AF_UNIX MSG_PEEK garbage-collector gap
 
 - Audited exact shipped `unix.ko` against upstream CVE-2021-0920 fix

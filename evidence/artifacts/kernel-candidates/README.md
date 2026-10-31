@@ -105,6 +105,7 @@ commits:
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
+- CVE-2017-10661: `1e38da300e1e395a15048b0af1e5305bd91402f6`;
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
 - CVE-2020-29661: `54ffccbf053b5b6ca4f6e45094b942fab92a25fc`;
@@ -125,6 +126,10 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`kernel-timerfd-cve-2017-10661.asm` binds same-file context identity,
+membership/list fields, narrow global locking, later waitqueue locking, and the
+absent fixed per-context critical region underlying V-026.
 
 `kernel-unix-peek-cve-2021-0920.asm` binds both MSG_PEEK branches, attached-file
 `scm_fp_dup` calls, SCM-cookie continuity, exact global GC-lock identity, and

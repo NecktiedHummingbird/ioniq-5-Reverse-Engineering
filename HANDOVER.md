@@ -175,7 +175,11 @@ followed by stateful service/CAN/persistence reconstruction.
   stream MSG_PEEK routes duplicate attached file lists and reach SCM descriptor
   delivery without a barrier on exact `unix_gc_lock`. Module load, GC overlap,
   UAF, corruption, and root remain unobserved. See
-  `evidence/vendor-kernel-unix-peek-cve-2021-0920.md`.
+  `evidence/vendor-kernel-unix-peek-cve-2021-0920.md`. V-026 retains exact
+  CVE-2017-10661 timerfd semantics: membership changes occur outside the only
+  global-list lock and no common context lock covers parallel same-file
+  transitions. No harmful interleaving, list corruption/UAF, crash, or root is
+  established. See `evidence/vendor-kernel-timerfd-cve-2017-10661.md`.
   CVE-2017-11176 is also rejected by
   exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup

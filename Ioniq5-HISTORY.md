@@ -2638,3 +2638,9 @@ and are superseded by corrections rather than silently rewritten.
 - Exact stream and datagram receive paths duplicate attached file lists and carry them into SCM delivery without touching the module-global GC lock.
 - Recovered D-Bus use makes AF_UNIX load plausible, but passive module identity remains the first bench step.
 - No socket graph, descriptor transfer, GC overlap, UAF, corruption, or root was created or proved.
+
+## 2026-11-01 — timerfd cancellation membership lacks per-context serialization
+
+- Exact setup and removal update one context membership state outside the static global-list lock; the fixed per-context lock is absent.
+- Built-in timerfd makes the premise broadly reachable in principle, but no harmful same-context interleaving was exercised.
+- List corruption, UAF, crash, corruption, and privilege gain all remain unproved; public impact supports DoS more clearly than root.

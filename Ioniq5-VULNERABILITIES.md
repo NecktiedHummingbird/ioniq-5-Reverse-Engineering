@@ -392,6 +392,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `cbcf01128d0a92e131bd09f1688fe032480b65ca` or equivalent post-duplication serialization against the same GC lock on both PEEK routes; validate only in a disposable instrumented kernel environment.
 - **Evidence:** `evidence/vendor-kernel-unix-peek-cve-2021-0920.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-unix-peek-cve-2021-0920.asm`; Boolean-only model `tools/uk_fw/unix_peek_gc_model.py`.
 
+## V-026 — timerfd cancellation-list race (EXACT CVE-2017-10661 PREMISE; CORRUPTION/UAF UNPROVEN)
+
+- **Status:** exact built-in timerfd code retains pre-fix CVE-2017-10661 membership/list serialization. Same-file operations resolve one live context, but setup/removal decide and change `might_cancel` outside the only global-list lock and without a common context-derived cancel lock. No timerfd, shared descriptor, concurrency, list corruption, UAF, crash, or privilege transition was executed.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_TIMERFD=y`, `CONFIG_SMP=y`.
+- **Exact mechanism:** `timerfd_remove_cancel.part.5` `[0xffffffff8114551c,0xffffffff81145570)` clears `ctx+0xd0` before locking static `0xffffffff81c27410` and unlinking `ctx+0xc0`. In `sys_timerfd_settime` `[0xffffffff81145a49,0xffffffff81145e35)`, setup stores membership before that global lock; the alternate branch calls the same removal helper. The `ctx+0x88` waitqueue lock is acquired only afterward. Creation has no second context-lock initialization equivalent to the upstream fix.
+- **Reachability:** timerfd is built in and needs no device, module, namespace, network, or setuid program. Effective syscall filtering, uid/SMACK state, limits, scheduling, and installed owner kernel remain unobserved.
+- **Impact boundary:** exact static evidence establishes missing same-context serialization only. It does not establish a winning interleaving, list invariant violation, list corruption, UAF, controlled reuse, crash, disclosure, RCE, root, policy escape, persistence, or safety impact. Public assessments treat denial of service as clearer than privilege escalation.
+- **Remediation:** backport `1e38da300e1e395a15048b0af1e5305bd91402f6` or equivalent context-derived locking continuously covering membership and nested global-list operations; validate only with race and memory-safety instrumentation on a disposable kernel.
+- **Evidence:** `evidence/vendor-kernel-timerfd-cve-2017-10661.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-timerfd-cve-2017-10661.asm`; Boolean-only model `tools/uk_fw/timerfd_cancel_lock_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

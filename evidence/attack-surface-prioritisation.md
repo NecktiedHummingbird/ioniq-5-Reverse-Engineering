@@ -232,6 +232,11 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-026/CVE-2017-10661 is an exact built-in timerfd race premise requiring no
+  device/module/namespace. Same-context membership transitions lack the fixed
+  per-context lock, but public impact is more clearly list corruption/DoS than
+  privilege gain. Keep below V-022 through V-025 until disposable sanitizer
+  work can establish an actual invariant violation.
 - V-025/CVE-2021-0920 is an exact AF_UNIX local candidate. Both MSG_PEEK
   attached-file receive paths omit the GC serialization added upstream, and
   recovered D-Bus usage makes runtime module loading plausible. Confirm

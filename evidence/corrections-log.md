@@ -578,6 +578,20 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C40 — missing timerfd context locking is not demonstrated privilege gain
+
+- **Candidate:** CVE-2017-10661 affects an ordinary built-in syscall surface and
+  exact code predates the stable 4.1.41 fix.
+- **Exact result:** same-file operations resolve one context; setup/removal
+  decide membership outside the static global-list lock, and no common
+  context-derived lock covers the transition.
+- **Conclusion:** V-026 establishes the race premise. It does not establish a
+  harmful interleaving, list corruption, UAF, crash, root, or persistence;
+  public privilege-escalation impact is weak.
+- **Evidence:** `evidence/vendor-kernel-timerfd-cve-2017-10661.md`.
+
+---
+
 ## C39 — an exact AF_UNIX GC gap is not an observed object lifetime failure
 
 - **Candidate:** CVE-2021-0920 is a local AF_UNIX descriptor-passing race and
