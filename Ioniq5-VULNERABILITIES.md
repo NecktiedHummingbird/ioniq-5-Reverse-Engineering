@@ -454,6 +454,34 @@ established. The precondition therefore remains "a privileged write primitive", 
 
 **Status:** precondition confirmed at the filesystem level; no write primitive demonstrated by this project.
 
+## Chain analysis — V-012 lowers V-013's precondition from "root" to "local code execution"
+
+V-013 states its precondition as an existing privileged write primitive. V-012, from the merged register,
+supplies exactly that, and the two were checked against each other here.
+
+**V-012 confirmed as stated, with the service list verified.** `lib/systemd/esinit:10` mounts `tmpfs` on `/tmp`
+with **default options**, i.e. the kernel default root mode `01777` — world-writable and sticky. **Eleven**
+enabled services read `EnvironmentFile=/tmp/session_appmgr.env`: `ApplicationLauncher`, `nua`, `MediaBrowser`,
+`mediamanager`, `CryptoService`, `watchdogd`, `ofono`, `mof`, `vbtd`, `credman`, `remote`. None of them sets
+`User=`, so all run as root; `ApplicationLauncher.service` was checked directly and carries no `User=` line.
+The environment-file format accepts arbitrary variables, including dynamic-loader overrides.
+
+**The resulting chain, stated end to end:**
+
+1. Any local unprivileged code execution (a media parser, an application, or the launcher's unverified path in
+   the merged V-009) writes `/tmp/session_appmgr.env` containing a loader override.
+2. The next start of any of those eleven services loads attacker code **as root**.
+3. That root context writes `app/share/AppUpgrade/teruten5_pub.key` — established earlier to be mutable at
+   runtime and persistent across reboot.
+4. Every subsequent update, wired or over-the-air, is verified against the substituted anchor.
+
+**What is established and what is not.** Established: the tmpfs mount options, the eleven services, the absence
+of `User=`, the anchor's mutability and persistence, and that the directory chain to the anchor is `0755`
+throughout (so step 3 genuinely needs step 2's root, not merely a local user). Not established: a concrete
+first-stage execution primitive, and any service restart trigger in practice. The chain therefore raises
+V-013's severity from "requires root" to "requires local code execution plus one service restart", which is a
+material change, and it should be read that way rather than as a demonstrated exploit.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

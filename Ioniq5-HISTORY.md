@@ -2653,3 +2653,13 @@ and are superseded by corrections rather than silently rewritten.
 - The part worth keeping is the caveat. The live guest reports a file owner that is ours, not the vendor's,
   and saying so keeps the finding at the strength the evidence supports: one privileged write, not one local
   user.
+
+## 2026-10-31 — two entries from an outside PR, checked against each other
+
+- Individually each was an observation; together they form a path. A world-writable environment file read by
+  eleven root services supplies precisely the privileged write that a separate entry said was missing.
+- The discipline that mattered was refusing to round the chain up. The file that anchors update trust is 0755
+  in a 0755 chain, so the chain still needs the root step, and saying so is what keeps the register credible.
+- Every element of this was verified in the image today: mount options, unit list, absence of User=, anchor
+  mutability and persistence. The only unverified parts are the first stage and the restart, and they are
+  labelled as such.

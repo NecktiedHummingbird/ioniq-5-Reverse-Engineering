@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.47.0 - V-012 lowers V-013's precondition from root to local code execution
+
+- Verified the merged V-012 against the image: `lib/systemd/esinit:10` mounts `tmpfs` on `/tmp` with **default
+  options** (kernel default root mode `01777`, world-writable), and **eleven** enabled services read
+  `EnvironmentFile=/tmp/session_appmgr.env` — `ApplicationLauncher`, `nua`, `MediaBrowser`, `mediamanager`,
+  `CryptoService`, `watchdogd`, `ofono`, `mof`, `vbtd`, `credman`, `remote`. `ApplicationLauncher.service`
+  carries **no `User=`**, confirming the root context directly.
+- That supplies the privileged write primitive V-013 said it needed. Chain, now recorded end to end: local code
+  execution → write `/tmp/session_appmgr.env` with a loader override → one of eleven root services starts →
+  write the update trust anchor → all future updates trust a substituted key.
+- The directory chain to the anchor is `0755` throughout, so step 3 genuinely requires step 2's root and not
+  merely a local user — that distinction is kept explicit rather than flattened into "local user can own
+  updates".
+- **Not established:** a concrete first-stage execution primitive, and any practical service-restart trigger.
+  So this raises V-013's severity from "requires root" to "requires local code execution plus one restart", and
+  is recorded as such rather than as a demonstrated exploit.
+
 ## 1.46.0 - V-013 runtime question answered: root stays writable, so the anchor is mutable and persistent
 
 - Checked the merged PR's update trust-anchor entry against the image and a live boot:
