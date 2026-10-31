@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.42.0 - with the compositor up the shim does not fix the attach; buffer still never supplied
+
+- Ran the decisive measurement properly this time, compositor up and shim applied:
+  `attach(nil)` **0**, non-nil `attach` **0**, `commit` **5**, `Cannot attach to shared memory` **9**,
+  surface mapped **1**.
+- Two conclusions, one of them a correction:
+  1. **The client still never supplies a buffer.** Zero `attach` calls of any kind after five commits, so the
+     black frame is explained by the client, not the renderer. That question is now closed.
+  2. **The previous entry's "attach errors: 0→0" was another zero-means-nothing-ran.** Without a compositor the
+     application fails earlier, at display initialisation, and never reaches widget creation — so the attach
+     failures it would have logged were never reached. With a compositor present the count returns as 9.
+- So `ihu-shim` is **not** yet doing its job, and the honest status is that the shared-memory wall is still
+  standing. Its naming derivation is sound (two samples agreed), but a key that matches and a segment that
+  exists are evidently not sufficient: Qt also validates the segment on attach, and a 64 KB zero-filled region
+  with no expected structure may be rejected, as may a `ftok` project id or size mismatch.
+- This is the fourth zero-that-meant-nothing in this session. The pattern is consistent enough to state as a
+  standing rule for this project: **before reading any zero, confirm the code path that would increment it was
+  reached.** Both of the last two false results would have been caught by that check.
+
 ## 1.41.0 - Qt's segment naming derived, and the shared-memory wall comes down
 
 - **Derived Qt's segment naming empirically** rather than by reverse-engineering the library: the file Qt uses

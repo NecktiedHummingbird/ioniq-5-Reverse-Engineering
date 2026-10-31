@@ -2564,3 +2564,13 @@ and are superseded by corrections rather than silently rewritten.
 - Shipped `snd-timer.ko` and permissive-looking static-node policy made three 2016 timer races plausible on version/configuration evidence.
 - Exact relocatable-module semantics showed all three repairs: list reinitialization on expiry, one ioctl/release mutex, and coherent global/timer locking with complete slave unlinking.
 - The result is an identity-bound rejection, not a runtime claim; no module or timer interface was exercised.
+
+## 2026-10-31 — the fourth empty zero
+
+- Running the measurement with the compositor up told the truth twice. The client never attaches a buffer, so
+  the black frame is settled as a client-side fact. And the attach count I reported as fixed came back at nine,
+  because without a compositor the application dies before it ever reaches the widgets that complain.
+- That is the fourth time a zero has meant "the code path was never reached". It is now a standing rule in this
+  project rather than a lesson to relearn: check the path was reached before believing the count.
+- The shim's naming work is still correct — two independent samples agreed — but correctness of a name is not
+  the same as a usable segment, and the difference is the next thing to find.
