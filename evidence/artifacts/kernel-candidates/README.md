@@ -392,6 +392,42 @@ edges, exact zero-wrap calls, the single-user no-clear flush route, independent
 `mmput` user-count binding, and 32-bit lookup generation effects underlying
 V-022.
 
+`kernel-cve-2018-9568-exact-static.asm` retains complete authoritative-map-
+successor-bounded allocation, clone, immediate/deferred free, TCP
+post-clone-cleanup, protocol conversion, disconnect/listen, IPv6 creation, and
+TCP child-clone functions. Exact `sk_clone_lock` allocates through source
+`sk_prot`. Its second copy spans `[0x78,obj_size)`; raw descriptor `+0x100`
+values are `0x780` for `tcp_prot` and `0x840` for `tcpv6_prot`, yielding copy
+lengths `0x708` and `0x7c8`. The creator qword is only `0x128..0x12f` bytes
+from that copy start, so the span necessarily includes all of source/clone
+`+0x1a0..+0x1a7`. The function completes this sole creator-overwriting copy at
+`0xffffffff8147884e`, then stores source `sk_prot` to clone `sk_prot_creator` at
+`0xffffffff81478867`. Normal control between those points is linear through the
+reviewed configured/default LSM clone callback, bound by exact
+`security_fixup_ops` to a complete no-op callback. Both failure decisions
+feeding the sole in-function post-copy `sk_free` follow the store; that cleanup
+returns null, while all non-null returns and every later caller cleanup follow
+the corrected return. Exact final free loads the corrected creator and its slab
+pointer as the cache argument. The direct fix-shaped effect rejects
+CVE-2018-9568's wrong-cache free mechanism for the
+exact recovered kernel even though `IPV6_ADDRFORM` divergence and the TCP clone
+route are compiled. Artifact SHA-256:
+`e876c4eddfc08de17ded57371c447a93c44a44031265c34fb5ffa1decb253273`.
+The reviewed mainline and 4.1.y public patches remain only in canonical ignored
+`work/online-kernel-candidates-20261107/cve-2018-9568/` because their
+byte-identical bodies contain an operational trigger program. The complete
+public-reference bindings are mainline commit
+`9d538fa60bad4f7b23193c89e843797a1cf71ef3`, parent
+`b32ca44a88def4bf92626d8777494c6f14638c42`, patch SHA-256
+`c1f7389124f499cc764ce39a25f841bc701f0d3e8e4ab6a86f3c578941ed085d`;
+and stable commit `0a11ea32304f6ad6daf5589b6626775b7f00015c`, parent
+`cafd2b53da565ca30c48a146635c95d385d83b81`, patch SHA-256
+`756c9749346bda510e242b02b849448418196bc1f95684dbcbbf362eff60d8ba`.
+Both corresponding 20261102 analysis patches pass byte-for-byte `cmp` against
+the canonical files and independently produce those same authoritative hashes;
+that directory is analytical/disassembly workspace, not canonical patch
+provenance.
+
 `kernel-sysvipc-cve-2015-7613.asm`,
 `kernel-recvmmsg-cve-2016-7117.asm`, and
 `kernel-inet-csk-cve-2017-8890.asm` retain the initialization/publication,

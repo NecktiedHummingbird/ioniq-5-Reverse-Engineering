@@ -8,23 +8,40 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## CVE-2018-9568 socket clone creator checkpoint — 2026-11-07
 
-- Work began and remained on baseline/current HEAD
-  `78aa695145745370e839e3911338fcb9b6d0fe49`. Protected unrelated modified
-  `tools/uk_fw/ias_backend_soft/micom_service.c` and untracked
-  `tools/uk_fw/ias_backend_soft/micom-service` were not edited, staged, reset,
-  stashed, removed, committed, or pushed.
+- Work began on requested baseline
+  `78aa695145745370e839e3911338fcb9b6d0fe49`. A concurrent external workspace
+  commit advanced HEAD to `1d6d30611be2721e78d1ccf53af836039fa2f9c3` and
+  included the protected unrelated MICOM source plus `.gitignore`; this audit
+  did not create that commit and did not reset, amend, stage, stash, remove, or
+  push it. The protected source and untracked binary were not edited or executed
+  by this audit after the advance. A second concurrent external commit,
+  `517a63c985ce2365c33f73efddcd632921d6789b` (parent `1d6d306...`), later
+  advanced HEAD while registering unrelated V-036; this audit likewise did not
+  create, stage, amend, reset, or push it.
 - The exact recovered EU `260128` kernel has the direct upstream patch shape
   for CVE-2018-9568. Complete `sk_clone_lock
   [0xffffffff814787f9,0xffffffff81478abd)` allocates through source current
   `sk_prot` at `+0x28`, performs one variable copy from `+0x78` for
   `obj_size-0x78`, then reloads source `+0x28` at `0xffffffff81478862` and
   stores it to child `sk_prot_creator +0x1a0` at `0xffffffff81478867`.
-- Exact `tcp_prot` object size `0x780` and `tcpv6_prot` size `0x840` both make
-  the variable copy creator-overwriting. The fixed first copy is only `0x60`
-  bytes. No later creator-overwriting copy or `+0x1a0` store occurs. The reset
-  precedes the only observed in-function post-copy `sk_free` at
-  `0xffffffff81478a12`; later `tcp_v4_syn_recv_sock` cleanup can occur only
-  after a non-null corrected child returns.
+- Exact raw descriptor bytes at protocol `+0x100` bind `tcp_prot` object size
+  to `0x780` (`80 07 00 00` at file `0xcc12e0`) and `tcpv6_prot` size to
+  `0x840` (`40 08 00 00` at file `0xcc6dc0`). The second copy's instructions
+  set both endpoints to `+0x78`, load dword `[source current proto+0x100]`, and
+  subtract `0x78`, producing lengths `0x708`/`0x7c8`. Creator qword
+  `[0x1a0,0x1a8)` is `[0x128,0x130)` relative to that start, so both spans copy
+  every creator byte. The fixed first copy is only `0x60` bytes. The
+  creator-overwriting copy ends at `0xffffffff8147884e`; normal
+  control is linear through the reviewed LSM callback to the load/store at
+  `0xffffffff81478862..0xffffffff81478867`. No later creator-overwriting copy
+  or `+0x1a0` store occurs. The complete function's only post-copy direct
+  `sk_free` is at `0xffffffff81478a12`; both of its failure decisions follow
+  the store, and its block returns null through the sole epilogue. Every
+  non-null return is therefore corrected. Separately, each TCP caller tests the
+  returned child before later `tcp_v4_syn_recv_sock` cleanup, so caller-side
+  cleanup occurs only after successful corrected return. Exact
+  `security_fixup_ops` fills the intervening configured/default LSM hook with
+  complete no-op `cap_sk_clone_security`.
 - Complete allocator/free binding confirms `sk_alloc` initializes current and
   creator together, `sk_prot_alloc` selects protocol slab `+0xf8` and object
   size `+0x100`, and `__sk_free` at `0xffffffff814784ea` selects final cache
@@ -37,18 +54,29 @@ followed by stateful service/CAN/persistence reconstruction.
   `2cfba9...e3c1f`, and configuration SHA-256 `987268...dad56` with NET, INET,
   IPV6, and SLUB enabled and USER_NS disabled. All ten supplied raw function
   hashes independently match.
-- Retained byte-identical mainline commit `9d538fa60bad...` patch SHA-256
-  `c1f738...d085d` (parent `b32ca44a88de...`) and stable commit
-  `0a11ea32304f...` patch SHA-256 `756c97...d8ba`. Exact-static artifact
-  SHA-256 is `ce0ff16ade4b09d37757f1a2f33f4a974ddd0e636ffa0b697d56558a85660bc9`.
+- Verified byte-identical public patches in canonical ignored
+  `work/online-kernel-candidates-20261107/cve-2018-9568/`: mainline commit
+  `9d538fa60bad4f7b23193c89e843797a1cf71ef3`, parent
+  `b32ca44a88def4bf92626d8777494c6f14638c42`, patch SHA-256
+  `c1f7389124f499cc764ce39a25f841bc701f0d3e8e4ab6a86f3c578941ed085d`;
+  and stable commit `0a11ea32304f6ad6daf5589b6626775b7f00015c`, parent
+  `cafd2b53da565ca30c48a146635c95d385d83b81`, patch SHA-256
+  `756c9749346bda510e242b02b849448418196bc1f95684dbcbbf362eff60d8ba`.
+  Both corresponding 20261102 analysis copies pass byte-for-byte `cmp` and
+  produce the same authoritative hashes; that directory is not canonical
+  provenance. The patch bodies are not retained in tracked evidence because
+  both include the full
+  operational trigger program. Exact-static artifact SHA-256 is
+  `e876c4eddfc08de17ded57371c447a93c44a44031265c34fb5ffa1decb253273`.
 - Added a 15-input Boolean-only schema-v2 classifier that separates direct
-  patch shape, equivalent fix, vulnerable semantics, absent route, and
-  indeterminate evidence. Incomplete/conflicting evidence fails closed. The
-  full 32,768-state domain asserts every classification field; key/type/CLI
-  tests reject missing, unknown, duplicate, abbreviated, and non-Boolean input.
-  Output is deterministic sorted UTF-8 through `sys.stdout.buffer` with exactly
-  one LF independent of `PYTHONIOENCODING`; default report SHA-256 is
-  `bde9b1683f53494d9bfbb6f9521d0a236eb22312a05032450eae794d86189a13`.
+  patch shape, equivalent fix, vulnerable semantics, positively established
+  absent route, and indeterminate evidence. Incomplete/conflicting evidence
+  fails closed. The full 32,768-state domain asserts every classification and
+  output field; key/type/CLI tests reject every missing key, unknown keys,
+  duplicate/abbreviated options, and non-Boolean input. Output is deterministic
+  sorted UTF-8 through `sys.stdout.buffer` with exactly one LF independent of
+  `PYTHONIOENCODING`; default report SHA-256 is
+  `aa495e1103098e4926d1996a9bf31c4bdea8b0c3c8a6358f0cb71c6ea60cc1cd`.
 - The named mismatch is rejected for this exact kernel. Machine-code shape does
   not establish direct cherry-pick provenance. Installed/running identity,
   runtime policy/route, wrong-cache free, corruption, privilege escalation,
