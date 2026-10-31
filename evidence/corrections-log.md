@@ -403,6 +403,31 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C27 — Integrated `extracted-safe` BusyBox is a VM helper, not stock firmware
+
+- **Was:** current `extracted-safe/mango-rootfs/bin/busybox`, SHA-256
+  `6e123e7f...11348`, was treated as the original `/usr/bin/unzip` provider and
+  its BusyBox 1.35.0 method-12 BZIP2 code was assigned to recovered `260128`.
+- **Now:** VM integration preserved the original as `busybox.vendor`, removed
+  that path, and hard-linked the static research helper from `work/vm/busybox`
+  into `/bin/busybox`. Canonical stock bytes from the independent original
+  extraction are SHA-256 `95bab633...bd9ebc`, BusyBox 1.23.2. Stock `unzip`
+  accepts methods 0/8 and rejects method 12.
+- **Replacement finding:** stock method 8 reaches exact pre-fix CVE-2015-9261
+  `huft_build` before AppScomoDM authenticates either extracted member. The
+  supported result is likely `unzip` child crash/update DoS, not the withdrawn
+  method-12 allocation-relative write claim.
+- **Additional corrections:** AppScomoDM's archive selector examines one first
+  `QDirIterator` result rather than the last match. Exact Qt returns a normalized
+  exit code; checking only bits 8–15 accepts every normal 0..255 exit code.
+- **Why:** an offline extraction tree became a VM staging tree. Hard links and
+  path names are not provenance; original archive/extraction identities must be
+  rechecked before exact-binary conclusions.
+- **Evidence:** `evidence/busybox-unzip-cve-2015-9261.md` and
+  `evidence/artifacts/update-candidates/busybox-unzip-cve-2015-9261-evidence.txt`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

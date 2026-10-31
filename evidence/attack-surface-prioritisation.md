@@ -36,7 +36,30 @@ unknown installed firmware.
   No head-unit event, root transition, or physical console access was observed.
 - Evidence: `evidence/systemd-udev-cve-2026-40225.md`.
 
-### 2. ConnMan DHCPv6 DOMAIN_LIST overwrite — strongest static adjacent-network candidate
+### 2. BusyBox CVE-2015-9261 — exact pre-auth removable-update parser defect
+
+- AppScomoDM's recovered USB path examines one first iterator result matching
+  `S5W_SYSTEM_*_*_*.zip`, then invokes bare `unzip` to extract `AppUpgrade` and
+  `.lge.upgrade.xml` before authenticating either extracted member.
+- Original `/usr/bin/unzip -> /bin/busybox` resolves to stock SHA-256
+  `95bab633...bd9ebc`, BusyBox 1.23.2. Independent review found that the 1.35.0
+  file under the current integrated tree is a VM-injected helper; it is excluded
+  from stock conclusions.
+- Exact stock `unzip` accepts methods 0/8 and rejects method 12. Method 8 reaches
+  dynamic `huft_build`, whose exact `v+n` cursor bound at `0x4788a` can read an
+  uninitialized `v[]` slot at `0x47938`; initial fix
+  `1de25a6e87e0e627aa34298105a3d17c60a1f44e` and corrective sentinel
+  follow-up `6bd3fff51aa74e2ee2d87887b12182a3b09792ef` are absent.
+- The configured launcher context defaults to uid 0 and intended policy labels
+  AppScomoDM `App::upgrade`. Runtime route selection, inherited `PATH`, process
+  identity/label, and the owner's installed hash remain physical-state gates.
+- No ZIP/DEFLATE fixture was made and no target ran. The strongest supported
+  impact is likely `unzip` child crash/update DoS; no memory write, RCE, root,
+  signature bypass, package acceptance, partition write, or persistence was
+  demonstrated.
+- Evidence: `evidence/busybox-unzip-cve-2015-9261.md`.
+
+### 3. ConnMan DHCPv6 DOMAIN_LIST overwrite — strongest static adjacent-network candidate
 
 - Exact RPM metadata identifies `connman-1.29+5w.master.38-r1`, but the finding
   does not rely on that version. Exact shipped instructions at `connmand+0x1f150`
@@ -64,7 +87,7 @@ classification is conditional adjacent-network service termination/availability,
 not memory corruption or code execution. See
 `evidence/connman-cve-2023-28488.md`.
 
-### 3. oFono TPDU and QMI bounds — strongest static cellular/modem candidates
+### 4. oFono TPDU and QMI bounds — strongest static cellular/modem candidates
 
 - V-017 exact shipped instructions retain the destination checks fixed by
   CVE-2023-4232 through CVE-2023-4235, CVE-2023-2794, and CVE-2024-7547. This
@@ -88,7 +111,7 @@ not memory corruption or code execution. See
 - Evidence: `evidence/ofono-sms-decoder-cves.md` and
   `evidence/ofono-qmi-message-list-cve-2024-7537.md`.
 
-### 4. USB storage via AppNavi replacement — published but installation-gated
+### 5. USB storage via AppNavi replacement — published but installation-gated
 
 - Mechanism: `navi_extended` replaces `AppNavi`; on launch it runs
   `main_loop.sh` from the root of an exFAT USB.
@@ -101,11 +124,14 @@ not memory corruption or code execution. See
 - Unknown: whether `260128` still accepts the replacement, and whether the SOP
   gate can be cleared without already having execution.
 
-### 5. Other Wi-Fi/network daemon candidates — exact review rejects two P2P CVEs
+### 6. Other Wi-Fi/network daemon candidates — exact review rejects two P2P CVEs
 
 The recovered RPM Btree contains 1,679 records and identifies, among others,
 `wpa-supplicant-2.5+56-r1`, `busybox-1.23.2-r0mango12`,
-`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. Exact review of
+`dropbear-2020.81-r8mango2`, and `openssl-1.0.2k-r0`. V-020 still illustrates
+why records are only leads, but in the opposite direction from the first draft:
+the stock 1.23.2 bytes had to be separated from a VM-injected 1.35.0 helper
+before exact CVE-2015-9261 review. Exact review of
 wpa_supplicant, SHA-256
 `6ad96a34c09b66c29ed2f9ad7ae73dee8389c81064a30dfd36a1212c52a21212`,
 shows why these package labels are leads rather than verdicts: its
@@ -131,7 +157,7 @@ when package-age matching suggests them.
 listener and banner capture tool. No public end-to-end Wi-Fi-to-root for this
 Gen5W_L build has been established.
 
-### 6. Bluetooth BSA BNEP — exact parser defect, but recovered PAN configuration is dormant
+### 7. Bluetooth BSA BNEP — exact parser defect, but recovered PAN configuration is dormant
 
 Both PCB-selected daemons contain CVE-2017-0782's pre-fix
 `bnep_process_control_packet()` control flow. They read the BNEP extension and
@@ -150,7 +176,7 @@ allocation-bound OOB, disclosure, write primitive, RCE, and owner applicability
 remain unknown. See
 `evidence/broadcom-bsa-bluetooth-cves.md`.
 
-### 7. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
+### 8. USB gadget / iAP2 / CarPlay — recovered, parser review still needed
 
 Kernel config enables `USB_F_IAP2`, `USB_U_IAP2`, `USB_G_SERIAL`,
 `GADGETFS`, `USB_F_MASS_STORAGE`, `USB_DWC3` dual-role. These are modules and the
@@ -160,7 +186,7 @@ finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
-### 8. Kernel — analysed; conditional post-execution candidates remain
+### 9. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).
 - 41 priority functions decompiled with corrected names.
@@ -191,7 +217,7 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   `CONFIG_USER_NS=n` blocks the published unprivileged root setup and production
   interface UFO features are unknown.
 
-### 9. MICOM / CAN — post-exploitation
+### 10. MICOM / CAN — post-exploitation
 
 `micom_*` (24 symbols) includes a user-writable sysfs handler
 (`micom_sys_spidump_store`). CVE-2020-8539 (`micomd`) is a **local** issue:
@@ -215,28 +241,32 @@ the public KOFFEE report confirms it needs code execution first, then reaches
    display/input gates for a disconnected bench with a benign marker—not the
    installed shell unit. Parser and synthetic udevd-to-systemd semantics are
    complete; do not describe them as physical-device reproduction.
-2. For V-015 and V-016, preserve the current NIC-free VM. On a disconnected
+2. For V-020, passively record installed BusyBox/AppScomoDM hashes, the
+   `/usr/bin/unzip` provider, effective `PATH`, SCOMO/FUMO selection, and runtime
+   uid/SMACK label. Do not place a malformed update archive on the owner unit;
+   reserve sanitizer fixtures for a disposable vendor regression environment.
+3. For V-015 and V-016, preserve the current NIC-free VM. On a disconnected
    bench, first record installed `connmand` and libc hashes, interface ownership,
    IPv4/IPv6 state, and benign DHCP/RA behavior. Do not move to a malformed
    control unless restart and recovery are proven, and do not develop a
    privilege payload. Exact fortification already constrains V-016 to an abort
    before the reviewed copy.
-3. For V-017, record installed `ofonod`, unit/marker state, uid/SMACK label,
+4. For V-017, record installed `ofonod`, unit/marker state, uid/SMACK label,
    modem devices, QMI services, and benign SMS behavior before any malformed
    control. Treat any later test as crash-only on a disconnected disposable
    state; do not develop a payload.
-4. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
+5. Identify an authentic post-index caller of V-012 playback or MediaBrowser's
    explicit `requestThumbnails(as)`, and repair the bounded VM thumbnail
    service-name/delivery boundary. Exact static code maps that request to
    `VideoContext → uridecodebin → eligible asfdemux`, while LightMediaScanner
    startup indexing uses a separate non-GStreamer ASF plugin. Manual authentic
    PlayerEngine D-Bus reachability is proven, but no automatic media-to-root path
    or RCE is established.
-5. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
+6. Determine production DAC/SMACK access to `/dev/snd/seq` and analyze V-013's
    first post-free use without attempting or claiming a root exploit.
-6. Measure production interface features before treating CVE-2017-1000112 as a
+7. Measure production interface features before treating CVE-2017-1000112 as a
    reachable path; keep the current VM NIC-free.
-7. If physical bench access later becomes available, capture UART and installed
+8. If physical bench access later becomes available, capture UART and installed
    version state before any write or engineering-mode experiment.
 
 ## Sources

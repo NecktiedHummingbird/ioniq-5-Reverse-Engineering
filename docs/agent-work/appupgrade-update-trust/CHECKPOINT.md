@@ -25,6 +25,17 @@ Date: 2026-11-01
   - SCOMO MASS_PRODUCT/PENETRATION startup explicitly ignores the marker.
 - Excluded AppSetup as the descriptor parser; it initiates the app-ID-300
   transition.
+- Reconstructed AppScomoDM `launchAppUpgrade` and its direct helpers:
+  - one first `S5W_SYSTEM_*_*_*.zip` iterator result and stricter filename-shape validation;
+  - pre-verification extraction of `AppUpgrade` and `.lge.upgrade.xml`;
+  - exact-zero public-key-backed verification of both extracted files;
+  - CryptoService versus old `DecryptToPIPE` AppUpgrade decryption;
+  - plain XML copy, ELF/executable check, final copy/chmod, and app-ID-300 launch;
+  - legacy layout rejection and weak subprocess/error propagation.
+- Identified V-020 in the stock BusyBox `unzip` provider after correcting a VM-
+  helper provenance error: exact method 8 reaches CVE-2015-9261's unfixed
+  `huft_build` `v+n` bound before member authentication; method 12 is rejected.
+  Added a data-free bound model and focused tests.
 - Wrote `evidence/appupgrade-update-trust.md` and corrected the broad
   marker-equals-unchecked-path documentation.
 
@@ -37,18 +48,20 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
 
 ## Remaining
 
-1. Finish AppScomoDM `launchAppUpgrade` at `0xbf260`, including exact build-mode
-   source, legacy/new archive branches, command lines, return handling, and
-   cleanup at `0xc1860`.
-2. Locate the exact owner of `.lge.upgrade.xml` discovery, TE2/decryption,
-   version compare, model/region checks, and package authentication.
+1. Finish the broader caller-state and cleanup reconstruction around AppScomoDM
+   `0xc1860`; the `0xbf260` staging function and direct trust helpers are now
+   complete enough for the current route verdict.
+2. Parse `.lge.upgrade.xml` fields and locate the exact installed-version,
+   model/region, and eligibility comparisons after AppScomoDM's authenticated
+   copy. Keep the unresolved FUMO/AppDMClient route separate.
 3. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
    and write functions without inferring that one skipped branch removes all
    trust controls.
 4. Reconstruct payload target selection, inactive-slot writing, boot selection,
    userspace health, and mark-good independently.
-5. Compare installed hashes and effective arguments only on an owner-controlled,
-   disconnected bench using the passive state bundle.
+5. On a disconnected bench, passively capture installed BusyBox/AppScomoDM/
+   AppUpgrade hashes, effective `PATH`, runtime uid/SMACK label, selected `-un`
+   arguments, and updater state before any active test.
 
 ## Validation
 

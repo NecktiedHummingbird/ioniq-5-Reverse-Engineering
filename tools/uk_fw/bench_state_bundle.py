@@ -30,6 +30,7 @@ from typing import Any, Iterable, Optional
 
 SCHEMA = "ioniq-bench-state/v1"
 MARKER = "@@IONIQ_BENCH_STATE_V1"
+SAFE_ENVIRON_READ_LINE = r'''P_PATH=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null)'''
 MAX_CAPTURE_BYTES = 64 * 1024 * 1024
 MAX_SECTION_BYTES = 8 * 1024 * 1024
 EXPECTED_SECTIONS = (
@@ -210,9 +211,12 @@ do
     P_EXE=$(readlink "$P_DIR/exe" 2>/dev/null)
     P_LABEL=$(cat "$P_DIR/attr/current" 2>/dev/null)
     P_CMD=
+    P_PATH=
     case "$P_COMM" in
-        connmand|ofonod|wpa_supplicant|supplicantmanager|vbtd|bluetoothd|dropbear|dropbearmulti|AppUpgrade)
+        connmand|ofonod|wpa_supplicant|supplicantmanager|vbtd|bluetoothd|dropbear|dropbearmulti|AppLauncher|AppDMClient|AppScomoDM|AppUpgrade)
             P_CMD=$(tr '\000' ' ' < "$P_DIR/cmdline" 2>/dev/null)
+            P_PATH=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null)
+            record process-path "$P_PID|$P_PATH"
             ;;
     esac
     case "$P_COMM" in vbtd|bluetoothd) BT_DAEMON_RUNNING=1 ;; esac
@@ -318,7 +322,11 @@ for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo system_update_
 end_section storage 0
 
 begin_section hashes
-for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
+for H_META in /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key
+ do
+    file_meta "$H_META"
+ done
+for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
  do
     hash_file "$H_TARGET"
  done
@@ -339,8 +347,8 @@ def audit_script(script: str) -> list[str]:
         if not line or line.startswith("#"):
             continue
         # Stderr suppression to /dev/null is non-persistent and is the only
-        # output redirection allowed. Reading cmdline through tr is the only
-        # input redirection allowed.
+        # output redirection allowed. Reading allowlisted cmdline/PATH fields
+        # through tr is the only input redirection allowed.
         redirection_check = (
             line.replace("2>/dev/null", "")
             .replace(">/dev/null", "")
@@ -348,7 +356,13 @@ def audit_script(script: str) -> list[str]:
         )
         if ">" in redirection_check:
             violations.append(f"line {lineno}: output redirection is forbidden")
-        if "<" in redirection_check and '< "$P_DIR/cmdline"' not in redirection_check:
+        if "environ" in line and line != SAFE_ENVIRON_READ_LINE:
+            violations.append(f"line {lineno}: non-allowlisted environment read")
+        if (
+            "<" in redirection_check
+            and '< "$P_DIR/cmdline"' not in redirection_check
+            and '< "$P_DIR/environ"' not in redirection_check
+        ):
             violations.append(f"line {lineno}: unexpected input redirection")
         for pattern in FORBIDDEN_LINE_PATTERNS:
             if pattern.search(f" {line} "):
@@ -390,6 +404,7 @@ def _derive_facts(sections: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "hashes": {},
         "units": {},
         "processes": [],
+        "process_paths": {},
         "interfaces": [],
         "files": {},
         "update_flags": [],
@@ -419,6 +434,9 @@ def _derive_facts(sections: Iterable[dict[str, Any]]) -> dict[str, Any]:
                         "cmdline": cmdline,
                     }
                 )
+            elif key == "process-path":
+                pid, path = _split_fields(value, 2)
+                facts["process_paths"][pid] = path
             elif key == "interface":
                 name, operstate, carrier, kind, ifindex, iflink, driver = _split_fields(value, 7)
                 facts["interfaces"].append(

@@ -25,12 +25,26 @@ followed by stateful service/CAN/persistence reconstruction.
   route selection, not package acceptance: version/model, signature/digest,
   payload write, slot selection, boot trust, health, and mark-good remain
   separate unresolved boundaries.
-- Exact AppSetup is only an app-ID-300 initiator, not the reviewed owner of USB
-  discovery, `.lge.upgrade.xml` decryption/version parsing, authentication, or
-  marker selection. See `evidence/appupgrade-update-trust.md` and
-  `docs/agent-work/appupgrade-update-trust/CHECKPOINT.md`.
-- No recovered updater/helper was run; no package, marker, partition, slot, or VM
-  filesystem was modified.
+- Exact AppSetup is only an app-ID-300 initiator. The SCOMO USB owner is now
+  resolved: AppScomoDM selects a `S5W_SYSTEM_*_*_*.zip`, extracts `AppUpgrade`
+  and `.lge.upgrade.xml`, verifies both through a fixed public-key-backed helper,
+  decrypts only AppUpgrade on this route, performs a basic ELF/executable check,
+  and requests app ID 300. The FUMO/AppDMClient path and later descriptor
+  version/model/region semantics remain unresolved.
+- **V-020 added and independently corrected:** stock `/usr/bin/unzip` resolves
+  to BusyBox SHA-256 `95bab633...bd9ebc`, version 1.23.2. It accepts method 8,
+  rejects method 12, and retains CVE-2015-9261's pre-fix `huft_build` `v+n`
+  bound before AppScomoDM's two verifier calls. The 1.35.0 BusyBox under the
+  current integrated tree is a VM-injected helper and is excluded. The strongest
+  supported impact is likely `unzip` child crash/update DoS, not a memory write,
+  RCE, root, signature bypass, or accepted update. See
+  `evidence/busybox-unzip-cve-2015-9261.md` and
+  `tools/uk_fw/busybox_huft_bounds_model.py`.
+- No recovered updater/helper was run; no archive or compressed stream was
+  created; no package, marker, partition, slot, or VM filesystem was modified.
+  See `evidence/appupgrade-update-trust.md`,
+  `docs/agent-work/appupgrade-update-trust/CHECKPOINT.md`, and
+  `docs/agent-work/busybox-unzip-bounds/CHECKPOINT.md`.
 
 ## Disconnected-bench tooling checkpoint — 2026-11-01
 
@@ -108,6 +122,14 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## Security checkpoint — 2026-11-01
 
+- **V-020 added — exact pre-auth removable-update parser defect:** stock BusyBox
+  method 8 reaches CVE-2015-9261's pre-fix `huft_build`; `v+n` at `0x4788a`
+  permits an uninitialized `v[]` read at `0x47938`, with conditional invalid
+  table reads before AppScomoDM authenticates `AppUpgrade` and
+  `.lge.upgrade.xml`. Stock method 12 is rejected. Physical route selection,
+  effective `PATH`, dynamic target crash, memory write, RCE, SMACK escape, root,
+  persistence, package acceptance, and owner applicability remain unknown. See
+  `evidence/busybox-unzip-cve-2015-9261.md`.
 - **V-015 added — strongest static adjacent-network memory-safety candidate:**
   the recovered RPM Btree identifies `connman-1.29+5w.master.38-r1`, and exact
   shipped instructions confirm CVE-2026-115863 rather than relying on that
@@ -270,7 +292,10 @@ followed by stateful service/CAN/persistence reconstruction.
   evidence:
   `evidence/artifacts/media-candidates/appmediaplayer-thumbnail-caller-evidence.txt`.
 - Next security work: preserve V-014's remaining physical-helper/port/VT gates
-  for a disconnected bench rather than starting the root shell. For V-015, keep
+  for a disconnected bench rather than starting the root shell. For V-020,
+  passively capture installed BusyBox/AppScomoDM hashes, `unzip` provider,
+  effective `PATH`, selected `-un` route, uid, and SMACK label; do not put a
+  malformed update archive on the owner unit. For V-015, keep
   the current VM NIC-free and defer even benign RA/DHCPv6 controls until the
   disconnected bench can record the installed binary, interface/IPv6 state, and
   restart/recovery behavior. For V-016, record installed `connmand` and libc

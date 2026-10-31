@@ -29,6 +29,7 @@ write, slot, boot, or health checks.
 | exact embedded FUMO ELF | `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7` | `863a8730e66a1c5245a1bf458fe2554adee0351a` |
 | `/app/bin/AppLauncher` | `c8d6d56bc254ad0731e81f40bd83aa9b3be6b49bcbd8efb291157a06c4a84268` | not used for this conclusion |
 | `/app/bin/AppScomoDM` | `c44da21eb39987e88d71c648f625338722b8458f0ff8ecfe29e3321cf6d62046` | `496a47fae4cca227723b1f4037be918cae18473c` |
+| stock `/bin/busybox` | `95bab633630fb158344497af52dc112e9e777458b810860068d4daa257bd9ebc` | two notes: `42e0a4c7631667cf9106ca36a4f2e7886f6f72b0`, `dc25533aa5ad984ec9a7ed388925f24d328c1836` |
 | `/app/bin/AppSetup` | `5221ed11a7945eee448c39f8c0a6b52ee2e3130ff8df5fb8b0a9d1c2343200b3` | `c30aaa3c2e3fd536beeb2fafc774e4339550fdf4` |
 
 The canonical extracted files are ignored research artifacts under:
@@ -192,6 +193,71 @@ request is app ID 300, name `AppUpgrade`, location
 normal option builder above supplies its arguments; the outer wrapper then sees
 `-un:1` on a SCOMO/UNECE route and selects its SCOMO child.
 
+## AppScomoDM USB staging and pre-launch trust
+
+The function at `0xbf260` is guarded by byte `this+0x68`. All five direct
+callers pass a true third argument. The ordinary new-method path is:
+
+1. recreate `/update/usb/temp`;
+2. examine the first traversal result returned by `QDirIterator` for
+   `S5W_SYSTEM_*_*_*.zip` (there is no iterator loop);
+3. require that one result to satisfy `QRegExpValidator::Acceptable` for the eight-group
+   `S5W_SYSTEM_...zip` filename pattern;
+4. extract only `AppUpgrade` and `.lge.upgrade.xml`;
+5. authenticate both extracted files through wrapper `0x28580` and
+   `/app/share/AppUpgrade/teruten5_pub.key`;
+6. decrypt `AppUpgrade` to `/update/usb/bin/AppUpgrade.temp` through either the
+   CryptoService `fileDecryption` method or the old `DecryptToPIPE | dd` route;
+7. copy `.lge.upgrade.xml` without decrypting it on this path;
+8. require the decrypted temporary application to begin with ELF magic and be
+   executable;
+9. copy it to `/update/usb/bin/AppUpgrade`, apply mode 755, and request the
+   app-ID-300 launch.
+
+Helper `0xb8a10` validates only filename syntax. It does not extract regex
+captures or compare them with a device model, region, or installed version.
+The normal ZIP command executed at `0xbfaf2` is:
+
+```text
+unzip -o <archive> -d /update/usb/temp AppUpgrade .lge.upgrade.xml
+```
+
+In the original recovered provider arrangement, `/usr/bin/unzip` points to
+stock `/bin/busybox`, SHA-256 `95bab633...bd9ebc`, which identifies itself as
+1.23.2. The current `extracted-safe/.../bin/busybox` was later replaced by a
+VM-only static helper and must not be used for stock conclusions. Exact stock
+`unzip` rejects method 12, accepts method 8, and retains CVE-2015-9261's pre-fix
+`huft_build` bound. Consequently, USB-controlled DEFLATE table data is parsed
+before AppScomoDM authenticates either member. This is V-020, documented in
+`evidence/busybox-unzip-cve-2015-9261.md`; it supports a likely unzip-child
+crash/update denial of service, not a demonstrated memory write, signature
+bypass, RCE, root, or accepted update.
+
+Authentication wrapper `0x28580` requires the fixed public-key path, reads the
+key, and returns verifier `0xe3470`'s result. Linked code contains concrete
+SHA-256 and mbedTLS key operations, but the exact signed-file format, covered
+byte range, parser mode, and RSA/padding behavior remain incomplete. Both
+verifier returns must be zero. This resolves the immediate SCOMO USB owner and
+ordering without claiming that every later payload is authenticated.
+
+The legacy layout detector requires exact entries `AppUpgrade`, `HU`,
+`.lge.upgrade.xml`, and `.whatsnew.tar.gz`, but this MASS_PRODUCT/PENETRATION
+function logs that it will not run the legacy method and returns `-2`. The new
+method has weak error handling: several removal/copy/chmod results are ignored.
+Exact Qt returns a normal child exit code, `-1` for abnormal/crashed termination,
+and `-2` for start/wait failure; AppScomoDM tests only bits 8–15, so every normal
+exit code 0..255 passes this gate while `-1`/`-2` fail. The old `DecryptToPIPE`
+branch ignores `system()` status, and exhausting three final-copy retries still
+continues toward launch. These properties can select stale/partial state only if
+permissions and prior files allow it; they do not remove the two preceding
+member-verifier calls or prove a first-entry path.
+
+The exact launch is an asynchronous session-bus request to service
+`com.lge.avn.applauncher`, path `/Request`, interface
+`com.lge.avn.applauncher.request`, method `launch`, with arguments 300,
+`AppUpgrade`, and `/update/usb/bin/AppUpgrade`. A separate polling helper uses
+`pgrep -x AppUpgrade`; the D-Bus reply itself is not awaited.
+
 ## Marker semantics differ by child
 
 ### FUMO child
@@ -245,9 +311,12 @@ payloads, choose SCOMO/FUMO, inspect the marker, or pass `-un`. Statements that
 assign those jobs to AppSetup are public operating-model summaries, not exact
 recovered-code findings.
 
-The owner of the descriptor discovery/decryption/version/authentication pipeline
-is still being reconstructed. Candidates include AppScomoDM, ApplicationManager,
-`DecryptToPIPE`, and the selected embedded updater.
+The SCOMO USB staging owner is now exact: AppScomoDM discovers the archive,
+extracts and authenticates `.lge.upgrade.xml`, then copies that file to
+`/update/usb/bin` without decrypting it in this route. This does not resolve the
+FUMO/AppDMClient path, the descriptor's internal semantics, installed-version
+comparison, model/region eligibility, or every authentication decision inside
+the selected embedded updater.
 
 ## Route synthesis
 
@@ -272,15 +341,15 @@ The verdicts below are deliberately separate.
 | outer parsing/extraction | Proven wrapper resource boundaries and selection; no package-parser verdict |
 | route selection | Proven: exact `-un:1` selects SCOMO, otherwise FUMO |
 | NE model argument | Proven in embedded fallback row and launch data flow; runtime/owner applicability conditional |
-| descriptor discovery | Unresolved owner/function |
-| descriptor decryption | Unresolved end-to-end; `DecryptToPIPE` exists |
-| version eligibility | Publicly reported, but exact recovered compare/owner still unresolved |
-| model/region eligibility | Unresolved |
+| descriptor discovery | SCOMO USB route proven: selected ZIP member; FUMO/AppDMClient route unresolved |
+| descriptor decryption | SCOMO USB route copies authenticated XML without decrypting it here; other routes/end-to-end semantics unresolved |
+| version eligibility | No compare in the AppScomoDM selector; publicly reported child check, but exact recovered compare/owner remains unresolved |
+| model/region eligibility | Filename syntax only in AppScomoDM; later semantic checks unresolved |
 | FUMO encryption mode | Proven marker-controlled startup byte and broad downstream use |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | Unresolved; marker is not evidence that all checks are skipped |
-| payload hashes/CRC binding | Unresolved |
-| archive extraction safety | Unresolved |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade and XML through a fixed public key; signed range/mode and child payload authentication remain unresolved |
+| payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
+| archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |
 | slot selection | Unresolved exact mechanism |
 | boot-time image trust | Separate from userspace package acceptance; existing boot-container evidence still applies |

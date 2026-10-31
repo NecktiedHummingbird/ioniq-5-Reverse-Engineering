@@ -3,6 +3,35 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.32.0 - stock USB updater reaches CVE-2015-9261 before authentication
+
+- Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new
+  USB method examines one first `QDirIterator` result for
+  `S5W_SYSTEM_*_*_*.zip`, extracts only `AppUpgrade` and `.lge.upgrade.xml`,
+  verifies both through `/app/share/AppUpgrade/teruten5_pub.key`, decrypts
+  AppUpgrade through CryptoService or the old `DecryptToPIPE` route, copies the
+  authenticated XML, checks ELF magic/executable status, and requests app 300.
+- Established exact ordering: archive decompression precedes both member
+  verification calls. Independent review corrected artifact provenance: the
+  current integrated tree's BusyBox 1.35.0 is a VM-injected static helper.
+  Original `/usr/bin/unzip -> /bin/busybox` uses stock SHA-256
+  `95bab633...bd9ebc`, BusyBox 1.23.2.
+- Added corrected V-020. Stock `unzip` accepts methods 0/8 and rejects method 12.
+  Method 8 reaches exact pre-fix CVE-2015-9261 `huft_build`: the `v+n` bound at
+  `0x4788a` can read an uninitialized `v[]` entry at `0x47938` and conditionally
+  perform invalid indexed table reads before the caller rejects the table.
+  Initial `v_end` fix `1de25a6e87e0e627aa34298105a3d17c60a1f44e` was
+  corrected by `6bd3fff51aa74e2ee2d87887b12182a3b09792ef`, which initializes
+  all `v[]` slots to an invalid sentinel; neither correction is present.
+- Added `tools/uk_fw/busybox_huft_bounds_model.py` and focused tests. The tool
+  models integer bounds only and cannot generate compressed or archive input.
+- No target ran and no ZIP/DEFLATE fixture was made. The strongest supported
+  impact is likely `unzip` child crash/update DoS; no memory write, RCE, root,
+  signature bypass, package acceptance, or physical-unit result was produced.
+- Added `evidence/busybox-unzip-cve-2015-9261.md`, extended the passive bench
+  bundle for update identities/symlink/PATH evidence, and updated the trust
+  matrix, inventory, register, priorities, checkpoints, and handover.
+
 ## 1.31.0 - the responder works but is in the wrong environment
 
 - Wrote `micom-responder`: a minimal `/dev/ttyS1` peer implementing the measured framing
@@ -41,35 +70,6 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   answers the empirically observed ids with valid XOR frames and plausible boot info, run it as the
   `/dev/ttyS1` peer, and re-test. The framing, the id table and the reply rule (request id with bit 15 set)
   are all already measured and written down.
-
-## 1.31.0 - pre-auth USB update parser defect and exact SCOMO staging
-
-- Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new
-  USB method selects the last matching `S5W_SYSTEM_*_*_*.zip`, extracts only
-  `AppUpgrade` and `.lge.upgrade.xml`, verifies both through
-  `/app/share/AppUpgrade/teruten5_pub.key`, decrypts AppUpgrade through
-  CryptoService or the old `DecryptToPIPE` route, copies the authenticated XML,
-  checks ELF magic/executable status, and requests app ID 300.
-- Established exact ordering: archive decompression precedes both member
-  verification calls. The normal bare `unzip` provider is recovered BusyBox
-  SHA-256 `6e123e7f...11348`; its exact banner says 1.35.0 despite a conflicting
-  1.23.2 package record.
-- Added V-020. Exact BusyBox instructions accept ZIP method 12 and reach the
-  bundled BZIP2 decoder. `runCnt` accumulation at `0x489929` lacks the
-  signed-negative check added by upstream commit
-  `14f6b6b580a4c5a64029ea77ef4dbeca7ebdfd8f`; the wrapped bound, count update,
-  sign extension, and allocation-relative write remain at
-  `0x48993f..0x489946`, `0x48995c`, and `0x489a39`.
-- Added `tools/uk_fw/busybox_bunzip2_bounds_model.py` and focused tests. The tool
-  models numeric states only and cannot generate an archive, compressed stream,
-  command, packet, or payload.
-- Kept the residual condition separate from CVE-2017-15873 and found no separate
-  public CVE assignment. No target ran; no trigger archive, crash, controlled
-  write, RCE, root transition, signature bypass, package acceptance, or
-  physical-unit result was produced.
-- Added `evidence/busybox-bunzip2-usb-update.md` and updated the updater trust
-  matrix, exploit inventory, vulnerability register, priorities, checkpoints,
-  and handover.
 
 ## 1.29.0 - shared-memory publishers identified, but not the one that matters
 

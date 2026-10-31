@@ -2317,3 +2317,21 @@ and are superseded by corrections rather than silently rewritten.
   each time and I had treated that as "no peer to talk to", when it also meant "no attempt was made".
 - The correction is cheap to state and expensive to have missed: running and functioning are different
   claims, and this image separates them cleanly by boot path.
+
+## 2026-11-01 — correction: the first updater parser finding used the VM helper
+
+- Independent review rejected the initial method-12 V-020 attribution. The BusyBox 1.35.0 file under the
+  integrated `extracted-safe` tree is a hard-linked static VM helper, installed during research-image
+  construction; it is not stock firmware. The original bytes were preserved and also exist in an independent
+  extraction as BusyBox 1.23.2, SHA-256 `95bab633...bd9ebc`.
+- Stock `unzip` accepts ZIP methods 0 and 8 and rejects method 12, so the earlier BZIP2 run-count route is
+  withdrawn for the recovered firmware. This correction preserves the failed analysis rather than silently
+  rewriting it and adds a stock/VM provenance rule for future exact-binary work.
+- Re-analysis found a different exact pre-authentication defect: method 8 reaches CVE-2015-9261's pre-fix
+  `huft_build` `v+n` bound. Incomplete dynamic-Huffman tables can read an uninitialized `v[]` entry and
+  conditionally make an invalid indexed read before AppScomoDM authenticates either extracted member.
+- The supported impact is now deliberately narrower: likely `unzip` child crash and update denial of service.
+  No malformed stream was created, no target ran, and no memory write, RCE, root, signature bypass or accepted
+  update is claimed.
+- The same review corrected archive selection from "last match" to one first iterator result and extended the
+  passive collector to record symlink metadata plus allowlisted effective process `PATH` evidence.

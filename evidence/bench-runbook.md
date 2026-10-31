@@ -55,8 +55,11 @@ host:
 This single capture records installed hashes, process uid/gid and effective
 SMACK labels, unit activation, listeners, interfaces, passive Wi-Fi/P2P state,
 oFono device/unit state, local Bluetooth SDP/profile state, Dropbear chain
-completeness, and A/B/update flags. Missing commands/files remain explicit
-records. An incomplete terminal marker makes the JSON incomplete rather than
+completeness, and A/B/update flags. Update-specific records include the live
+command lines for AppLauncher/AppDMClient/AppScomoDM/AppUpgrade and hashes for
+BusyBox, both unzip providers, those applications, `CarOption.csv`,
+`DecryptToPIPE`, and `teruten5_pub.key`. Symlink metadata is recorded separately
+from hash resolution. Missing commands/files remain explicit records. An incomplete terminal marker makes the JSON incomplete rather than
 silently treating a truncated serial capture as authoritative. Do not replace
 this generated probe with an arbitrary script under the same filename.
 

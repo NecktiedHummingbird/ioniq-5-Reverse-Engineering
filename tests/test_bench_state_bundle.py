@@ -63,6 +63,21 @@ class BenchStateBundleTests(unittest.TestCase):
         self.assertEqual(script.count("command -v"), 1)  # only inside has_command()
         self.assertNotIn("if command -v", script)
         self.assertNotRegex(script, r"\biw\s+.*\bscan\b")
+        for process_name in ("AppLauncher", "AppDMClient", "AppScomoDM", "AppUpgrade"):
+            self.assertIn(process_name, script)
+        for update_path in (
+            "/bin/busybox",
+            "/usr/bin/unzip",
+            "/usr/bin/unzip64",
+            "/app/bin/AppLauncher",
+            "/app/bin/AppDMClient",
+            "/app/bin/AppScomoDM",
+            "/app/bin/AppUpgrade",
+            "/app/bin/CarOption.csv",
+            "/app/share/AppUpgrade/DecryptToPIPE",
+            "/app/share/AppUpgrade/teruten5_pub.key",
+        ):
+            self.assertIn(update_path, script)
 
     def test_audit_rejects_target_writes_and_active_commands(self) -> None:
         unsafe = """#!/bin/sh
@@ -75,6 +90,20 @@ wpa_cli p2p_find
         self.assertGreaterEqual(len(violations), 4)
         self.assertTrue(any("redirection" in item for item in violations))
 
+    def test_audit_rejects_non_allowlisted_environment_read(self) -> None:
+        unsafe_lines = (
+            '''P_PATH=$(cat < "$P_DIR/environ" 2>/dev/null)\n''',
+            '''P_PATH=$(cat "$P_DIR/environ" 2>/dev/null)\n''',
+            '''capture_file process-env "$P_DIR/environ"\n''',
+        )
+        for unsafe in unsafe_lines:
+            with self.subTest(unsafe=unsafe):
+                violations = MODULE.audit_script(unsafe)
+                self.assertTrue(
+                    any("non-allowlisted environment read" in item for item in violations)
+                )
+        self.assertEqual(MODULE.audit_script(MODULE.SAFE_ENVIRON_READ_LINE + "\n"), [])
+
     def test_parse_timestamped_capture_and_derive_facts(self) -> None:
         capture = valid_capture(
             {
@@ -82,7 +111,8 @@ wpa_cli p2p_find
                     (
                         "process",
                         "12|0|0|App::bluetooth|/tmp/vbtd|vbtd|/app/bin/vbtd -d /dev/ttyS0",
-                    )
+                    ),
+                    ("process-path", "12|/usr/local/bin:/usr/bin:/bin"),
                 ],
                 "units": [("unit", "vbtd.service|LoadState=loaded;ActiveState=active;")],
                 "interfaces": [
@@ -100,6 +130,10 @@ wpa_cli p2p_find
         self.assertTrue(report["complete"])
         self.assertEqual(report["warnings"], [])
         self.assertEqual(report["facts"]["processes"][0]["smack_label"], "App::bluetooth")
+        self.assertEqual(
+            report["facts"]["process_paths"]["12"],
+            "/usr/local/bin:/usr/bin:/bin",
+        )
         self.assertEqual(report["facts"]["units"]["vbtd.service"], "LoadState=loaded;ActiveState=active;")
         self.assertEqual(report["facts"]["interfaces"][0]["name"], "wlan0")
         self.assertEqual(report["facts"]["interfaces"][0]["ifindex"], 3)

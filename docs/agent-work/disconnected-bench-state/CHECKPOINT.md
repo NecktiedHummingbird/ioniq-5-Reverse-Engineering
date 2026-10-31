@@ -69,11 +69,14 @@ executable, or active exploit input was used.
 1. On return of an owner-controlled disconnected bench, emit/audit the probe,
    run it through an already-available console without copying it to storage,
    and parse the retained stdout before any active test.
-2. Compare installed hashes/state with V-015 through V-019 and the recovered
+2. Compare installed hashes/state with V-015 through V-020 and the recovered
    Dropbear conclusion; do not promote absence/denial/truncation to a negative.
+   V-020-specific passive fields now cover BusyBox/unzip providers,
+   AppLauncher/AppDMClient/AppScomoDM/AppUpgrade, `CarOption.csv`,
+   `DecryptToPIPE`, the public key, effective arguments, uid, and SMACK labels.
 3. Use the captured A/B flags and current root only after a full partition dump
    and restore rehearsal to plan any update acceptance experiment.
-4. Offline, continue exact `AppSetup`/`AppUpgrade` analysis of verification order,
-   TE2 metadata use, manifest-to-payload binding, and version comparison. Keep
-   parsing, eligibility, authentication, inactive-slot write, boot selection,
-   boot trust, and mark-good as separate verdicts.
+4. Offline, continue exact `AppUpgrade` child analysis of descriptor semantics,
+   TE2 metadata use, manifest-to-payload binding, version comparison, payload
+   targets, inactive-slot writes, boot selection, and mark-good. AppScomoDM USB
+   staging and its pre-auth BusyBox boundary are now separately documented.
