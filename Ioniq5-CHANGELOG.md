@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.49.0 - exact CVE-2020-29660 TTY session-lock classification
+
+- Added V-027 after binding exact `TIOCGSID` dispatch, unlocked session-pointer
+  reload/dereference, two same-field writer lifetime transitions, and the
+  missing effects of upstream fix `c8bcd9c5be24fb9e6132e97da5a35e55a83e36b9`.
+- Classified it as a conditional local information-disclosure candidate rather
+  than root: upstream describes a theoretical four-byte read for `PREEMPT=y`,
+  while this kernel has voluntary preemption and full preemption unset. SMP is
+  recorded independently; a realizable harmful overlap remains unproved.
+- Added focused reviewed assembly, the authoritative patch, a Boolean-only
+  model, a complete 64-state truth table, CLI/determinism invariants, and
+  explicit null outcomes for runtime overlap, disclosure, and privilege gain.
+- No PTY, ioctl, thread, race, PID-lifetime operation, stale access, target
+  execution, privilege transition, or persistence action was performed.
+
 ## 1.48.0 - passive runtime triage for V-024 through V-026
 
 - Added a deterministic, fail-closed host classifier for completed passive

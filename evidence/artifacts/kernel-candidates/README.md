@@ -108,6 +108,7 @@ commits:
 - CVE-2017-10661: `1e38da300e1e395a15048b0af1e5305bd91402f6`;
 - CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2018-18281: `eb66ae030829605d61fbef1909ce310e29f78821`;
+- CVE-2020-29660: `c8bcd9c5be24fb9e6132e97da5a35e55a83e36b9`;
 - CVE-2020-29661: `54ffccbf053b5b6ca4f6e45094b942fab92a25fc`;
 - CVE-2021-0920: `cbcf01128d0a92e131bd09f1688fe032480b65ca`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
@@ -138,6 +139,10 @@ absence of a direct or indirect barrier underlying V-025.
 `kernel-tty-pgrp-cve-2020-29661.asm` binds target/real TTY identities,
 reciprocal UNIX98 PTY links, exact pgrp/lock offsets, and same-field updates
 under distinct master/slave locks underlying V-024.
+
+`kernel-tty-session-cve-2020-29660.asm` binds `TIOCGSID` dispatch, the unlocked
+session null-test/reload/dereference sequence, two same-field writer lifetime
+transitions, and exact `pid_vnr` object dereferences underlying V-027.
 
 `kernel-mremap-cve-2018-18281.asm` binds ordinary PTE transfer, exact
 source/destination PTL acquisition and release, deferred-flush state, and the

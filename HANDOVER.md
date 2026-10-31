@@ -187,7 +187,13 @@ followed by stateful service/CAN/persistence reconstruction.
   CVE-2017-10661 timerfd semantics: membership changes occur outside the only
   global-list lock and no common context lock covers parallel same-file
   transitions. No harmful interleaving, list corruption/UAF, crash, or root is
-  established. See `evidence/vendor-kernel-timerfd-cve-2017-10661.md`.
+  established. See `evidence/vendor-kernel-timerfd-cve-2017-10661.md`. V-027
+  retains exact CVE-2020-29660 TTY session-lock semantics: `TIOCGSID` reads and
+  dereferences the session PID without the control lock/reference while writers
+  release before clearing or replacing the same field. The upstream-described
+  four-byte read specifically names full preemption, which this voluntary-
+  preemption build lacks; no harmful overlap, disclosure, or root is proved.
+  See `evidence/vendor-kernel-tty-session-cve-2020-29660.md`.
   CVE-2017-11176 is also rejected by
   exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup

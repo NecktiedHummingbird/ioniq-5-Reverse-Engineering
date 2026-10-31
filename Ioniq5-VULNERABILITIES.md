@@ -402,6 +402,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `1e38da300e1e395a15048b0af1e5305bd91402f6` or equivalent context-derived locking continuously covering membership and nested global-list operations; validate only with race and memory-safety instrumentation on a disposable kernel.
 - **Evidence:** `evidence/vendor-kernel-timerfd-cve-2017-10661.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-timerfd-cve-2017-10661.asm`; Boolean-only model `tools/uk_fw/timerfd_cancel_lock_model.py`.
 
+## V-027 — TTY session-pointer locking defect (EXACT CVE-2020-29660 PREMISE; DISCLOSURE UNPROVEN)
+
+- **Status:** exact `TIOCGSID` machine code reads and dereferences the real TTY session PID without the control lock or a retained PID reference, while exact writers release the referenced PID before clearing or replacing the same field. No PTY, ioctl, concurrency, stale dereference, disclosure, or privilege transition was executed.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_TTY=y`, `CONFIG_UNIX98_PTYS=y`, `CONFIG_SMP=y`, `CONFIG_PREEMPT_VOLUNTARY=y`, and full `CONFIG_PREEMPT` unset.
+- **Exact mechanism:** ioctl `0x5429` dispatches to `0xffffffff812879a9`; the branch null-tests `real_tty+0x1d8`, calls `might_fault`, reloads the field, and passes it to exact `pid_vnr` with no control lock/reference acquisition. `pid_vnr` reaches PID-object field reads. Exact `__proc_set_tty` releases the old reference under `tty+0x128`, unlocks, and only afterward stores the replacement; `disassociate_ctty` independently releases then clears the same field under that lock.
+- **Reachability:** upstream says an unprivileged user on `PREEMPT=y` can theoretically read four bytes of freed memory. That documented configuration is absent here. SMP leaves other concurrency questions open, but runtime PTY exposure, an eligible writer, and a harmful overlap remain unobserved.
+- **Impact boundary:** exact static evidence establishes the locking defect and stale-session read premise only. It does not establish a stale dereference, four-byte return, useful disclosure, controlled write, corruption, RCE, root, SMACK escape, persistence, or safety impact.
+- **Remediation:** backport `c8bcd9c5be24fb9e6132e97da5a35e55a83e36b9` or equivalent consistent session-field locking/reference ownership; validate only on a disposable instrumented kernel.
+- **Evidence:** `evidence/vendor-kernel-tty-session-cve-2020-29660.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-tty-session-cve-2020-29660.asm`; Boolean-only model `tools/uk_fw/tty_session_lock_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

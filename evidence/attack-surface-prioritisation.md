@@ -232,6 +232,11 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-027/CVE-2020-29660 is an exact TTY session-pointer locking defect, but the
+  authoritative four-byte disclosure description names `PREEMPT=y` and this
+  build has only voluntary preemption. Keep as conditional information
+  disclosure below V-024 unless runtime evidence or disposable-kernel analysis
+  establishes a realizable harmful overlap.
 - V-026/CVE-2017-10661 is an exact built-in timerfd race premise requiring no
   device/module/namespace. Same-context membership transitions lack the fixed
   per-context lock, but public impact is more clearly list corruption/DoS than
