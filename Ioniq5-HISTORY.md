@@ -2980,3 +2980,13 @@ and are superseded by corrections rather than silently rewritten.
   bare number stops being possible in good conscience.
 - Worth keeping as a general lesson for shared documents: identifiers allocated by position are not identifiers at
   all once more than one author appends.
+
+## 2026-10-31 — my conclusion was wrong, and the register caught it
+
+- I had eliminated the launcher as a first stage because every target I could find was a literal on read-only media.
+  The register's newer entry shows the target is a string supplied over D-Bus at runtime, which a literal survey
+  could never see.
+- This is the most useful kind of correction: it does not just fix a fact, it revives a chain. The same-uid HMI
+  boundary in that entry is precisely what the environment-file and trust-anchor entries need.
+- Writing down that my own commit was refuted is the point of keeping a register with evidence grades. A record that
+  only ever accumulates confirmations is not a record, it is a press release.

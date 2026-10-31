@@ -3,6 +3,38 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.65.0 - CORRECTION: my "V-009 eliminated" conclusion is refuted by V-028
+
+- Reviewing the register's newer entries (V-015…V-032, added by another workstream) turned up a correction to **my
+  own** conclusion at 1.48.0. I had eliminated the launcher's unverified path as a first stage on the grounds that
+  every launch target is a literal under read-only `/navi`. **That reasoning was invalid.**
+- **V-028** establishes the opposite: `AppLauncher` exports a session-bus `launch(appid, appname, applocation, …)`
+  and the runtime **`applocation` QString** reaches the AppProcess program field, where a dispatcher byte (`+0x1c`)
+  selects a route to a `QProcess::start` call site **without either verifier call**. New objects accept appids
+  1…1024 and require only `QFile(applocation).exists()`. My string-literal survey of the binary simply could not see
+  a path that is supplied at runtime, and I treated the absence of evidence in one method as evidence of absence.
+- **The correct boundary, taken from V-028 rather than restated by me:** the service has a uid-0 default; the
+  recovered session bus uses EXTERNAL authentication and, with no user connection rule, defaults to the daemon's
+  uid, so this is **not** arbitrary cross-uid access. It is relevant to **same-uid, SMACK-separated HMI code** that
+  can own the service name, register the `Request` object and authenticate.
+- **Consequence for the chain this thread was building:** the "first stage" is a live candidate again, and it is the
+  same-uid HMI context — which is exactly the precondition the V-012 (`EnvironmentFile`) → V-034 (update trust
+  anchor) chain needs. My 1.48.0 entry therefore overstated its negative, and the chain is one step closer to
+  complete than the records said yesterday.
+- Recorded plainly: a wrong conclusion of mine, corrected by a different workstream's evidence, with the boundary
+  that actually holds. The lesson is the same one this session keeps teaching — **absence of a literal is not
+  absence of a path**.
+
+## 1.66.0 - bind V-031 source mutability to live DAC and SMACK evidence
+
+- Confirmed that both recovered eMMC fstab branches configure `/update` as a writable ext4 partition and that boot setup conditionally constructs `/update/usb/bin` plus staged executable placeholders.
+- Separated writable-filesystem structure from actor write access: rootfs mountpoint metadata is hidden by the mounted filesystem; setup does not pin staged uid/gid/mode or `SMACK64`; and `SMACK64EXEC` does not authorize writes.
+- Counted configured write relations from the floor label and 22 named `App::*` labels to `App::upgrade` objects, while retaining directory/file labels, DAC metadata, process credentials/labels, loaded rules, and update serialization as runtime gates.
+- Added `evidence/update-source-runtime-policy.md` with exact configuration hashes and narrow V-031 implications.
+- Extended the passive disconnected-bench bundle to record `/update` and `/update/usb` metadata plus read-only `SMACK64`/`SMACK64EXEC` query states for the update namespace, staged updater/XML, installed AppDMClient/AppUpgrade, and persistent public key. Process records now retain real/effective/saved/filesystem uid/gid values and supplementary groups separately.
+- The collector distinguishes absent path, absent attribute, unavailable provider, query error, malformed label, and successful label; parsed reports retain raw records and derive `facts.smack_xattrs`. Static audit rejects bare and path-qualified xattr/ownership/mode mutation utilities and mutating `attr`/`setfattr` modes.
+- No target xattr, file, mount, process, update state, package, partition, slot, radio, network, or boot state was changed; no recovered executable was run.
+
 ## 1.64.0 - register numbering collision found and repaired (provenance added)
 
 - Discovered while checking the register: it is edited by **more than one workstream**, and has been advanced
