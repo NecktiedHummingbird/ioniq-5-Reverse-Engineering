@@ -550,11 +550,22 @@ left as an absence-of-`User=` argument:
 
 Both run as **root**, measured. So the separation is genuinely absent, not merely unset in a unit file.
 
-**What is *not* demonstrated, and why it matters.** With a probe file placed at `/media/usb/probe.mp3`, no
-scanner database was produced and no probe marker appeared in any database on the image. `lightmediascanner.conf`
-ships its `db-path` **commented out**, so the daemon had no destination to write to in this harness. The parsing
-step — the one that would consume attacker-supplied bytes — is therefore **not** demonstrated here. This register
-does not claim it happened.
+**What is *not* demonstrated, and why it matters.** The parsing step — the one that would consume
+attacker-supplied bytes — was attempted **four ways** and did not run in this harness:
+
+1. default configuration (`db-path` ships commented out, so there is no destination);
+2. a written config supplying `db-path=/tmp/lms.db` and `directory=audio:/media/usb/`;
+3. the same with `LD_LIBRARY_PATH=/app/lib`, because `usr/lib/liblightmediascanner.so.0.5.1` is a **38-byte
+   stub** while the real 300 KB library lives in `app/lib`;
+4. the daemon driven directly, with a probe file present at `/media/usb/probe.mp3`.
+
+In every case the process ran as **uid 0** and produced **no database and no diagnostic output at all**. The
+image does ship `app/lib/lightmediascanner/plugins`, so the most likely requirements are a plugin-path variable
+or a **mount/udev event** rather than `startup-scan` in this projection.
+
+The parsing step is therefore **not demonstrated**, and this register does not claim it happened. What is
+established is the privilege (measured) and the scan target configuration (sourced); what is not is execution of
+the parse itself.
 
 **Chain status.** First stage candidate confirmed at the configuration level, with the root identity now measured:
 root parser over attacker-supplied content, reachable locally via `/media`. What remains unproven is (a) that the

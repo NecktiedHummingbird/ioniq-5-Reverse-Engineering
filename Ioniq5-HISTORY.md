@@ -2710,3 +2710,21 @@ and are superseded by corrections rather than silently rewritten.
   from reading as stronger than it is.
 - Twice now the same discipline has paid: separate whether the process ran from whether the code path ran, and
   report only what was observed.
+
+## 2026-11-02 — the VMNC version match was defeated by its machine code
+
+- Embedded build metadata made the installed VMNC plugin look like vulnerable GStreamer `1.8.3-r0`, and the plugin is present in the recovered filesystem.
+- Exact packet parsing instead showed both effects of the later upstream repair: unsigned 16384 width/height checks terminate before WMVi handler dispatch, and the canvas allocation uses `g_malloc0`.
+- The maximum accepted four-byte-pixel product is `0x40000000`, so CVE-2016-9445's historical allocation-wrap premise is unreachable through that handler. Zero initialization also rejects CVE-2016-9446's canvas-disclosure premise.
+- This is a narrow rejection, not a declaration that VMNC or the wider media stack is safe. No media input or recovered parser was executed.
+
+## 2026-10-31 — four ways to make it parse, and none worked
+
+- The scanner runs as root and its configuration points at removable-media paths, but it would not produce a
+  database in this harness under any of four setups. The most useful conclusion is a boundary: measured privilege,
+  configured targets, undemonstrated parse.
+- Finding a 38-byte stub where a 300 KB library should be was a genuine lead and still not enough, which is how
+  these things usually go: each correction removes one candidate and the real requirement is something dumber,
+  like an environment variable or a mount event.
+- Stopping here rather than continuing to vary the invocation is the right call. The register is accurate about
+  what is known, and the remaining work is a harness feature (simulating a mount event) rather than another guess.

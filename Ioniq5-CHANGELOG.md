@@ -3,6 +3,32 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.51.0 - the parse is not demonstrable in this harness; recorded as such
+
+- Four attempts to make the root scanner actually parse a locally-dropped file, all with a probe present and all
+  running as **uid 0**:
+  1. default config (`db-path` commented out — no destination);
+  2. written config with `db-path=/tmp/lms.db` and `directory=audio:/media/usb/`;
+  3. same plus `LD_LIBRARY_PATH=/app/lib`, after finding `usr/lib/liblightmediascanner.so.0.5.1` is a **38-byte
+     stub** while the real 300 KB library is in `app/lib`;
+  4. daemon driven directly.
+- Every attempt: root, **no database, no diagnostic output at all**. The image ships
+  `app/lib/lightmediascanner/plugins`, so the likely requirements are a plugin-path variable or a **mount/udev
+  event** rather than `startup-scan` under this projection.
+- Recorded as "not demonstrable here" rather than as another open question, because the difference matters: the
+  privilege and the scan targets are established, and only the execution of the parse is not. The register says
+  exactly that and no more.
+- The empty log is the same trap for the fifth or sixth time in this project — silence from a daemon is not
+  evidence of anything until it is known the daemon reached the code that would speak.
+
+## 1.53.0 - reject VMNC CVE-2016-9445/9446 by exact vendor backport
+
+- Rejected CVE-2016-9445's VMNC dimension-overflow mechanism for exact recovered `libgstvmnc.so`, despite its embedded GStreamer `1.8.3-r0` recipe path.
+- Bound complete packet-parser flow: WMVi width and height are unsigned 16-bit fields; every feasible WMVi route compares both with 16384 before handler dispatch, and either oversized value returns `-1`. A syntactic bypass edge is predicate-infeasible, so no strict structural-dominance claim is made.
+- Bound the handler's accepted depths to 8/16/32 bits, the exact width/height/bytes-per-pixel field assignments, and the relevant allocation to `g_malloc0`. The maximum accepted product is `16384 * 16384 * 4 = 0x40000000`, so the guarded multiplication fits signed 32-bit arithmetic. The zeroed allocation also rejects CVE-2016-9446's uninitialised-canvas mechanism.
+- Added the authoritative upstream patch, exact machine-code excerpt, bounded numeric model, tests, and evidence. This rejects only the two named mechanisms, not every VMNC defect or every media-parser candidate.
+- No media file, parser execution, packet, overwrite, crash, code execution, privilege transition, or persistence action was performed.
+
 ## 1.50.0 - V-007's root identity measured live; the parse itself still not demonstrated
 
 - Stopped inferring the privilege from an absent `User=` and measured it on a running guest:
