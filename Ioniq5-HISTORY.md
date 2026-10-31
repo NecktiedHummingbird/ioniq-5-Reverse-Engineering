@@ -2837,3 +2837,12 @@ and are superseded by corrections rather than silently rewritten.
   about the safety of the image. Both halves of that are now written down.
 - The register ends where it should: a dated, privileged, reachable parsing stack, with no invented vulnerability
   attached to it.
+
+## 2026-10-31 — a run that produced nothing is not a negative result
+
+- Two trace attempts came back empty, and the correct reading is that the instrumentation did not capture anything,
+  not that the client withheld configure events. This is the rule this project keeps having to relearn, applied
+  before the numbers were interpreted this time.
+- The VM question is now well posed and externally unanswerable: the client commits without attaching. Pushing
+  further from outside the process is wasted effort; the decisive move is to supply the missing buffer from a shim
+  and see whether the scene lights up.

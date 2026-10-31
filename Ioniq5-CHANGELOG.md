@@ -3,6 +3,24 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.58.0 - VM: the buffer question needs a shim, not more probing
+
+- Two attempts to capture the client's protocol trace produced no trace at all — the application log was empty and the
+  final markers were cut off before the run ended. Under this project's standing rule (confirm the path was reached
+  before reading a zero) that is **no result**, not "no configure events".
+- What is already established stands unchanged: the compositor renders (control capture works), our shim maps the
+  application's surface (`ias-soft: shim mapped surface`), the shared-memory segments are created and attached
+  (attach errors 0 in the run where the app reached the widget code), and the client issues five `commit`s while
+  never issuing a non-nil `attach`. So the scene has a view whose surface has no buffer: nothing to composite, and a
+  correctly black frame.
+- The gap is therefore purely client-side, and probing it further from outside has produced diminishing returns.
+  The clean next step is an **LD_PRELOAD shim** that intercepts `wl_surface_attach`/`wl_surface_commit` and, when
+  the client attaches no buffer, supplies a known dummy shm buffer. If a frame then appears, the entire stack —
+  backend, CRTC, IAS shell, renderer, capture — is proven end to end and the client's omission is isolated as the
+  single remaining defect. That is a simulated adaptor in the project's own terms rather than another measurement.
+- No claim is made here that the client is defective in general; only that on this build, in this environment, it
+  commits surfaces without buffers.
+
 ## 1.59.0 - reject CVE-2016-9806 by exact saved-object cleanup
 
 - Compared complete exact `netlink_dump` against upstream fix `92964c79b357efd980812c4de5c1fd2ec8bb5520` rather than relying on the `4.1.27-abl` banner.
