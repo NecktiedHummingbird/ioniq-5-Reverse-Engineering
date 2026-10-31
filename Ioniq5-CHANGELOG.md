@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.64.0 - register numbering collision found and repaired (provenance added)
+
+- Discovered while checking the register: it is edited by **more than one workstream**, and has been advanced
+  concurrently to **V-032** while three sections this thread appended re-used **V-012**, **V-013** and **V-014**.
+  That produced duplicate numbers pointing at different findings — a documentation defect that would mislead
+  anyone citing them.
+- Repaired: those three sections are now **V-033** (production compositor ships full DWARF), **V-034** (update
+  trust anchor on a writable root) and **V-035** (root media parsers link ageing codec libraries). The three V-007
+  additions are now headings of the form `## Amendment to V-007 (X) — …`, so they read as amendments rather than
+  pseudo-entries.
+- Added a **provenance note** at the top of the register: entry numbers are not stable while it is edited
+  concurrently, so any citation must include the **title** as well as the number, and late material appears as
+  `Amendment to V-0NN (X)`. Changelog references written before today use the old numbers and must be read by title.
+- Also noted for the record that this thread's register edits and another stream's entries have been interleaving
+  for several rounds without conflict in git, which is exactly why the semantic collision survived unnoticed: the
+  merges were clean, the meaning was not.
+
 ## 1.63.0 - malformed-input probe: a negative result with a weak instrument, recorded as such
 
 - **Images are not reachable on this path.** Five malformed PNGs in `/media/mtp` gave `processed=0`, because the

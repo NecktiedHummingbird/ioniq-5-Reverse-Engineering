@@ -2971,3 +2971,12 @@ and are superseded by corrections rather than silently rewritten.
   audio. The inventory in V-014 implied a broader surface than the configuration actually exposes.
 - The instrument was the problem again, in a new form: crude mutations cannot find bugs that require valid
   structure. The next attempt needs a generator, not more bit flips.
+
+## 2026-10-31 — clean merges, colliding meaning
+
+- The register had grown to V-032 under another workstream while three of my sections reused V-012, V-013 and V-014.
+  Every merge succeeded and every number was wrong, which is the failure mode version control cannot see.
+- Renumbered, converted the leftovers into clearly-marked amendments, and wrote a provenance note so that citing a
+  bare number stops being possible in good conscience.
+- Worth keeping as a general lesson for shared documents: identifiers allocated by position are not identifiers at
+  all once more than one author appends.
