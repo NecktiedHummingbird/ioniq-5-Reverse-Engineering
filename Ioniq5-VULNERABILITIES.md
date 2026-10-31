@@ -434,6 +434,16 @@ bring-up defect. That question is open.
 - **Remediation:** backport `232cd35d0804cc241eb887bb8d4d9b3b9881c64a` or equivalent early rejection before allocation/copy; validate only in a disposable instrumented kernel environment.
 - **Evidence:** `evidence/vendor-kernel-ipv6-cve-2017-9242.md`; reviewed/complete assembly under `evidence/artifacts/kernel-candidates/kernel-ipv6-cve-2017-9242*.asm`; Boolean-only model `tools/uk_fw/ipv6_append_bounds_model.py`.
 
+## V-030 — perf move-group context race (EXACT CVE-2017-6001 MECHANISM; RUNTIME RACE/ROOT UNPROVEN)
+
+- **Status:** exact `perf_event_open` software-group-to-hardware-context migration loads `group_leader->ctx` before waiting for two mutexes and uses that saved context after the wait without a live-reference acquisition, identity revalidation/retry, or post-lock group-state check. No event, thread, race, crash, or privilege transition was created.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_PERF_EVENTS=y`, `CONFIG_SMP=y`; exact initialized `perf_event_paranoid` is 1 but its installed runtime value is unknown.
+- **Exact mechanism:** `SYSC_perf_event_open [0xffffffff810cd747,0xffffffff810ce12f)` reads the group context at `0xffffffff810cde81`, locks old/new context mutexes at `0xffffffff810cdea4`/`0xffffffff810cdeac`, then begins removal/migration without re-reading the group context. Exact `perf_event_ctx_lock_nested.isra.60 [0xffffffff810c7996,0xffffffff810c7a14)` separately demonstrates the compiled nonzero-reference, lock, identity-check, unlock/drop/retry discipline, but the move-group path bypasses it. Upstream `321027c1fe77f892f4ea07846aeae08cefbbb290` adds the missing two-context effects and post-lock state validation.
+- **Reachability boundary:** public records classify this as local privilege gain. Static syscall/configuration and initial policy are established; installed identity, runtime policy, PMU availability, accepted unprivileged event combinations, scheduling, and a winning interleaving are unobserved.
+- **Impact boundary:** the exact pre-fix mechanism does not establish stale/dead-context use, crash, controlled corruption, credential modification, SMACK transition, unrestricted root, update acceptance, or persistence.
+- **Remediation:** backport `321027c1fe77f892f4ea07846aeae08cefbbb290` or equivalent live-reference/identity/retry and post-lock move-state validation; restrict unprivileged perf access as defense in depth; validate only on a disposable instrumented kernel.
+- **Evidence:** `evidence/vendor-kernel-perf-cve-2017-6001.md`; complete exact assembly `evidence/artifacts/kernel-candidates/kernel-perf-cve-2017-6001.asm`; upstream patch `evidence/artifacts/kernel-candidates/cve-2017-6001-fix.patch`; Boolean-only model `tools/uk_fw/perf_move_group_race_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.
@@ -662,8 +672,26 @@ device, subject to the listing above showing `/media/mtp` as scanned when mounte
   privilege, over a path that a local process can populate. Ageing codec components are exactly where memory-safety
   defects accumulate, and this stack has not been updated to match the 2026 build date of the surrounding system.
 - **What is *not* claimed:** that any specific CVE is present in these builds, or that any of them is reachable to
-  code execution here. Version dating is evidence of exposure, not proof of a defect. Confirming which published
-  issues affect these exact versions is a discrete follow-up.
+  code execution here. Version dating is evidence of exposure, not proof of a defect.
+- **Advisory check performed, with the one hit rejected.** Each pinned version was queried against GitHub's advisory
+  database (`/advisories?affects=<pkg>`) and compared against the published vulnerable ranges. Result:
+
+  | package | version | advisories seen | applicable |
+  |---|---|---|---|
+  | libpng | 1.6.32 | 1 | **rejected — see below** |
+  | libogg, libvorbis, libtheora, mp4v2, file | as listed | 0 | none returned |
+
+  The single candidate was **CVE-2018-14550** (GHSA-qwwr-qc2p-6283, severity high 8.8, range `<= 1.6.35`). It is
+  **not applicable**: the advisory text places the defect in `get_token` in **`pnm2png.c`**, a contrib/demo utility
+  shipped with libpng sources — and `pnm2png` **does not exist anywhere in the image** (searched). Recording it
+  would have been a false positive against code that is not deployed.
+
+  **Caveat on the negatives:** GitHub's advisory database is sparse for older or less popular libraries, so
+  "0 advisories" here is *not* evidence of absence. It means this particular source had nothing to return.
+- **Consequence for status:** no specific CVE is asserted for these builds. V-014 stays a supply-chain-ageing
+  finding — the exposure signal is the release dates and the privilege the parsing runs under, not a named bug.
+  Confirming applicability would require version-exact matching against distro-level trackers (Debian/OpenEmbedded)
+  for the same releases, which is a separate exercise.
 - **Remediation direction:** update the codec stack to maintained versions; parse in a sandboxed, unprivileged,
   seccomp-confined helper and pass only metadata back; treat `libmagic` sniffing as untrusted input handling; and
   stop running media parsing under root at all, which fixes this class regardless of library age.

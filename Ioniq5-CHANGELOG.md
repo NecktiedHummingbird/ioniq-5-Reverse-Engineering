@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.57.0 - CVE check against the pinned versions: one hit, rejected as a false positive
+
+- Queried GitHub's advisory database for each pinned library and compared against published vulnerable ranges.
+- **One candidate: CVE-2018-14550** (high, 8.8, range `<= 1.6.35`) against `libpng 1.6.32`. **Rejected**: the advisory
+  places the defect in `get_token` in **`pnm2png.c`** — a contrib/demo utility — and `pnm2png` **does not exist
+  anywhere in the image** (searched). Recording it would have been a false positive against undeployed code.
+- No advisories returned for libogg, libvorbis, libtheora, mp4v2 or file. **Caveat kept explicit:** that database is
+  sparse for older libraries, so "0" is not evidence of absence.
+- Consequence: **no specific CVE is asserted** for these builds. V-014 remains a supply-chain-ageing finding where
+  the exposure signal is release date plus the privilege the parsing runs under.
+- The useful lesson is procedural: an automated CVE match is a lead, not a finding. The first one this exercise
+  produced was wrong, and it would have looked authoritative in a report.
+
+## 1.57.0 - identify exact CVE-2017-6001 perf move-group race
+
+- Added V-030 after binding complete exact `SYSC_perf_event_open` and `perf_event_ctx_lock_nested.isra.60` machine code.
+- The software-group-to-hardware-context path reads `group_leader->ctx` before a potentially blocking double-mutex acquisition and then removes/migrates through that saved context without acquiring a live reference, revalidating identity/retrying, or checking post-lock whether another caller already moved the group.
+- The same binary's single-context helper implements the nonzero-reference, lock, identity-check, unlock/drop/retry discipline, proving those effects are compiled but do not protect the affected move-group path.
+- Bound upstream fix `321027c1fe77f892f4ea07846aeae08cefbbb290`, `CONFIG_PERF_EVENTS=y`, and exact initialized `perf_event_paranoid=1`. The installed runtime value and production PMU/event behavior remain unobserved.
+- Classified this as an exact static local privilege-escalation candidate, not observed exploitation. A winning race, stale/dead-context use, controlled corruption, credential/SMACK transition, unrestricted root and persistence remain unproved.
+- Added complete exact FDE evidence, the authoritative patch, a nine-input Boolean-only model, and exhaustive 512-state tests. No event, syscall, thread, race, crash or target execution was created.
+
 ## 1.56.0 - V-014: the root parsing stack is built on 2011-2017 era codec libraries
 
 - Enumerated what the media parsers actually link, and read the versions from the image:

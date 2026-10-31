@@ -2784,6 +2784,21 @@ and are superseded by corrections rather than silently rewritten.
   tests, and independent review; no packet socket, ring, mmap, crash, or target
   action was performed.
 
+## 2026-11-03 — exact perf move-group race retained
+
+- Exact `perf_event_open` machine code retains CVE-2017-6001's stale-context
+  premise: it reads a software group's context before a two-mutex wait and uses
+  the saved object afterward without reference acquisition or identity retry.
+- The same kernel's single-context helper contains the safe reference, lock,
+  identity revalidation, unlock/drop and retry sequence. This is useful negative
+  control evidence: equivalent effects exist, but not at the affected path.
+- Public impact is local privilege gain, making V-030 the strongest current
+  exact local-kernel candidate. Runtime perf policy, production PMU support,
+  race success, stale/dead-context use, controlled corruption and root remain
+  separate unobserved gates.
+- Added complete exact FDE evidence, the upstream patch, and an exhaustive
+  Boolean-only model without creating an event, thread, race or trigger.
+
 ## 2026-10-31 — the parsers are older than the car
 
 - Reading link tables turned a theoretical surface into a dated one: libogg from the early 2000s, libpng from 2017,
@@ -2793,3 +2808,13 @@ and are superseded by corrections rather than silently rewritten.
   and names the follow-up rather than implying more.
 - It also explains why the reachability demonstration mattered. Without it, this would be a list of old libraries;
   with it, the list sits on a path that has been shown to consume attacker files as root.
+
+## 2026-10-31 — the CVE match was wrong, and that is the finding
+
+- Automated matching produced a high-severity hit on libpng, and inspection killed it: the defect lives in a
+  contrib utility that is not shipped in the image at all. A report built on the machine output would have been
+  confidently false.
+- Everything else came back empty, which says more about the sparsity of advisory coverage for old libraries than
+  about the safety of the image. Both halves of that are now written down.
+- The register ends where it should: a dated, privileged, reachable parsing stack, with no invented vulnerability
+  attached to it.
