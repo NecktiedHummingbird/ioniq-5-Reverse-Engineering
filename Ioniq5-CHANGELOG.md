@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.41.0 - Qt's segment naming derived, and the shared-memory wall comes down
+
+- **Derived Qt's segment naming empirically** rather than by reverse-engineering the library: the file Qt uses
+  is `qipc_sharedmemory_<key><sha1(key)>`, then looked up with `ftok()`/`shmget()`. Verified against two
+  segments the vendor actually created — `ApplicationEnableInformation` → `…7cb8a380…` and
+  `ApplicationManagerInformation` → `…b9a7139f…`, both exactly `sha1(key)`. A third sample
+  (`APPLICATIONMANAGERINFORMATION`, all caps) does not match, which is recorded rather than explained away.
+- Built `ihu-shim` on that basis: it creates the key files and the SysV segments for `/Ihu`, `/Inform`,
+  `/Information`, `/Can`, `/PhevInterface` and `/CryptoService` (both slash and slashless spellings, 12 names,
+  64 KB each, zero-filled).
+- **It works.** With the shim run first, `AppHomeScreen`'s
+  `Cannot attach to shared memory` count goes from **12–13 to 0**, and the process stays alive. The failure
+  that has been blocking the UI for several rounds is gone.
+- The frame captured in the same run was still uniformly black, but the capture preceded the change in the
+  client's behaviour and cannot be used to answer the drawing question.
+- **Recorded correction:** the follow-up `WAYLAND_DEBUG` run returned zeros for attaches, commits and shared
+  memory alike, which looked like a result and was not one — the compositor was never started in that run, so
+  the app had nothing to connect to. Third occurrence of a zero that means "nothing ran"; the lesson keeps
+  needing to be applied.
+- Next: re-run `WAYLAND_DEBUG` **with the compositor up** and count non-nil `attach` calls. That single number
+  decides whether the remaining gap is client-side drawing or the renderer.
+
 ## 1.40.0 - strace attempt blocked the wrapper; switching to publishing `/Ihu` ourselves
 
 - The tracing attempt did not produce data. Running the daemon under

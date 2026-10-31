@@ -2543,3 +2543,12 @@ and are superseded by corrections rather than silently rewritten.
 - A second physical kernel lead was exact enough to test: generic USB Audio/MIDI is modular and shipped, while CVE-2016-2384 is reached during descriptor-driven probe before login.
 - Exact relocation and successor review found the fix effect. Raw-MIDI owns final destruction, and all post-registration endpoint failures return without the vulnerable second direct free.
 - The candidate is rejected for the recovered module. No descriptor or peripheral was created and no module or target kernel path was run.
+
+## 2026-10-31 — the shared memory attaches
+
+- The shim worked on the first attempt because the naming rule was derived from evidence rather than guessed:
+  two vendor-created segments agreed on sha1(key), which is enough to build the third.
+- The UI's attach failures are gone, which removes a blocker that had survived several rounds of indirect
+  attack. Whether it draws is now a separate question, and one that a single counter can answer.
+- Three times today a zero has meant "nothing ran" rather than "nothing failed", and the third time was caught
+  in the same turn it was produced. That is the format working: record the run, then check it was a run.
