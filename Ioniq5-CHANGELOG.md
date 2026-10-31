@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.61.0 - why the shim silently did nothing: the symbol it interposes is never called
+
+- The shim is **loaded** — verified directly with `grep vnbuf /proc/<pid>/maps` (**4 mappings**) alongside
+  libwayland-client (4) in a client that definitely commits. Yet the hook never ran and produced no output.
+- Cause: in wayland-client, `wl_surface_commit()` and its siblings are **`static inline` wrappers in the generated
+  header**, which call `wl_proxy_marshal_flags()` internally. A client compiled against that header **never
+  references the exported `wl_surface_commit` symbol at all**, so interposing it is a no-op. Symbol versioning was
+  ruled out first: `libwayland-client.so.0` has **no `.gnu.version_d` section**, so it exports unversioned symbols.
+- This explains both earlier surprises: the shim loading cleanly (once all `wl_` symbols were resolved at runtime)
+  while having no effect, and the app surviving a preload that previously killed it.
+- **Corrected hook point:** interpose `wl_proxy_marshal_flags` (and `wl_proxy_marshal` /
+  `wl_proxy_marshal_constructor` for older call sites), and act when the proxy's interface is `wl_surface` and the
+  opcode is `commit` (6 in the `wl_surface` request table). The dummy buffer is then attached by marshalling an
+  `attach` (opcode 1) through the real function before letting the commit through.
+- Nothing about the earlier client measurement changes: it commits without attaching, and that remains the defect
+  the shim exists to compensate for.
+
 ## 1.60.0 - shim loads cleanly, but preloading it kills the client
 
 - Fixed the load failures. `LD_PRELOAD` resolves eagerly enough that **every** libwayland symbol had to be resolved

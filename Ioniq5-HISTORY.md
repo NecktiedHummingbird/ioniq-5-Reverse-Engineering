@@ -2926,3 +2926,13 @@ and are superseded by corrections rather than silently rewritten.
   breaks the thing being measured is the opposite of progress, and it is better to say so than to keep running it.
 - The correction is clear: touch only the commit path, take the display lazily, and make any failure visible on
   stderr before attempting the experiment again.
+
+## 2026-10-31 — the hook that could never fire
+
+- The object was loaded, the client was healthy, and nothing happened. The reason is a detail of wayland's client
+  API: the functions one would naturally interpose are inline wrappers, so the symbol is never called by anyone
+  compiled against the header.
+- This is the third distinct explanation for the same symptom — no output — after "the client did not start" and
+  "the log was in the wrong place". Each was cheap to disprove once the right question was asked, and the
+  questions were only obvious in hindsight.
+- The corrected hook point is a level lower, at the marshalling function every call actually goes through.
