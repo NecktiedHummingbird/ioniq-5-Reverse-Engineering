@@ -116,7 +116,7 @@ Final key file hashes:
 | model | `0e158d1d9eb75f4113113bd9fc8542e89cd5ca8b22d0d8c30c14bb404b13ab19` |
 | tests | `7e479fefec209b213544b2cd379aaf3eefbc65fba4cd7051675639c44cafe88b` |
 | assessment | `814811c34a6fe84b7b981f4a859dc50cd6f4a2f971aed89b02fd52c4a3e04704` |
-| exact-static artifact | `0416dd1ac691d0870f5bc4c1b4053a760c24563035b6c050966ebd85419df4c4` |
+| exact-static artifact | `a694c11543b8fdc8ad62c469133e2a9e670959a7dcbc5dc0f9def1bf084fefb4` |
 | retained public patch | `6f80d9cd3534d00e24c9c33717a282f1e6ae180f05f833e502c7a361e86b2721` |
 
 ## Unresolved boundaries

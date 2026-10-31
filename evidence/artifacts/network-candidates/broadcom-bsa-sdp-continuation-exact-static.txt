@@ -21,7 +21,7 @@ TOOLS AND REPRODUCTION COMMANDS
 Static tools:
   /opt/homebrew/opt/llvm/bin/llvm-objdump
   /opt/homebrew/opt/llvm/bin/llvm-readelf
-  /Users/leo/.platformio/penv/bin/python3
+  Python 3 from the PlatformIO virtual environment
 
 The bounded disassemblies were regenerated with:
   llvm-objdump -d --no-show-raw-insn \
