@@ -27,6 +27,7 @@ EVIDENCE_FACTS = {
     "lookup_offset_is_remainder_times_frame_size": True,
     "frames_per_block_is_floor_block_size_div_frame_size": True,
     "mmap_insert_rejects_addresses_outside_vma": True,
+    "oversized_vector_rejected_by_exact_allocator": True,
 }
 
 
@@ -140,12 +141,14 @@ def classify_evidence(**values: bool) -> dict[str, Any]:
         "frames_per_block_is_floor_block_size_div_frame_size",
     ))
     mmap_fail_closed = state["mmap_insert_rejects_addresses_outside_vma"]
+    signed_index_unreachable = state["oversized_vector_rejected_by_exact_allocator"]
     return {
         "schema_version": SCHEMA_VERSION,
         "module_sha256": MODULE_SHA256,
         "supplied_evidence": state,
         "v1_v2_frame_lookup_oob_rejected_by_supplied_effects": lookup_complete,
         "out_of_vma_page_insert_rejected_by_supplied_effects": mmap_fail_closed,
+        "signed_vector_index_residual_rejected_by_supplied_effects": signed_index_unreachable,
         "missing_guard_has_proven_memory_corruption": False,
         "runtime_ring_creation_observed": None,
         "privilege_transition_observed": None,
@@ -155,6 +158,7 @@ def classify_evidence(**values: bool) -> dict[str, Any]:
             "establishes": [
                 "classification of the supplied Boolean machine-code facts",
                 "reduced-width arithmetic checks including zero wrapped frame count",
+                "classification of the supplied exact allocator rejection fact",
             ],
             "does_not_establish": [
                 "binary verification by this model",

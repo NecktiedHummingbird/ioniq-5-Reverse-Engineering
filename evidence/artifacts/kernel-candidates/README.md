@@ -141,11 +141,14 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 
 `kernel-af-packet-frame-count.asm` retains complete module-relative FDEs for
 `free_pg_vec`, `packet_mmap`, `packet_lookup_frame`, `packet_rcv_has_room`, `packet_poll`,
-`packet_set_ring`, `tpacket_rcv`, and `packet_sendmsg`, plus the absolute-vmlinux
-`vm_insert_page` FDE in a separately labeled address namespace. It binds the
-formerly unresolved wrapped-frame-count producer to all V1/V2 address-sensitive
-consumers and the separate mmap boundary rejection. SHA-256:
-`e161ab73101fcd3279f99a5b5a6c10457af22c7b398a5a4304192b68c7673b8b`.
+`packet_set_ring`, `tpacket_rcv`, and `packet_sendmsg`, plus absolute-vmlinux
+FDEs for `vm_insert_page`, `__get_order`, `__kmalloc`, `kmalloc_order`,
+`alloc_kmem_pages`, `__alloc_pages_nodemask`, `get_page_from_freelist`, and
+`__rmqueue` in a separately labeled address namespace. It binds the formerly
+unresolved wrapped-frame-count producer to all V1/V2 address-sensitive consumers,
+the mmap boundary rejection, and exact rejection of every vector large enough
+to reach a negative signed index. SHA-256:
+`f7097d97fc2e29671673aa67c0cd34df7241e60e0fb49d6d782376fca37d9994`.
 
 `kernel-inotify-cve-2017-7533.asm` binds snapshot dominance around exact parent
 and rename notification paths, short-name copying under the dentry lock,

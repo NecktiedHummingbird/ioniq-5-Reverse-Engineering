@@ -2776,10 +2776,10 @@ and are superseded by corrections rather than silently rewritten.
   including the zero-residue/`UINT_MAX` frame-max case; classified the missing
   guard as a correctness/early-rejection gap rather than a frame-lookup OOB/root
   primitive.
-- Separated three signed vector-index residuals beginning at block count
-  `0x80000001`: setup needs the preceding `0x80000000` blocks, mmap needs whole-
-  ring publication, and the weakest cleanup route needs only a strictly-greater-
-  than-16-GiB vector plus early block failure. Allocator feasibility is unresolved.
+- Found three signed vector-index opcodes beginning at block count `0x80000001`,
+  then rejected them by exact allocator semantics: the minimum vector yields
+  order 23 and exact allocator paths reject every order above 10 before setup,
+  cleanup, publication, or mmap can reach a negative index.
 - Added exact evidence, a deterministic non-operational arithmetic/Boolean model,
   tests, and independent review; no packet socket, ring, mmap, crash, or target
   action was performed.

@@ -443,9 +443,10 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
   position remains within the vector and block, including wrapped count zero.
   Separate mmap size wrap fails at exact VMA insertion bounds. The omission is a
   correctness/early-rejection gap, not an impact-unknown frame-lookup primitive.
-  Three signed vector-index residuals beginning at block count `0x80000001` are
-  tracked separately because the final frame-product guard does not reject every
-  such `F=1` geometry; allocator feasibility remains unproved.
+  Three signed vector-index opcodes begin at block count `0x80000001`, but the
+  minimum vector yields order 23 and exact allocator paths reject every order
+  above 10. They are predicate-infeasible even though the final frame-product
+  guard alone would not reject every such `F=1` geometry.
 - **Boundary:** all packet-socket paths still require `CAP_NET_RAW`, applicable
   ring-version reachability, and the owner's installed module identity. This does not reject
   unrelated AF_PACKET defects.

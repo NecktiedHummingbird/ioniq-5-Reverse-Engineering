@@ -28,13 +28,14 @@ below `vm_start` or at/above `vm_end` before insertion, so the mapping loop
 returns an error when it reaches the declared VMA boundary rather than inserting
 outside it. Successful cleanup of every possible partially inserted mapping was
 not independently reconstructed, but no out-of-VMA insertion follows from this
-mapping path. Three separate signed vector-index sites and their stronger
-allocation prerequisites are bounded below.
+mapping path. Three syntactic signed vector-index sites are bounded below and
+then rejected as predicate-infeasible by the exact allocator path.
 
 Classification: the absent guard admits an invalid wrapped frame-count geometry
 and can permit allocation work that a later kernel rejects earlier. It is **not a
 defensible memory-corruption or local-root primitive** on the reviewed exact
-V1/V2 address paths. Actual allocation success, resource exhaustion, mapping
+V1/V2 address paths. The three signed vector-index edges require a vector size
+that the exact allocator rejects before publication or cleanup. Actual allocation success, resource exhaustion, mapping
 success, crash, corruption, code execution, privilege transition, root, and
 persistence were not observed. The published CVE-2017-7308 private-area primitive
 remains separately rejected by the existing exact 64-bit arithmetic evidence.
@@ -168,12 +169,41 @@ length `0x80000000` exits when the loop counter first reaches that value:
   at `0x646`, and indexes at `0x64c`; reaching the bad index requires publication
   after successful vector and all-block allocation, followed by mapping.
 
-Success of the enormous contiguous `__kmalloc` vector is not established and is
-expected to face allocator limits, but exact allocator infeasibility has not been
-retained here. The final upstream frame-product guard would not reject every
-`F=1` geometry with such a block count, so these conditional signed-index
-residuals are recorded separately rather than attributed to the missing frame-
-count guard. They do not weaken the V1/V2 frame-lookup proof.
+### Exact allocator rejection
+
+The exact allocator makes all three signed-index edges predicate-infeasible:
+
+1. At the first bad count, `block_count * 8` is at least `0x400000008` bytes.
+   `packet_set_ring` widens before its shift at `0x20d9–0x20dc`, so that size is
+   passed without truncation to `__kmalloc`.
+2. Exact `__kmalloc` `[0xffffffff8110665a,0xffffffff81106746)` sends every size
+   above `0x2000` to `__get_order` and `kmalloc_order` at
+   `0xffffffff8110665b–0xffffffff8110667e`.
+3. Exact `__get_order` `[0xffffffff81103c70,0xffffffff81103c86)` decrements the
+   byte size, shifts by 12, applies `bsr`, and increments. The minimum bad vector
+   therefore produces order 23; larger bad vectors produce order at least 23.
+4. `kmalloc_order` `[0xffffffff810e78ba,0xffffffff810e78fb)` calls
+   `alloc_kmem_pages`, which forwards that order to
+   `__alloc_pages_nodemask` `[0xffffffff810d674c,0xffffffff810d6e3d)`.
+5. Its fast path reaches exact `get_page_from_freelist`
+   `[0xffffffff810d6114,0xffffffff810d6663)`, whose buddy removal reaches exact
+   `__rmqueue` `[0xffffffff810d5f25,0xffffffff810d6114)`. `__rmqueue` compares
+   requested order with 10 at `0xffffffff810d5f5b`; an order above 10 follows
+   the fallback where `0xffffffff810d5fdb–0xffffffff810d60d8` produces a null
+   page, retries only the fallback migratetype, and returns null at
+   `0xffffffff810d60eb–0xffffffff810d60fe`.
+6. After fast-path failure, `__alloc_pages_nodemask` compares the same order with
+   10 at `0xffffffff810d6919–0xffffffff810d6923`. An order above 10 bypasses the
+   slow allocation path and converges on its null return.
+7. `__kmalloc` returns null, and `packet_set_ring` tests that result at
+   `0x20fb–0x2102` and exits through `-ENOMEM` before any block-allocation,
+   cleanup, publication, or mmap signed-index loop.
+
+Thus the signed-extension opcodes are real but unreachable for every count that
+could make them negative. The final upstream frame-product guard would not by
+itself reject every `F=1` geometry in this count range; exact allocator rejection,
+not that guard, closes these edges. This does not weaken the V1/V2 frame-lookup
+proof.
 
 ## Upstream comparison
 
@@ -191,13 +221,14 @@ one.
 ## Retained evidence and model
 
 - `evidence/artifacts/kernel-candidates/kernel-af-packet-frame-count.asm`
-  contains complete `free_pg_vec` and all affected producer/consumer FDEs plus
-  exact vmlinux `vm_insert_page`; SHA-256
-  `e161ab73101fcd3279f99a5b5a6c10457af22c7b398a5a4304192b68c7673b8b`.
+  contains complete `free_pg_vec`, all affected producer/consumer FDEs, exact
+  `vm_insert_page`, and the complete exact allocator chain through `__rmqueue`;
+  SHA-256
+  `f7097d97fc2e29671673aa67c0cd34df7241e60e0fb49d6d782376fca37d9994`.
 - `tools/uk_fw/af_packet_frame_geometry_model.py` is a bounded, non-operational
   Boolean/reduced-width classifier. It does not verify the binary or create a
   ring. Default deterministic report SHA-256:
-  `28fd6c15d874d669882bb5f23530e042d9155f62999a778fdcc230ad43b64f05`.
+  `b8d42156434be6ff8aaecc2a1b67650e124cd68f90d0eaf3991a7920bd3611b0`.
 - `tests/test_af_packet_frame_geometry_model.py` covers wrapped zero, nonzero
   wrap, rejected equality, exhaustive toy geometries, all Boolean evidence
   states, deterministic UTF-8/LF output, and fail-closed CLI parsing.

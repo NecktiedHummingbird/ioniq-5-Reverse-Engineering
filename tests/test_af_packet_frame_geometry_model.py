@@ -120,12 +120,16 @@ class EvidenceAndCliTests(unittest.TestCase):
         result = model.classify_evidence(**model.EVIDENCE_FACTS)
         self.assertTrue(result["v1_v2_frame_lookup_oob_rejected_by_supplied_effects"])
         self.assertTrue(result["out_of_vma_page_insert_rejected_by_supplied_effects"])
+        self.assertTrue(result["signed_vector_index_residual_rejected_by_supplied_effects"])
         self.assertFalse(result["missing_guard_has_proven_memory_corruption"])
         self.assertIsNone(result["root_observed"])
 
     def test_all_boolean_states_fail_closed(self) -> None:
         names = list(model.EVIDENCE_FACTS)
-        lookup_names = set(names) - {"mmap_insert_rejects_addresses_outside_vma"}
+        lookup_names = set(names) - {
+            "mmap_insert_rejects_addresses_outside_vma",
+            "oversized_vector_rejected_by_exact_allocator",
+        }
         for bits in itertools.product((False, True), repeat=len(names)):
             supplied = dict(zip(names, bits, strict=True))
             result = model.classify_evidence(**supplied)
@@ -136,6 +140,10 @@ class EvidenceAndCliTests(unittest.TestCase):
             self.assertEqual(
                 result["out_of_vma_page_insert_rejected_by_supplied_effects"],
                 supplied["mmap_insert_rejects_addresses_outside_vma"],
+            )
+            self.assertEqual(
+                result["signed_vector_index_residual_rejected_by_supplied_effects"],
+                supplied["oversized_vector_rejected_by_exact_allocator"],
             )
             self.assertFalse(result["missing_guard_has_proven_memory_corruption"])
 
@@ -176,7 +184,7 @@ class EvidenceAndCliTests(unittest.TestCase):
         self.assertEqual(len(report["reduced_width_checks"]), 7)
         self.assertEqual(
             hashlib.sha256(first).hexdigest(),
-            "28fd6c15d874d669882bb5f23530e042d9155f62999a778fdcc230ad43b64f05",
+            "b8d42156434be6ff8aaecc2a1b67650e124cd68f90d0eaf3991a7920bd3611b0",
         )
 
     def test_cli_rejects_duplicates_invalid_values_and_positionals(self) -> None:

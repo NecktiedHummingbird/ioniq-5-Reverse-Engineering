@@ -233,12 +233,11 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
   count, and every position bounded by wrapped `frame_max` remains inside the
   allocated vector and block, including wrapped count zero. Separate mmap size
   wrap reaches exact `vm_insert_page` VMA rejection. This is a correctness and
-  early-rejection gap, not a demonstrated OOB/root path. A distinct
-  three signed vector-index residuals begin at block count `0x80000001`; the
-  weakest `free_pg_vec` route needs only a strictly-greater-than-16-GiB vector
-  plus an early block failure; `packet_set_ring` needs the preceding
-  `0x80000000` blocks, and mmap needs successful publication of the whole ring. Allocator feasibility is
-  unproved and these are not attributable solely to the missing guard.
+  early-rejection gap, not a demonstrated OOB/root path. Three signed vector-
+  index opcodes begin at block count `0x80000001`, but the minimum vector yields
+  allocation order 23 and exact `__rmqueue` plus `__alloc_pages_nodemask` reject
+  every order above 10. `__kmalloc` returns null before setup, cleanup, or mmap
+  can reach a negative index.
 - V-022/CVE-2018-17182 is exact pre-fix code on an ordinary MMU/thread surface:
   32-bit generations wrap into a live single-user flush helper that can retain
   cache pointers, and lookup validates only the same 32-bit generation. Public

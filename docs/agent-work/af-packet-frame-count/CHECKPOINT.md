@@ -15,13 +15,11 @@ Status: complete; independent semantic/model review **ACCEPT**.
   A wrapped expected size can make the mapping too short, but exact
   `vm_insert_page` rejects addresses at or beyond `vm_end`; no out-of-VMA insert
   is established.
-- Three separate signed vector-index residuals begin at block count
-  `0x80000001`: `packet_set_ring` requires the vector and preceding
-  `0x80000000` blocks; mmap requires successful publication of the whole ring;
-  `free_pg_vec` needs only the strictly-greater-than-16-GiB zeroed vector before
-  an early block failure enters full-length cleanup. Allocator feasibility is unproved. The final upstream frame-product
-  guard does not reject every such `F=1` geometry, so these are recorded
-  separately from the missing guard.
+- Three syntactic signed vector-index edges begin at block count `0x80000001`.
+  The minimum vector is `0x400000008` bytes and produces allocation order 23.
+  Exact `__rmqueue` and `__alloc_pages_nodemask` reject every order above 10, so
+  `__kmalloc` returns null and `packet_set_ring` exits before block allocation,
+  cleanup, publication, or mmap. The opcodes are present but predicate-infeasible.
 - Classification: the missing guard is a correctness/early-rejection gap, not a
   defensible V1/V2 frame-lookup corruption or local-root primitive.
 
@@ -29,11 +27,11 @@ Status: complete; independent semantic/model review **ACCEPT**.
 
 - `evidence/vendor-kernel-af-packet-frame-count.md`
 - `evidence/artifacts/kernel-candidates/kernel-af-packet-frame-count.asm`
-  - SHA-256 `e161ab73101fcd3279f99a5b5a6c10457af22c7b398a5a4304192b68c7673b8b`
+  - SHA-256 `f7097d97fc2e29671673aa67c0cd34df7241e60e0fb49d6d782376fca37d9994`
 - `tools/uk_fw/af_packet_frame_geometry_model.py`
 - `tests/test_af_packet_frame_geometry_model.py`
 - deterministic default report SHA-256:
-  `28fd6c15d874d669882bb5f23530e042d9155f62999a778fdcc230ad43b64f05`
+  `b8d42156434be6ff8aaecc2a1b67650e124cd68f90d0eaf3991a7920bd3611b0`
 
 ## Validation
 
@@ -42,8 +40,9 @@ Status: complete; independent semantic/model review **ACCEPT**.
 - Public research harness: **PASS**.
 - Independent review found missing `free_pg_vec` evidence/overbroad cleanup
   wording, argparse abbreviation aliasing, an off-by-one signed-index threshold,
-  and two additional signed index sites in setup/mmap. All were corrected and
-  the final cross-document re-review returned **ACCEPT**.
+  and two additional signed index sites in setup/mmap. All were corrected. A
+  final exact allocator trace made those three edges predicate-infeasible; its
+  independent semantic/model/cross-document review returned **ACCEPT**.
 
 ## Delegation/routing
 
