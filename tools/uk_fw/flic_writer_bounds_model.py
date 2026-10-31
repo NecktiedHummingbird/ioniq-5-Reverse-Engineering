@@ -49,6 +49,7 @@ def classify_flic_bounds(**values: bool) -> dict[str, Any]:
         "input": state,
         "complete_reviewed_byte_reader_writer_effect": complete_writer_remediation,
         "named_flic_write_bounds_family_rejected_by_supplied_effects": complete_writer_remediation,
+        "cve_2016_9807_invalid_read_rejected_by_supplied_effects": complete_writer_remediation,
         "production_media_delivery_observed": None,
         "parser_execution_observed": None,
         "out_of_bounds_write_observed": None,
@@ -76,6 +77,7 @@ def build_report(state: dict[str, bool] | None = None) -> dict[str, Any]:
             "establishes": [
                 "classification of supplied bounded-reader, bounded-writer, and failure-routing facts",
                 "whether every reviewed effect of the comprehensive FLIC rewrite is supplied",
+                "whether the supplied bounded-reader effects reject CVE-2016-9807's invalid-read mechanism",
             ],
             "does_not_establish": [
                 "automatic extraction or verification of target instructions",

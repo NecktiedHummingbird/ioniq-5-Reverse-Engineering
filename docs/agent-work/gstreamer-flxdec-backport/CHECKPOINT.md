@@ -1,4 +1,4 @@
-# GStreamer FLIC write-bounds backport checkpoint
+# GStreamer FLIC read/write-bounds backport checkpoint
 
 Status: complete; independent semantic/model review **ACCEPT**.
 
@@ -21,8 +21,9 @@ Status: complete; independent semantic/model review **ACCEPT**.
   writer operations, helper return, and chain return are checked.
 - A decode failure branches to the chain error path before output publication.
 - The CVE-2016-9634/9635/9636/9808 write-bounds family is rejected for this
-  exact plugin. This is not general decoder safety, and CVE-2016-9807 remains
-  outside this conclusion.
+  exact plugin. CVE-2016-9807's distinct `flx_decode_chunks` invalid-read
+  mechanism is also rejected by the checked per-chunk sub-reader and propagated
+  read/helper failures. This is not general decoder safety.
 
 ## Tracked evidence
 
@@ -34,9 +35,9 @@ Status: complete; independent semantic/model review **ACCEPT**.
 - `tools/uk_fw/flic_writer_bounds_model.py`
 - `tests/test_flic_writer_bounds_model.py`
 - deterministic model report SHA-256:
-  `be93a960d834d793808148785525c3fa73f8c6b87e2f168ce69d8c0c3fba888a`
+  `cae4cff4233aa2739d563956624065d1d55ce83c82ff595b6d7383662cee701e`
 - focused validation: `6 passed, 526 subtests passed`
-- complete validation: `459 passed, 132344 subtests passed`
+- complete validation after CVE-2016-9807 extension: `472 passed, 134428 subtests passed`
 - public research harness: **PASS**
 
 ## Review correction
@@ -48,7 +49,8 @@ before its final `GST_FLOW_ERROR` return. The report now distinguishes both
 reader layers and the tracked artifact retains both complete affected FDEs,
 including all three previously missing regions. Final independent review returned **ACCEPT** and
 confirmed the CVE scope, instruction semantics, complete FDEs, error routing,
-model, hashes, and claim boundaries.
+model, hashes, and claim boundaries. A second independent review of the
+CVE-2016-9807 extension also returned **ACCEPT**.
 
 ## Safety
 

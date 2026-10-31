@@ -1,9 +1,9 @@
-# GStreamer FLIC write-bounds backport plan
+# GStreamer FLIC read/write-bounds backport plan
 
 ## Objective
 
 Determine from exact recovered `libgstflxdec.so` machine code whether the FLIC
-write-bounds mechanisms associated with CVE-2016-9634/9635/9636/9808 remain,
+bounds mechanisms associated with CVE-2016-9634/9635/9636/9807/9808 remain,
 despite embedded GStreamer `1.8.3-r0` metadata.
 
 ## Boundaries
@@ -14,7 +14,7 @@ despite embedded GStreamer `1.8.3-r0` metadata.
 - Preserve exact hash, Build ID, PIE addresses, half-open FDE ranges, operands,
   return routing, and source-line bindings.
 - Treat imports and version strings as leads only.
-- Keep CVE-2016-9807 separate unless its distinct mechanism is exactly audited.
+- Treat CVE-2016-9807 as a distinct invalid-read outcome and require exact bounded-reader/failure-routing evidence even though it shares the comprehensive rewrite.
 - Any model accepts Boolean state only and emits no target material.
 
 ## Work

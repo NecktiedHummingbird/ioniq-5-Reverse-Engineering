@@ -17,9 +17,9 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## GStreamer FLIC backport checkpoint — 2026-11-02
 
-- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so` despite embedded GStreamer `1.8.3-r0` metadata.
+- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family and CVE-2016-9807's `flx_decode_chunks` invalid-read mechanism for exact recovered `libgstflxdec.so` despite embedded GStreamer `1.8.3-r0` metadata.
 - Both complete affected FDEs contain the later comprehensive GstByteReader/GstByteWriter rewrite: bounded frame/chunk sub-readers, frame-sized output writer, checked FLI/FLC cumulative positions, checked reads/writes, and helper failure propagation to `GST_FLOW_ERROR` before publication.
-- CVE-2016-9807 remains separate and unclassified. Final independent review **ACCEPT**; commit `6ff6452`.
+- The invalid-read result remains distinct from write corruption even though the same comprehensive rewrite fixes both. Independent review of the CVE-2016-9807 extension returned **ACCEPT**; original family review was accepted in commit `6ff6452`.
 
 ## GStreamer VMNC backport checkpoint — 2026-11-02
 

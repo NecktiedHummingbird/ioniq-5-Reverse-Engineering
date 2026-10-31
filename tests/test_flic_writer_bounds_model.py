@@ -41,6 +41,9 @@ class FlicWriterBoundsModelTests(unittest.TestCase):
         self.assertTrue(
             result["named_flic_write_bounds_family_rejected_by_supplied_effects"]
         )
+        self.assertTrue(
+            result["cve_2016_9807_invalid_read_rejected_by_supplied_effects"]
+        )
         for key in NULL_RESULTS:
             self.assertIsNone(result[key])
 
@@ -55,6 +58,10 @@ class FlicWriterBoundsModelTests(unittest.TestCase):
                 )
                 self.assertEqual(
                     result["named_flic_write_bounds_family_rejected_by_supplied_effects"],
+                    expected,
+                )
+                self.assertEqual(
+                    result["cve_2016_9807_invalid_read_rejected_by_supplied_effects"],
                     expected,
                 )
                 for key in NULL_RESULTS:
@@ -123,7 +130,7 @@ class FlicWriterBoundsModelTests(unittest.TestCase):
         self.assertEqual(outputs[1], outputs[2])
         self.assertEqual(
             hashlib.sha256(outputs[0]).hexdigest(),
-            "be93a960d834d793808148785525c3fa73f8c6b87e2f168ce69d8c0c3fba888a",
+            "cae4cff4233aa2739d563956624065d1d55ce83c82ff595b6d7383662cee701e",
         )
 
     def test_report_contains_no_operational_material(self) -> None:

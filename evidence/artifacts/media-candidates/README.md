@@ -4,7 +4,7 @@ This directory contains only small, reviewed excerpts needed to support the
 tracked media-parser conclusions. Full VM serial/DLT logs, generated ASF files,
 recovered binaries, and the local runner remain under ignored `work/`.
 
-## FLIC / CVE-2016-9634, CVE-2016-9635, CVE-2016-9636, and CVE-2016-9808
+## FLIC / CVE-2016-9634, CVE-2016-9635, CVE-2016-9636, CVE-2016-9807, and CVE-2016-9808
 
 `gstreamer-flxdec-cve-2016-9634-9636-9808.asm` retains both complete affected
 FDEs: the inlined decode helper and the chain initialization/failure routing
@@ -12,9 +12,9 @@ from recovered `libgstflxdec.so`. `gstreamer-flxdec-bytewriter-rewrite.patch`
 is the authoritative comprehensive upstream rewrite. Together they establish
 bounded chunk sub-readers, a frame-sized writer, cumulative checked positions,
 checked reads/writes, and propagation of decode failure before publication.
-They reject only this named write-bounds family for the exact plugin; they do
-not classify CVE-2016-9807, prove a production media route, or claim general
-parser safety.
+They reject the named write-bounds family and CVE-2016-9807's distinct
+`flx_decode_chunks` invalid-read mechanism for the exact plugin; they do not
+prove a production media route or claim general parser safety.
 
 ## VMNC / CVE-2016-9445 and CVE-2016-9446
 

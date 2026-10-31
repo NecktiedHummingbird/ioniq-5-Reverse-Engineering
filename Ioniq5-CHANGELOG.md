@@ -60,14 +60,14 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Added complete-function evidence plus independent fail-closed Boolean and bounded-integer models. Review caught and resolved ERR_PTR routing, conditional-read wording, no-loop/capped-walk model counterexamples, a missing device wrapper, and the previously unclassified interior free; final review returned **ACCEPT**.
 - Focused validation passed `13 tests, 2084 subtests`; full validation passed `472 tests, 134428 subtests`; the public harness passed. No manifest, boot input, signature, update, target execution, crash, overwrite, flashing, or persistence action was performed.
 
-## 1.54.0 - reject the FLIC write-bounds CVE family by exact comprehensive rewrite
+## 1.54.0 - reject the FLIC read/write-bounds CVE family by exact comprehensive rewrite
 
-- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so`, despite its embedded GStreamer `1.8.3-r0` recipe path.
+- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so`, despite its embedded GStreamer `1.8.3-r0` recipe path. The same comprehensive rewrite also rejects CVE-2016-9807's distinct `flx_decode_chunks` invalid-read mechanism.
 - Distinguished the initial local bounds patch from upstream's comprehensive `153a8ae` GstByteReader/GstByteWriter rewrite. Exact source-line values and machine code establish that the latter is present.
 - Bound checked chunk sub-readers, writer initialization over exact frame storage and size, previous-frame copy, FLI/FLC line guards, cumulative destination-position checks, bounded reads/writes, and helper-to-chain failure propagation before output publication.
-- Kept CVE-2016-9807 outside the conclusion because its public read/conversion mechanism is distinct. This rejects only the named write-bounds family, not every FLIC or media-stack defect.
+- Kept outcomes distinct: CVE-2016-9807 is an invalid-read/crash issue, while the other named issues concern write bounds. The bounded chunk reader and propagated failures reject the former without converting it into a write-corruption claim. This still does not establish general FLIC or media-stack safety.
 - Added the authoritative patch, both complete affected FDEs, bounded nine-Boolean classifier, exhaustive 512-state tests, and explicit null runtime/impact outcomes.
-- Independent review caught a frame-vs-chunk sub-reader mislabel, a truncated helper FDE, and an incomplete final error-route excerpt. All three were corrected; final review returned **ACCEPT**. Focused validation passed `6 tests, 526 subtests`; full validation passed `459 tests, 132344 subtests`; the public harness passed.
+- Independent review caught a frame-vs-chunk sub-reader mislabel, a truncated helper FDE, and an incomplete final error-route excerpt. All three were corrected; final review returned **ACCEPT**. A second review of the CVE-2016-9807 extension also returned **ACCEPT**. Focused validation passed `6 tests, 526 subtests`; current full validation passed `472 tests, 134428 subtests`; the public harness passed.
 - No FLIC/media input, recovered parser execution, trigger, heap manipulation, overwrite, crash, code execution, privilege transition, or persistence action was performed.
 
 ## 1.51.0 - the parse is not demonstrable in this harness; recorded as such
