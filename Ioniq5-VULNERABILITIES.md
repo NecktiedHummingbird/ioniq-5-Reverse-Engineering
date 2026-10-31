@@ -2,6 +2,22 @@
 
 Updated: 2026-11-03. Internal defensive research; no disclosure or vendor contact is implied.
 
+## Numbering and provenance
+
+This register is edited by more than one workstream, and entries have been appended concurrently. Two
+consequences, both worth knowing before citing a number:
+
+- **Entry numbers are not stable over time.** A finding added early may later sit at a different number as other
+  entries are inserted ahead of it. When referencing an entry in the changelog or in correspondence, cite it by
+  **title as well as number**, and treat the title as authoritative.
+- **Late amendments carry the number of the entry they amend**, in headings of the form
+  `## Amendment to V-0NN (X) — …`. These are not separate findings; they belong to the entry named.
+
+A collision was found and corrected on 2026-10-31: three appended sections had re-used `V-012`, `V-013` and `V-014`
+while the sequence had already advanced past them. They now appear as **V-033** (production compositor ships full
+DWARF), **V-034** (update trust anchor on a writable root) and **V-035** (root media parsers link ageing codec
+libraries). References in the changelog written before that date use the old numbers and should be read by title.
+
 ## Scope and evidence rules
 
 Target: official European Gen5W **Linux** `NE_E.EUR.S5W_L.001.001.260128`, vendor kernel `4.1.27-abl`. The owner's installed head-unit build is unknown. No physical or network head-unit access is available. VM observations do not establish hardware exploitability.
@@ -464,7 +480,7 @@ bring-up defect. That question is open.
 - **Remediation:** bind pre-exec authentication to the exact immutable staged executable consumed by the launcher; independently bind every transformed payload and final partition image to authenticated metadata; keep boot acceptance and rollback enforcement as separate trust stages.
 - **Evidence:** `evidence/appfumo-authentication-coverage.md`; exact retained assembly `evidence/artifacts/update-candidates/appfumo-authentication-coverage.asm`; Boolean-only model `tools/uk_fw/fumo_auth_coverage_model.py`.
 
-## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
+## V-033 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.
 - **Where:** `usr/bin/weston` in `NE_E.EUR.S5W_L.001.001.260128`, 1,052,408 bytes.
@@ -486,7 +502,7 @@ bring-up defect. That question is open.
   server with access control. Verify the release build does not carry `-g` into the image, and audit other
   binaries in the image for the same condition.
 
-## V-013 (merged) — update trust anchor sits on a writable root; runtime check
+## V-034 — Update trust anchor sits on a writable root (merged entry, runtime check)
 
 The merged register entry states the update pipeline verifies its manifest against a public key held as an
 ordinary file, and that replacing that file would let substitute-signed packages be accepted. Its stated
@@ -555,7 +571,7 @@ those gates hold for a compromised uid-zero/SMACK-separated HMI application, V-0
 exec candidate without waiting for the V-012 service-restart route. Otherwise the established V-012 → V-013 chain still requires local code
 execution plus one privileged service restart. See `evidence/applauncher-dbus-launch-bypass.md`.
 
-## V-007 (merged) — confirmed: the media scanners run as root over removable and world-writable paths
+## Amendment to V-007 (A) — the media scanners run as root over removable and world-writable paths
 
 The merged register records media parsing without privilege separation. The service identity and the scan
 targets were checked here and both confirm it:
@@ -640,7 +656,7 @@ parsed file into execution. Both are bug-hunts rather than configuration questio
 neither. Stated precisely: the separation is absent, the reachability is local, and the
 missing piece is a single parser vulnerability rather than any missing access.
 
-## V-007 — parse reachability DEMONSTRATED (2026-10-31)
+## Amendment to V-007 (B) — parse reachability DEMONSTRATED (2026-10-31)
 
 The configuration finding is now backed by a demonstration of the parsing itself, on the corrected channel.
 
@@ -667,7 +683,7 @@ rather than a reachability question.
 MTP mount point sits under the same world-writable `/media`, so a local process can populate it without any physical
 device, subject to the listing above showing `/media/mtp` as scanned when mounted.
 
-## V-014 — Root media-parsing stack links outdated third-party codec libraries
+## V-035 — Root media-parsing stack links outdated third-party codec libraries
 
 - **Status:** configuration and inventory confirmed by inspection; no exploit attempted or demonstrated. This is a
   supply-chain-ageing finding, not a claimed vulnerability in any specific library.
@@ -716,7 +732,7 @@ device, subject to the listing above showing `/media/mtp` as scanned when mounte
   seccomp-confined helper and pass only metadata back; treat `libmagic` sniffing as untrusted input handling; and
   stop running media parsing under root at all, which fixes this class regardless of library age.
 
-## V-007 / V-014 — bounded malformed-input test (negative, weak instrument)
+## Amendment to V-007/V-035 (C) — bounded malformed-input test (negative, weak instrument)
 
 Two sets of deliberately malformed files were pushed through the demonstrated root parsing path.
 
