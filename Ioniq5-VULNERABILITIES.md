@@ -105,6 +105,26 @@ Nothing here was demonstrated on a running unit or on hardware. Evidence lives u
 - **Acceptance / regression:** shell metacharacters, separators, `${IFS}`-style expansion, over-long serials, comma and non-ASCII serials, and a missing helper must all produce no shell interpretation; legitimate PTP and mass-storage mount and unmount must still work; no privileged child of the automounter should exist.
 - **Validation boundary:** do not describe V-006 as "USB-to-root" or as an exploitable CWE-78 on `260128`. Re-test other firmware builds because the sanitizer is defence in depth rather than a substitute for removing the shell.
 
+**Decisive re-test of the merged V-006 claim (2026-10-31).** The merged register entry from the external PR
+states that root command execution was demonstrated in the QEMU harness using
+`ID_SERIAL_SHORT="pwn;id>/tmp/VM-PWNED"` with `ID_USB_INTERFACES=:060101:`. That exact payload was re-run here
+through a **real device descriptor** — QEMU `usb-mtp` with `serial=pwn;id>/tmp/VM-PWNED`, which presents the PTP
+interface class the branch requires. Measured result:
+
+- Raw descriptor serial as presented to the guest: `pwn;id>/tmp/VM-PWNED` (the payload is intact on the wire).
+- Property actually delivered to `usb-automount`: **`ID_SERIAL_SHORT=pwn_id__tmp_VM-PWNED`** — `;`, `>` and `/`
+  each rewritten to `_`, consistent with the allow-list recorded below.
+- `ID_USB_INTERFACES=:060101:` was present, so the MTP branch condition was satisfied.
+- **No marker was created.** `/tmp/VM-PWNED` does not exist after the automounter ran and the add event was
+  re-triggered.
+
+Conclusion: the payload is not deliverable to the sink **from a device**. The external result is therefore most
+consistently explained by a synthetic event or a directly injected `ID_SERIAL_SHORT`, which bypasses
+`builtin_usb_id` and its sanitiser — a property a real USB device cannot produce. Under that reading the
+external demonstration is a **harness artefact**, and V-006 remains a latent defect rather than a
+device-reachable root path. Both parties agree the source defect (unquoted `sprintf` into `system()`) is real
+and must be removed; the disagreement is purely about reachability, and reachability is what severity rests on.
+
 **Runtime amendment (2026-10-29) — the metacharacter pass-through claim above is falsified.**
 
 Dynamic confirmation was attempted in the isolated VM and reached the vulnerable sink without

@@ -2621,3 +2621,14 @@ and are superseded by corrections rather than silently rewritten.
 - Exact UNIX98 PTY installation, ioctl dispatch, pgrp helper, and PID ownership flow establish CVE-2020-29661 wrong-object locking.
 - Startup intends `/dev/ptmx` mode 0666, making this a high-priority local candidate if passive runtime capture confirms exposure.
 - The result remains a race premise: no PTY operation, concurrent interleaving, PID UAF, corruption, or root was run or proved.
+
+## 2026-10-31 — the disagreement was settled with a device, not an argument
+
+- Two reports claimed different things about the same bug. Rather than adjudicate on plausibility, the exact
+  payload was put through a real descriptor with the correct interface class, and the property udev handed to
+  the vulnerable service was recorded: every metacharacter had become an underscore, and nothing executed.
+- That does not make the outside report dishonest. It most likely injected the environment property directly,
+  which skips the sanitiser that sits in front of it. A harness can do that; a USB device cannot.
+- Both sides were right about the defect and wrong about nothing except reachability, which is the part that
+  decides whether a bug is critical or informational. The register now carries the measurement next to the
+  claim so neither can be read without the other.

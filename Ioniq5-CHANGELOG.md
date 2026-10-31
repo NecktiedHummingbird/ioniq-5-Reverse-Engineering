@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.45.0 - V-006 settled by experiment: the payload is not deliverable from a device
+
+- Re-ran the merged PR's exact claim. QEMU `usb-mtp` with `serial=pwn;id>/tmp/VM-PWNED` presents a real
+  descriptor carrying the payload **and** the `060101` PTP interface the vulnerable branch requires. Measured:
+  - descriptor on the wire: `pwn;id>/tmp/VM-PWNED` (intact)
+  - property delivered to `usb-automount`: **`pwn_id__tmp_VM-PWNED`** — `;`, `>` and `/` rewritten to `_`
+  - `ID_USB_INTERFACES=:060101:` present, so the branch condition was met
+  - **`/tmp/VM-PWNED` was not created**
+- So the string that reaches the sink from a device is inert. The external report of root execution is most
+  consistently explained by a synthetic event or directly injected `ID_SERIAL_SHORT`, which bypasses
+  `builtin_usb_id` — something a physical device cannot do. That makes it a harness artefact rather than a
+  device-reachable root path.
+- Both findings agree the **source defect is real**: unquoted `sprintf` into `system()`. The disagreement was
+  always about reachability, and reachability is what severity rests on. V-006 stays a latent defect.
+- Register updated with the measurement inline, so the merged claim and its refutation sit together rather than
+  in two repositories.
+
 ## 1.44.0 - merged haraldaarz's register PR, and a V-006 contradiction to resolve
 
 - Merged `JaredReabow/ioniq-5-Reverse-Engineering#1` ("Document additional Ioniq 5 findings", Harald
