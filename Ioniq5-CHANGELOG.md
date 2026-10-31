@@ -3,6 +3,33 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.70.0 - reject CVE-2017-16995 for the exact syscall-based eBPF path
+
+- Rejected CVE-2017-16995 only for the named syscall-based eBPF verifier path
+  in exact recovered `vmlinux`: `CONFIG_BPF_SYSCALL` is disabled, weak
+  `sys_bpf` aliases complete `sys_ni_syscall` returning `-ENOSYS`, and native
+  x86-64 syscall-table slot 321 points to that same stub.
+- Preserved contrary scope facts: `CONFIG_BPF=y`, and classic BPF validation,
+  creation, attachment, interpreter, and runtime-selection symbols remain
+  compiled. This is not general BPF absence, classic-BPF safety, all alternate
+  eBPF-entry absence, an installed-device claim, or a verifier-internals audit.
+- Compared against authoritative upstream commit
+  `95a762e2c8c942780948091f8f2a4f32fce1ac6f` and retained its commit-message
+  boundary that unprivileged exploitability starts with v4.14. The vendor
+  4.1-derived banner is context only; exact configuration and dispatch evidence
+  determine the verdict.
+- Added the authoritative patch, exact static assembly/table artifact, dedicated
+  assessment, and a nine-input schema-v2 Boolean-only model with fail-closed
+  all-or-none CLI, tri-state incomplete-fact handling, explicit contrary
+  functional and alternate-entry facts, explicit classic-BPF scope, null
+  runtime/impact outcomes, and exhaustive output assertions.
+- Focused validation passed `8 tests, 529 subtests`; the complete suite passed
+  `586 tests, 153246 subtests`; the public harness and bytecode compilation
+  passed; independent exact-binary/package review returned **ACCEPT**.
+- No recovered target, target operation, code load, communication endpoint,
+  verifier input, verifier trigger, race, payload, crash, privilege transition,
+  root action, or persistence mechanism was used or created.
+
 ## 1.69.0 - reject CVE-2016-0723 by exact retained line-discipline reference
 
 - Bound command `0x5424` in complete exact

@@ -129,6 +129,7 @@ commits:
 - CVE-2020-29661: `54ffccbf053b5b6ca4f6e45094b942fab92a25fc`;
 - CVE-2021-0920: `cbcf01128d0a92e131bd09f1688fe032480b65ca`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
+- CVE-2017-16995: `95a762e2c8c942780948091f8f2a4f32fce1ac6f`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
 - CVE-2017-15265: `71105998845fb012937332fe2e806d443c09e026`;
 - CVE-2018-1000004 mainline: `b3defb791b26ea0683a93a4f49c77ec45ec96f10`;
@@ -187,6 +188,18 @@ compiled compat iptables translation path. SHA-256:
 The primary and related patches have SHA-256
 `4a30140d96c857a4cebf0ccdfd6e7a4b80d1d0aed01c002af8a490d33f7afec0`
 and `b42c9a22f04883903c3a8b9f86efe22dc4b790c95e8f1a1d83ab8053fabaadd7`.
+
+`kernel-bpf-syscall-cve-2017-16995.asm` retains the exact configuration,
+complete `sys_ni_syscall` range, weak `sys_bpf` alias, and native x86-64
+syscall-table slot binding. `CONFIG_BPF_SYSCALL` is disabled and native slot
+321 points to the stub that returns `-ENOSYS`. Contrary classic-BPF and
+interpreter/runtime symbols are retained, so the result rejects only the named
+syscall-based eBPF verifier path and is not a general BPF safety or absence
+claim. SHA-256:
+`e36aa175a3ea5cc7083d30d2e2970d90613409cad2177249e6eeed1a05eaf98f`.
+`cve-2017-16995-fix.patch` is upstream commit
+`95a762e2c8c942780948091f8f2a4f32fce1ac6f`; SHA-256:
+`d09d5733423b14add9cb9d9a25487a088cba449d1ca5c614b55dad307f73f557`.
 
 `kernel-key-read-revoke-cve-2015-7550.asm` retains complete
 embedded-kallsyms-bounded `key_revoke`, `keyctl_revoke_key`,

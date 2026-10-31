@@ -6,6 +6,28 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## BPF syscall-path applicability checkpoint — 2026-11-04
+
+- CVE-2017-16995 is rejected for exact recovered `vmlinux` only for the named
+  syscall-based eBPF verifier path. `CONFIG_BPF_SYSCALL` is disabled, weak
+  `sys_bpf` aliases complete `sys_ni_syscall` and returns `-ENOSYS`, and native
+  x86-64 syscall-table slot 321 points to the same stub.
+- `CONFIG_BPF=y`; classic BPF validation, creation, attachment, interpreter, and
+  runtime symbols remain compiled. The verdict does not establish broad BPF or
+  classic-BPF safety, all alternate eBPF-entry absence, verifier-internal
+  correctness, installed-device identity, or runtime behavior.
+- Upstream commit `95a762e2c8c942780948091f8f2a4f32fce1ac6f` says unprivileged
+  exploitability starts with v4.14. The exact artifact is vendor 4.1-derived,
+  but the rejection rests on exact configuration and dispatch evidence rather
+  than banner/version inference.
+- Added the authoritative patch, exact static artifact, dedicated assessment,
+  and a nine-input schema-v2 Boolean model. Focused validation passed `8 tests,
+  529 subtests`; the complete suite passed `586 tests, 153246 subtests`; the
+  public harness and bytecode compilation passed; independent exact-binary and
+  package review returned **ACCEPT**. No recovered target, target operation,
+  code load, communication endpoint, verifier input, verifier trigger, race,
+  payload, crash, privilege action, or persistence mechanism was used or created.
+
 ## TTY line-discipline reference checkpoint — 2026-11-04
 
 - CVE-2016-0723 is rejected for exact recovered `vmlinux` by retained-reference
