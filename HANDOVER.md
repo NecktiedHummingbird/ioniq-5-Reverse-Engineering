@@ -104,6 +104,14 @@ followed by stateful service/CAN/persistence reconstruction.
   duplicate/incomplete sections, fact derivation, adversarial transcript text,
   CLI mode, and the safety audit. No device, network, radio, modem, or recovered
   target binary was used.
+- Added `tools/uk_fw/bench_candidate_triage.py` to classify only completed
+  passive reports for V-024 through V-026. The producer now captures
+  `/dev/pts/ptmx` and device major/minor identity. PTY confirmation requires an
+  effective major-5/minor-2 endpoint, permissions, directory, and devpts mount;
+  AF_UNIX module-name state remains explicitly unbound from the current file
+  hash. The triage does not establish a race, UAF, corruption, root, or exact
+  installed-kernel identity. See
+  `docs/agent-work/bench-candidate-triage/CHECKPOINT.md`.
 - Hardened `tools/uk_fw/rootfs_patch.py`: archive extraction now rejects absolute
   and parent-traversal paths, duplicates, links, FIFOs/device nodes, unsafe
   injection destinations, and in-place package/manifest overwrite. This protects

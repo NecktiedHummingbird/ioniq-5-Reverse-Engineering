@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.48.0 - passive runtime triage for V-024 through V-026
+
+- Added a deterministic, fail-closed host classifier for completed passive
+  bench-state reports. It preserves true/false/unknown rather than converting
+  missing providers into negative evidence.
+- Extended the read-only probe to capture `/dev/pts/ptmx` and device major/minor
+  identity. A positive V-024 PTY gate now requires an effective major-5/minor-2
+  endpoint, effective world read/write permissions, a valid `/dev/pts`
+  directory, and a devpts mount.
+- Kept `/proc/modules` name state and the current `unix.ko` file hash separate:
+  their conjunction does not prove that loaded module memory came from that
+  file. An exact `uname` release token likewise does not prove installed
+  `vmlinux` byte identity.
+- Four independent review rounds ended in `ACCEPT` after correcting report
+  validation, module-binding language, symlink/target handling, three-valued
+  conjunctions, producer fallback compatibility, and PTMX device identity.
+- No PTY, socket, timerfd, module operation, race, trigger, target command, or
+  firmware write was performed.
+
 ## 1.47.0 - V-012 lowers V-013's precondition from root to local code execution
 
 - Verified the merged V-012 against the image: `lib/systemd/esinit:10` mounts `tmpfs` on `/tmp` with **default

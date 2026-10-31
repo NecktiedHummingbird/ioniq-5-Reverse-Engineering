@@ -20,7 +20,8 @@ re-reviewed, and locally accepted on 2026-11-01.
     `force_launch`, completion markers, update-directory metadata, staged
     AppUpgrade/XML hashes, and `/tmp/AppUpgrade`) without creating or changing
     any marker;
-  - records `/dev/ptmx` and `/dev/pts` metadata alongside the existing mount
+  - records `/dev/ptmx`, `/dev/pts`, and `/dev/pts/ptmx` metadata, including
+    device major/minor identity, alongside the existing mount
     capture so configured PTY exposure can be separated from runtime state;
   - records `/proc/modules` and hashes exact `unix.ko` without loading it, so
     AF_UNIX static findings can be compared with observed module state;

@@ -100,7 +100,7 @@ class BenchStateBundleTests(unittest.TestCase):
         self.assertNotIn('[ -r "/update/$S_FLAG" ]', script)
         self.assertIn('P_STATUS=$?', script)
         self.assertIn('U_STATUS=$?', script)
-        for pty_path in ("/dev/ptmx", "/dev/pts"):
+        for pty_path in ("/dev/ptmx", "/dev/pts", "/dev/pts/ptmx"):
             self.assertIn(pty_path, script)
         self.assertIn("capture_file modules /proc/modules", script)
         self.assertIn("/lib/modules/4.1.27-abl/kernel/net/unix/unix.ko", script)

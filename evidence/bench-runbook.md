@@ -50,6 +50,8 @@ host:
 ```sh
 "$PY" tools/uk_fw/bench_state_bundle.py parse work/bench/state.log \
   --json work/bench/state.json
+"$PY" tools/uk_fw/bench_candidate_triage.py work/bench/state.json \
+  > work/bench/kernel-candidate-triage.json
 ```
 
 This single capture records installed hashes, process uid/gid and effective
@@ -61,12 +63,15 @@ BusyBox, both unzip providers, those applications, `CarOption.csv`,
 `DecryptToPIPE`, and `teruten5_pub.key`. It also records the FUMO relaunch and
 completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
 `/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
-`/tmp/AppUpgrade`. It passively records `/dev/ptmx` and `/dev/pts` metadata plus
-`/proc/mounts` so intended UNIX98 PTY exposure can be separated from observed
-runtime exposure before any TTY testing. It also records `/proc/modules` and the
-exact shipped `unix.ko` hash so AF_UNIX static findings are not treated as loaded
-owner-kernel state. Symlink metadata is recorded separately
-from hash resolution.
+`/tmp/AppUpgrade`. It passively records `/dev/ptmx`, `/dev/pts`, and
+`/dev/pts/ptmx` metadata—including device major/minor numbers—plus
+`/proc/mounts`, so intended UNIX98 PTY exposure can be separated from an
+observed major-5/minor-2 runtime endpoint before any TTY testing. It also
+records `/proc/modules` and the current `unix.ko` file hash. The host triage tool
+keeps a loaded `unix` module name and a matching current file separate from the
+unproved claim that the loaded bytes came from that file. Symlink metadata is
+recorded separately from hash resolution. A positive triage gate still does not
+establish an installed-kernel byte identity, race, UAF, corruption, or root.
 Missing commands/files remain explicit records. Unreadable files, failed
 reads/metadata queries/passive commands, and malformed hash output set a
 nonzero terminal collection status; an incomplete or nonzero terminal marker

@@ -192,7 +192,7 @@ file_meta() {
         FM_META=unavailable
         FM_STATUS=0
         if has_command stat; then
-            FM_META=$(stat -c '%a|%u|%g|%s|%F' "$FM_PATH" 2>/dev/null)
+            FM_META=$(stat -c '%a|%u|%g|%s|%F|%t|%T' "$FM_PATH" 2>/dev/null)
             FM_STATUS=$?
         elif has_command ls; then
             FM_META=$(ls -ldn "$FM_PATH" 2>/dev/null)
@@ -582,7 +582,7 @@ begin_section storage
 capture_file fstab /etc/fstab
 capture_file partitions /proc/partitions
 capture_file mounts /proc/mounts
-for S_DEVICE in /dev/ptmx /dev/pts
+for S_DEVICE in /dev/ptmx /dev/pts /dev/pts/ptmx
  do
     file_meta "$S_DEVICE"
  done
