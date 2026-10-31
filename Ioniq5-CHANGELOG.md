@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.69.0 - exact `launch` signature obtained; the bypass still does not execute
+
+- Introspection of `com.lge.avn.applauncher` `/Request` now works (the name is registered), and it yields the exact
+  method signature that had been guessed wrongly:
+
+  `launch(in i appid, in s appname, in s applocation, in b engcapturemode, in b emmctestmode)`
+
+  Five arguments, not three, and the last two are booleans. That signature is recorded here so nobody has to
+  introspect it again.
+- Called with the exact signature (`int32:999 string:probe string:/tmp/probe.sh boolean:false boolean:false`), the
+  request was **accepted without error and produced no execution**: `/tmp/LAUNCHED` was never created and the
+  launcher logged nothing for appid 999.
+- **V-028's runtime execution therefore remains unobserved**, and now for a narrower reason than before: the call is
+  well-formed and reaches the service, but does not result in a launch. Candidate causes, in order: the dispatcher
+  gates on appid registration for *existing* objects (only newly created ones accept 1…1024), the two boolean gates
+  must be true, or SMACK prevents the launcher from executing a file in `/tmp`.
+- **A separate milestone did land:** systemd now logs `Started HKMC Preminum AVN 2.1 -Launcher.` That unit had never
+  completed in any earlier boot — the MICOM adaptor is what allowed it, so the HMI-side dependency that blocked this
+  project from the beginning is now satisfied by the emulation rather than by the vendor daemon.
+
 ## 1.68.0 - the launcher starts: MICOM adaptor satisfies it end to end
 
 - With per-method payloads (`AskNaviOutermostRegion` 8 bytes, `AskSysBootinfo` 35, `AskCustomSetting` 16,
@@ -38,6 +58,44 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   the V-028 launch test still could not run.
 - Next: extend the settle window (the launcher was still working at 1 min 26 s), and answer the remaining ask
   methods with plausible non-empty payloads rather than empty arrays, in case a later step requires real values.
+
+## 1.72.0 - reject CVE-2015-1805 by exact pipe iterator architecture
+
+- Bound complete authoritative-map-successor ranges for `pipe_write`,
+  `pipe_read`, `copy_page_from_iter`, and `copy_page_to_iter`. Both write copy
+  sites directly call exact `copy_page_from_iter`, and the read copy site
+  directly calls exact `copy_page_to_iter`.
+- Proved exact bounded progress in both complete CVE-relevant iovec helper
+  branches: requested bytes are clamped to iterator count; descriptor base and
+  length are read from fixed 16-byte records; actual progress is requested
+  minus copy residual; advanced page/user state and remaining budget carry into
+  fallback; and iterator offset/count/descriptor/segment fields are committed
+  without changing descriptor `iov_base` or `iov_len`.
+- Retained public legacy-introduction commit
+  `f6762b7ad8edd6abc802542ce845d3bc8adcb92f`, read conversion
+  `637b58c2887e5e57850865839cc75f59184b23d1`, and write conversion
+  `f0d1bec9d58d4c038d0ac958c9af82be6eb18045`. Exact public v4.1 source already
+  has both conversions, so ordinary upstream 4.1 needs no 4.1.y
+  CVE-2015-1805 backport. Legacy stable adaptations and CVE-2016-0774 remain
+  contextual alternatives, not required 4.1 fixes; exact vendor code, not
+  version history, controls the verdict.
+- Added the three authoritative patches, complete static artifact, dedicated
+  assessment, and a 17-input schema-v2 Boolean-only classifier with
+  deterministic UTF-8/LF, all-or-none fail-closed CLI, tri-state unknown for
+  incomplete fixed effects, explicit broken-legacy-path precedence, an optional
+  progress-preserving legacy alternative, ordinary-local-pipe scope, null
+  runtime/impact outcomes, and exhaustive assertions for every emitted field.
+- Kept scope narrow: ordinary pipe functionality is compiled and public
+  source-level impact was unprivileged local memory corruption/privilege
+  escalation, but broad pipe/iov-iterator safety, every vendor-equivalent defect
+  absence, installed identity, runtime policy, successful triggering,
+  corruption, root and persistence are not established. Focused validation
+  passed `10 tests, 131109 subtests`; bytecode compilation, exact
+  patch/disassembly/hash checks, and scoped `git diff --check` passed. Exact
+  hashes are recorded in the checkpoint; no full suite/public harness or
+  independent acceptance is claimed. No recovered target or prohibited pipe,
+  vector-copy, fault, race, grooming, payload, or exploit operation was used or
+  created.
 
 ## 1.71.0 - reject CVE-2017-7184 for the named XFRM-user update path
 

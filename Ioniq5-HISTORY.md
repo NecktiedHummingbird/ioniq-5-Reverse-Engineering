@@ -3018,3 +3018,12 @@ and are superseded by corrections rather than silently rewritten.
 - It even began dispatching app requests of its own, which is the difference between "registered a name" and "working".
 - The launch-bypass test still did not fire: my call used guessed argument types and produced nothing. But that is a
   signature question now, not a blocker, and the interface is reachable to introspect.
+
+## 2026-10-31 — the signature, not the exploit
+
+- Introspection gave the exact five-argument signature, which retires a guess I had been making for two rounds. The
+  call now reaches the service cleanly and still does not execute anything.
+- The interesting result is elsewhere: the launcher unit reports "Started" for the first time. A dependency that has
+  been blocking this work from the start was satisfied by an adaptor we built, not by anything from the vendor.
+- Naming three candidate reasons for the remaining gap is more useful than another blind attempt, and each is
+  checkable in one run.
