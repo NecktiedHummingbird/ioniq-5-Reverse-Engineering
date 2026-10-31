@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.68.0 - the launcher starts: MICOM adaptor satisfies it end to end
+
+- With per-method payloads (`AskNaviOutermostRegion` 8 bytes, `AskSysBootinfo` 35, `AskCustomSetting` 16,
+  `AskSettingInfoValue` 8) and a polling window, **`com.lge.avn.applauncher` registered at poll 6** — the vendor
+  launcher reached readiness for the first time in this project. Every previous run stalled on the first ask.
+- The launcher then began taking control traffic too (`answered SetControlKeyLock with 4 bytes`) and logged its own
+  dispatch line: `ApplicationLauncher::getAppProcessByAppId appId[400][UserProfileManager]`. So it is not merely
+  registered, it is **processing application requests**.
+- **V-028's runtime execution is still unobserved.** My call
+  `launch uint32:999 string:probe string:/tmp/probe.sh` produced no marker and no execution; the only launch the
+  launcher logged was its own `appId[400]` UserProfileManager request. The likely cause is a signature mismatch — the
+  real `launch(appid, appname, applocation, …)` may take more or differently typed arguments than I guessed.
+- Next step is now cheap and precise: the name is registered, so **introspect `/Request` and read the exact method
+  signature**, then replay the call with matching types.
+- Practically, this also means the VM line has advanced: the launcher dependency that blocked the HMI is satisfied by
+  a simulated adaptor rather than by the vendor daemon.
+
 ## 1.67.0 - the MICOM adaptor owns the bus name and the launcher consumes its answers
 
 - Wrote `micom-service`, a research adaptor that owns `com.lge.car.micom` on the system bus, registers `/Ihu`
@@ -21,6 +38,44 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   the V-028 launch test still could not run.
 - Next: extend the settle window (the launcher was still working at 1 min 26 s), and answer the remaining ask
   methods with plausible non-empty payloads rather than empty arrays, in case a later step requires real values.
+
+## 1.71.0 - reject CVE-2017-7184 for the named XFRM-user update path
+
+- Rejected CVE-2017-7184 only for the upstream/named `CONFIG_XFRM_USER`
+  `XFRM_MSG_NEWAE -> xfrm_new_ae` update path in the exact recovered package.
+  `CONFIG_XFRM_USER` is disabled, so upstream v4.1 build rules do not select
+  `net/xfrm/xfrm_user.c`; a fresh read-only inventory directly against the
+  canonical decrypted stock archive (SHA-256
+  `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`)
+  finds 163 regular `.ko` members and no `xfrm_user.ko`. The mutable extracted
+  staging tree is not used to prove stock identity.
+- Preserved the complete eight-name authoritative-map query inventory without
+  turning it into a universal inline/vendor-equivalence claim. Preserved
+  contrary XFRM-core scope: `CONFIG_XFRM=y`, complete exact `xfrm_init_replay`,
+  state/policy/replay symbols, and three IPv6 XFRM mode modules remain.
+  Separately disabled `CONFIG_NET_KEY` is not conflated with the named path.
+- Public history identifies introducing commit
+  `d8647b79c3b7e223ac051439d165bc8e7bbb832f`, historical incomplete verifier
+  commit `e2b19125e94124daaeda1ddcf9b85b04575ad86f`, mainline fixes
+  `677e806da4d916052585301785d847c3b3e6186a` and
+  `f843ee6dd019bcece3e74e76ad9df0155655d0df`, and official stable 4.1.y
+  backports `438db92d7f2792e3bad17be70e6edf0f44a081f0` and
+  `171a957989c4f398adb41078dbfff73b0821e383`, both first in Linux 4.1.49
+  (22 January 2018). History is contextual only; exact absent-path evidence
+  controls. Verifier presence alone is not remediation, and both fix effects or
+  exact equivalents would be required if the path existed. No verifier/fix
+  effect is claimed for code that is not built or shipped.
+- Added exact static evidence, a dedicated assessment, and a ten-input schema-v2
+  Boolean-only model with fail-closed all-or-none CLI, tri-state incomplete-
+  absence handling, explicit contrary functional named-path and XFRM-core facts,
+  separate NET_KEY scope, null runtime/impact outcomes, and exhaustive output
+  assertions.
+- Focused tests, bytecode compilation, and `git diff --check` are recorded in
+  `docs/agent-work/xfrm-user-path/CHECKPOINT.md`. The complete suite, public
+  harness, and independent acceptance were not run or claimed. No recovered
+  target, socket/netlink/XFRM operation, message, attribute, packet, module
+  action, namespace, capability request, trigger, race, payload, or firmware
+  material was executed, created, or exercised.
 
 ## 1.70.0 - reject CVE-2017-16995 for the exact syscall-based eBPF path
 

@@ -3010,3 +3010,11 @@ and are superseded by corrections rather than silently rewritten.
 - The launcher still had not finished starting when the run ended, so the launch-bypass test remains unrun. But the
   blocker has moved from "the daemon cannot publish" to "the launcher needs longer", which is progress of the useful
   kind.
+
+## 2026-10-31 — the launcher came up
+
+- Poll six: the name appeared. A vendor client that had refused to start in every previous attempt is now running,
+  because a small adaptor answered the questions it asks of a board we do not have.
+- It even began dispatching app requests of its own, which is the difference between "registered a name" and "working".
+- The launch-bypass test still did not fire: my call used guessed argument types and produced nothing. But that is a
+  signature question now, not a blocker, and the interface is reachable to introspect.
