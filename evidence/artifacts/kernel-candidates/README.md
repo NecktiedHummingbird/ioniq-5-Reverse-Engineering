@@ -99,6 +99,7 @@ llvm-objdump -dr --x86-asm-syntax=intel \
 The `cve-*.patch` files are GitHub patch representations of these upstream
 commits:
 
+- CVE-2015-7550: `b4a1b4f5047e4f54e194681125c74c0aa64d637d`;
 - CVE-2015-7613: `b9a532277938798b53178d5a66af6e2915cb27cf`;
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
 - CVE-2016-2544: `3567eb6af614dac436c4b16a8d426f9faed639b3`;
@@ -175,6 +176,18 @@ binary does not establish commit provenance. SHA-256:
 `cve-2016-7910-fix.patch` is upstream commit
 `77da160530dd1dc94f6ae15a981f24e5f0021e84`; SHA-256:
 `701c7be0854836b8c7f2f4ff21e8e3d4a932809c2d32fe572215bdd5b03bcff0`.
+
+`kernel-key-read-revoke-cve-2015-7550.asm` retains complete
+embedded-kallsyms-bounded `key_revoke`, `keyctl_revoke_key`,
+`keyctl_read_key`, and `key_validate` machine code. The reader takes
+`key + 0x20` for reading before validation and retains it through the read
+callback; revoke takes the same rwsem for writing across revoked-state mutation
+and the revoke callback. These effects reject the CVE-specific unlocked
+validation-to-read race. SHA-256:
+`8dfaf1486bf070d154ac02d1f818ef9193f8a0f16ff9fdc4c72af39f1434ba6e`.
+`cve-2015-7550-fix.patch` is upstream commit
+`b4a1b4f5047e4f54e194681125c74c0aa64d637d`; SHA-256:
+`e2576be983a765c1a462fe9d90bcfcedf9fc076def125ffa94937513e264d7cc`.
 
 `kernel-ioprio-cve-2016-7911.asm` retains complete embedded-kallsyms-bounded
 `get_task_ioprio`, `SyS_ioprio_get`, and `exit_io_context` machine code. Getter

@@ -3,6 +3,13 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.67.0 - reject the key read/revoke race by exact same-rwsem effects
+
+- Rejected CVE-2015-7550 for exact recovered `vmlinux`: `keyctl_read_key` takes `key +0x20` for reading before validation and retains it through the optional read callback; `key_revoke` takes the same rwsem for writing across revoked-state mutation and the optional revoke callback.
+- Retained complete exact `key_revoke`, `keyctl_revoke_key`, `keyctl_read_key`, and `key_validate` functions plus upstream fix `b4a1b4f5047e4f54e194681125c74c0aa64d637d`. Machine code proves matching effects but not direct patch provenance.
+- Added a six-input schema-v2 Boolean model with exhaustive output assertions. Focused validation passed `8 tests, 73 subtests`; the complete suite passed `564 tests, 148570 subtests`; the public harness passed; independent exact-binary/package review returned **ACCEPT**.
+- No target/keyctl syscall, key, process, thread, race, allocation pressure, target execution, crash, corruption, privilege transition, or persistence action was created.
+
 ## 1.65.0 - CORRECTION: my "V-009 eliminated" conclusion is refuted by V-028
 
 - Reviewing the register's newer entries (V-015…V-032, added by another workstream) turned up a correction to **my

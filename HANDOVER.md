@@ -6,6 +6,12 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## key read/revoke race checkpoint — 2026-11-03
+
+- CVE-2015-7550 is rejected for exact recovered `vmlinux` by same-rwsem effects matching upstream `b4a1b4f5047e4f54e194681125c74c0aa64d637d`; stripped code cannot establish commit provenance.
+- Exact `keyctl_read_key [0xffffffff811b509a,0xffffffff811b516e)` takes `key +0x20` for reading before `key_validate`, retains the lock through the optional read callback, and unlocks afterward. Exact `key_revoke [0xffffffff811b239c,0xffffffff811b2401)` takes that same rwsem for writing across revoked-state bit 2 and the optional revoke callback.
+- The six-input schema-v2 model leaves incomplete fix facts unknown absent an explicit unlocked-window fact. No target/keyctl syscall, key, thread, race, allocation pressure, target execution, crash, or privilege action was created. Focused validation passed `8 tests, 73 subtests`; the complete suite passed `564 tests, 148570 subtests`; the public harness passed; independent exact-binary/package review returned **ACCEPT**.
+
 ## Update-source runtime-policy checkpoint — 2026-11-03
 
 - Both recovered eMMC fstab branches configure `/dev/mmcblk0p9` at `/update` as ext4 with `defaults,noatime,journal_checksum`, establishing writable-filesystem configuration rather than live mount success.
