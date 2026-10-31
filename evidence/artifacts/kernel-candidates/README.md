@@ -200,6 +200,20 @@ validation-to-read race. SHA-256:
 `b4a1b4f5047e4f54e194681125c74c0aa64d637d`; SHA-256:
 `e2576be983a765c1a462fe9d90bcfcedf9fc076def125ffa94937513e264d7cc`.
 
+`kernel-tty-ldisc-cve-2016-0723.asm` retains complete exact
+`tty_ioctl`, `tty_ldisc_ref_wait`, `tty_ldisc_ref`, `tty_ldisc_deref`,
+`__put_user_4`, and shared user-copy-error ranges. It binds command `0x5424` to
+waited line-discipline acquisition, post-acquisition `ops->num` loads, the
+four-byte user copy, and unconditional same-object dereference before return,
+including copy error. The complete helpers bind `ldsem_down_read`,
+`ldsem_down_read_trylock`, and `ldsem_up_read`. These effects reject only the
+CVE-2016-0723 unlocked-dereference premise and do not establish broad TTY safety
+or commit provenance. SHA-256:
+`358b8e8b4402841fcfc834a2ad23535274b0cd2804114fd78d6c70d5bac903cb`.
+`cve-2016-0723-fix.patch` is upstream commit
+`5c17c861a357e9458001f021a7afa7aab9937439`; SHA-256:
+`b99eb5238c54e8d49834ef225761ded17ebf0d130ea11ea3e4206bad619586c1`.
+
 `kernel-ioprio-cve-2016-7911.asm` retains complete embedded-kallsyms-bounded
 `get_task_ioprio`, `SyS_ioprio_get`, and `exit_io_context` machine code. Getter
 and exit paths use the same `task + 0x630` lock around the `task + 0x678`

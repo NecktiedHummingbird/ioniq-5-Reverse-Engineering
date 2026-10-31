@@ -1,10 +1,32 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-11-03**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-11-04**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
+
+## TTY line-discipline reference checkpoint — 2026-11-04
+
+- CVE-2016-0723 is rejected for exact recovered `vmlinux` by retained-reference
+  effects matching upstream `5c17c861a357e9458001f021a7afa7aab9937439`;
+  stripped machine code cannot establish direct commit provenance.
+- Exact `tty_ioctl [0xffffffff812871f8,0xffffffff81287d46)` dispatches command
+  `0x5424` to `0xffffffff812879f9`, calls exact `tty_ldisc_ref_wait`, loads the
+  retained `ldisc->ops->num` afterward, calls exact `__put_user_4`, and calls
+  exact `tty_ldisc_deref` before return. The copy result is not branched on
+  before dereference, so user-copy error is covered.
+- Complete exact `tty_ldisc_ref_wait`, `tty_ldisc_ref`, and `tty_ldisc_deref`
+  ranges bind their `ldsem_down_read`, `ldsem_down_read_trylock`, and
+  `ldsem_up_read` calls. The verdict is limited to the named unlocked
+  dereference; general TTY safety, installed identity, and all runtime/impact
+  observations remain unproved.
+- Added the authoritative patch, complete retained assembly, and a twelve-input
+  schema-v2 Boolean model. Focused validation passed `8 tests, 4111 subtests`;
+  the complete suite passed `578 tests, 152717 subtests`; the public harness and
+  bytecode compilation passed; independent exact-binary/package review returned
+  **ACCEPT**. No recovered target, target operation, terminal, thread, race, or
+  trigger material was used or created.
 
 ## compat netfilter path checkpoint — 2026-11-03
 

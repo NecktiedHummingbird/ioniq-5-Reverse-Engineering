@@ -3,6 +3,34 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.69.0 - reject CVE-2016-0723 by exact retained line-discipline reference
+
+- Bound command `0x5424` in complete exact
+  `tty_ioctl [0xffffffff812871f8,0xffffffff81287d46)` to the path beginning at
+  `0xffffffff812879f9`: exact `tty_ldisc_ref_wait`, post-acquisition
+  `ldisc->ops->num` loads, exact `__put_user_4`, and exact `tty_ldisc_deref`
+  before common return.
+- Proved that every normal path after successful wait reaches dereference,
+  including the user-copy error return; the copy result is saved but not tested
+  before the same retained object is released.
+- Retained complete exact `tty_ldisc_ref_wait`, `tty_ldisc_ref`, and
+  `tty_ldisc_deref` ranges and bound their exact `ldsem_down_read`,
+  `ldsem_down_read_trylock`, and `ldsem_up_read` calls.
+- Compared those fixed effects with authoritative upstream commit
+  `5c17c861a357e9458001f021a7afa7aab9937439`. The result rejects only the
+  CVE-specific unlocked-dereference premise; it does not establish source
+  provenance, installed identity, or general TTY safety.
+- Added the authoritative patch, complete retained assembly, dedicated report,
+  and a twelve-input schema-v2 Boolean-only model with fail-closed all-or-none
+  CLI, tri-state incomplete-fact handling, an explicit contrary unlocked path,
+  null runtime/impact outcomes, and exhaustive output assertions. Focused
+  validation passed `8 tests, 4111 subtests`; the complete suite passed `578
+  tests, 152717 subtests`; the public harness and bytecode compilation passed;
+  independent exact-binary/package review returned **ACCEPT**.
+- No recovered target, target operation, terminal, thread, race, trigger
+  material, crash, privilege transition, or persistence action was used or
+  created.
+
 ## 1.66.0 - V-028 runtime test blocked one layer down: the launcher is stuck on MICOM asks
 
 - Built the test properly this time: in the systemd workspace, a wrapper around `AppLauncher.sh` brings up our
