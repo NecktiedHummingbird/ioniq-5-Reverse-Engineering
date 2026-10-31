@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.67.0 - the MICOM adaptor owns the bus name and the launcher consumes its answers
+
+- Wrote `micom-service`, a research adaptor that owns `com.lge.car.micom` on the system bus, registers `/Ihu`
+  with interface `com.lge.car.micom.ihu`, and answers each method with an `ay` payload (35 bytes for
+  `AskSysBootinfo`, empty otherwise). libdbus is resolved through `dlopen` because this cross build has no
+  development headers for it.
+- **First attempt failed informatively:** `request_name` returned **3** (`EXISTS`) — the vendor daemon *does* own
+  the name, it simply answers nothing. With a retry loop plus displacing the daemon (`pkill
+  micommanager_userspace`), ownership is taken: `request_name → 1 (PRIMARY_OWNER)`.
+- **The launcher then consumed real answers**, which had never happened before:
+  `answered AskNaviOutermostRegion`, `AskSysBootinfo -> 35 bytes` (three retries), `answered AskCustomSetting`
+  (three), `answered AskSettingInfoValue`. Compare with every earlier attempt, where these came back as
+  `Did not receive a reply` and the launcher stalled.
+- The launcher therefore advanced **further than in any previous run** — it is now iterating its ask sequence
+  rather than failing on the first one. It still had not exported `com.lge.avn.applauncher` within the window, so
+  the V-028 launch test still could not run.
+- Next: extend the settle window (the launcher was still working at 1 min 26 s), and answer the remaining ask
+  methods with plausible non-empty payloads rather than empty arrays, in case a later step requires real values.
+
 ## 1.70.0 - reject CVE-2017-16995 for the exact syscall-based eBPF path
 
 - Rejected CVE-2017-16995 only for the named syscall-based eBPF verifier path

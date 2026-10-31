@@ -3000,3 +3000,13 @@ and are superseded by corrections rather than silently rewritten.
   written by the vendor's own script into world-writable /tmp, so the exposure is their design, not an inference.
 - The chain is not disproven, it is behind a bug we cannot fix without vendor source. That is a better statement
   than "unverified".
+
+## 2026-10-31 — the vehicle link answered a real client
+
+- A small adaptor took the bus name the vendor daemon holds but never serves, and the launcher immediately started
+  getting answers to the asks that had blocked it every previous run.
+- That is the first time in this project that the vehicle-interface dependency has been satisfied at runtime rather
+  than simulated in a transcript. The asks in the log are the same three names that appeared as failures for rounds.
+- The launcher still had not finished starting when the run ended, so the launch-bypass test remains unrun. But the
+  blocker has moved from "the daemon cannot publish" to "the launcher needs longer", which is progress of the useful
+  kind.
