@@ -1,7 +1,7 @@
 # Disconnected bench state bundle checkpoint
 
-Status: implemented, extended for FUMO relaunch state, independently
-re-reviewed, and locally accepted on 2026-11-01.
+Status: implemented, extended for FUMO relaunch and update-source policy state,
+and locally re-reviewed on 2026-11-03.
 
 ## Completed
 
@@ -28,6 +28,17 @@ re-reviewed, and locally accepted on 2026-11-01.
   - records the scalar `/proc/sys/kernel/perf_event_paranoid` runtime policy
     without calling `perf_event_open`, running `perf`, creating an event, or
     starting a thread;
+  - records metadata for `/update` and `/update/usb` in addition to the staged
+    subdirectories, and performs read-only `getfattr` listing/value queries for
+    `SMACK64` and `SMACK64EXEC` on the update namespace, staged updater/XML,
+    installed AppDMClient/AppUpgrade, and persistent public key;
+  - keeps absent path, absent attribute, unavailable xattr provider, query error,
+    malformed label and successful label distinct, preserves raw records, and
+    derives `facts.smack_xattrs` without reading staged file content;
+  - records process real/effective/saved/filesystem uid/gid values and
+    supplementary groups separately from the legacy real-id process summary;
+  - extends static auditing to reject bare or path-qualified xattr, ownership and
+    mode mutation utilities plus mutating `attr`/`setfattr` options;
   - distinguishes absent from unreadable/read-error state and fails the terminal
     completion verdict on failed reads, metadata/link queries, passive commands,
     or malformed/empty hash output.
@@ -58,14 +69,19 @@ independently accepted.
 ## Validation
 
 ```text
-390 passed, 339 subtests passed
+focused collector: 23 passed, 20 subtests passed
+complete suite: 556 passed, 148497 subtests passed
 public harness: PASS (pass=3, info=4, no pending/blocked/fail)
 probe audit: safe=true, syntax_ok=true, violations=[]
-probe SHA-256: ae8394910bf5e6bd8577ee921c2319afdbb46e4d87e11acb5952051223d2dd47
+probe size: 22464 bytes
+probe SHA-256: c043f3ed5c1815897de8ee5faececd6c36a9cb36e24fabd83d43b7dab164fc56
 git diff --check: PASS
 py_compile: PASS
 ```
 
+The update-source policy extension includes focused tests for absent paths and
+attributes, unavailable providers, query failures, malformed/successful labels,
+complete process credential parsing, and bare/path-qualified mutation rejection.
 No physical unit, target network, radio, modem, firmware update, recovered
 executable, or active exploit input was used.
 
@@ -92,8 +108,9 @@ executable, or active exploit input was used.
    Dropbear conclusion; do not promote absence/denial/truncation to a negative.
    V-020-specific passive fields now cover BusyBox/unzip providers,
    AppLauncher/AppDMClient/AppScomoDM/AppUpgrade, `CarOption.csv`,
-   `DecryptToPIPE`, the public key, effective arguments, uid, SMACK labels,
-   relaunch/completion markers, and staged `/update/usb/bin` identities.
+   `DecryptToPIPE`, the public key, effective arguments, uid, process SMACK
+   labels, relaunch/completion markers, staged `/update/usb/bin` identities, and
+   `SMACK64`/`SMACK64EXEC` state for the source namespace and trust subjects.
 3. Use the captured A/B flags and current root only after a full partition dump
    and restore rehearsal to plan any update acceptance experiment.
 4. Offline, continue exact `AppUpgrade` child analysis of descriptor semantics,

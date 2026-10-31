@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Update-source runtime-policy checkpoint — 2026-11-03
+
+- Both recovered eMMC fstab branches configure `/dev/mmcblk0p9` at `/update` as ext4 with `defaults,noatime,journal_checksum`, establishing writable-filesystem configuration rather than live mount success.
+- `smack_setup.sh` conditionally creates `/update/usb/bin` and placeholder AppUpgrade/AppScomoUpgrade files, then sets only their `SMACK64EXEC=App::upgrade` transition label. It does not pin uid/gid/mode or set the `SMACK64` access label.
+- The recovered policy permits the floor label and 22 named `App::*` labels to write an object labelled `App::upgrade`, but staged object/directory labels, DAC metadata, process uid/gid/labels, loaded rules and update serialization remain runtime gates. Actor write access and V-031 substitution remain unproved.
+- Extended `tools/uk_fw/bench_state_bundle.py` to capture `/update` namespace metadata, complete process uid/gid sets plus supplementary groups, and read-only `SMACK64`/`SMACK64EXEC` results for source/trust paths. Absent paths, absent attributes, unavailable provider, query errors, malformed labels and successes remain distinct. Focused validation passed `23 tests, 20 subtests`; the full suite passed `556 tests, 148497 subtests`; the public harness passed; corrected independent review returned **ACCEPT**. See `evidence/update-source-runtime-policy.md`.
+
 ## Inner FUMO authentication-coverage checkpoint — 2026-11-03
 
 - V-032 binds exact embedded FUMO SHA-256 `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7`, Build ID `863a8730e66a1c5245a1bf458fe2554adee0351a`, startup argument flow, verifier `[0x45820,0x45d75)`, file-MD5 helper `[0x140f50,0x1413e4)`, and worker relaunch `[0x6c9a0,0x6cab5)`.

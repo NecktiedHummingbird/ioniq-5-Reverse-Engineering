@@ -69,6 +69,7 @@ class BenchStateBundleTests(unittest.TestCase):
         self.assertNotRegex(script, r"\biw\s+.*\bscan\b")
         for process_name in ("AppLauncher", "AppDMClient", "AppScomoDM", "AppUpgrade"):
             self.assertIn(process_name, script)
+        self.assertIn('record process-credentials "$P_PID|$P_UID|$P_EUID|$P_SUID|$P_FSUID|$P_GID|$P_EGID|$P_SGID|$P_FSGID|$P_GROUPS"', script)
         for update_path in (
             "/bin/busybox",
             "/usr/bin/unzip",
@@ -81,6 +82,8 @@ class BenchStateBundleTests(unittest.TestCase):
             "/app/bin/CarOption.csv",
             "/app/share/AppUpgrade/DecryptToPIPE",
             "/app/share/AppUpgrade/teruten5_pub.key",
+            "/update",
+            "/update/usb",
             "/update/sysroot",
             "/update/usb/upgrade",
             "/update/usb/bin",
@@ -101,7 +104,9 @@ class BenchStateBundleTests(unittest.TestCase):
             self.assertRegex(script, rf"for S_FLAG in [^\n]*\b{update_flag}\b")
         self.assertIn('capture_file update-flag "/update/$S_FLAG"', script)
         self.assertNotIn('[ -r "/update/$S_FLAG" ]', script)
-        self.assertIn('P_STATUS=$?', script)
+        self.assertIn('P_UID_STATUS=$?', script)
+        self.assertIn('P_GID_STATUS=$?', script)
+        self.assertIn('P_GROUPS_STATUS=$?', script)
         self.assertIn('U_STATUS=$?', script)
         for pty_path in ("/dev/ptmx", "/dev/pts", "/dev/pts/ptmx"):
             self.assertIn(pty_path, script)
@@ -110,6 +115,239 @@ class BenchStateBundleTests(unittest.TestCase):
         self.assertIn("/lib/modules/4.1.27-abl/kernel/net/unix/unix.ko", script)
         self.assertIn('read_scalar interface-operstate', script)
         self.assertIn('record unreadable-file', script)
+
+        smack_paths = (
+            "/update",
+            "/update/usb",
+            "/update/usb/bin",
+            "/update/usb/bin/AppUpgrade",
+            "/update/usb/bin/.lge.upgrade.xml",
+            "/app/bin/AppDMClient",
+            "/app/bin/AppUpgrade",
+            "/app/share/AppUpgrade/teruten5_pub.key",
+        )
+        smack_path_loop = next(
+            line for line in script.splitlines() if line.startswith("for SX_PATH in ")
+        )
+        for path in smack_paths:
+            self.assertIn(f" {path}", smack_path_loop)
+        self.assertEqual(
+            script.count(
+                'getfattr -h --absolute-names --dump --match="^security\\\\.$SX_NAME$" "$SX_PATH"'
+            ),
+            1,
+        )
+        self.assertEqual(
+            script.count(
+                'getfattr -h --only-values -n "security.$SX_NAME" "$SX_PATH"'
+            ),
+            1,
+        )
+        self.assertIn("for SX_NAME in SMACK64 SMACK64EXEC", script)
+        self.assertIn('capture_smack_xattr "$SX_NAME" "$SX_PATH"', script)
+        smack_helper = script.split("capture_smack_xattr() {", 1)[1].split(
+            "\nhash_file() {", 1
+        )[0]
+        self.assertNotRegex(smack_helper, r"\b(?:cat|head|tail|hash_file)\b")
+        self.assertNotRegex(script, r"\b(?:setfattr|chsmack|chattr)\b")
+        self.assertNotRegex(script, r"\battr\b[^\n]*(?:\s-s\b|\s-r\b|--set\b|--remove\b)")
+        self.assertNotIn("[ ! -r \"$SX_PATH\" ]", smack_helper)
+
+    def test_smack_xattr_helper_records_success_absence_and_fail_closed_errors(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+begin_section smack
+capture_smack_xattr SMACK64 "$1"
+capture_smack_xattr SMACK64EXEC "$1"
+capture_smack_xattr SMACK64 "$2"
+capture_smack_xattr SMACK64 "$3"
+capture_smack_xattr SMACK64 "$4"
+capture_smack_xattr SMACK64 "$5"
+capture_smack_xattr SMACK64 "$6"
+record collect-failure "$COLLECT_FAILURE"
+end_section smack "$COLLECT_FAILURE"
+begin_section complete
+if [ "$COLLECT_FAILURE" -eq 0 ]; then
+    record result complete
+    end_section complete 0
+else
+    record result collection-error
+    end_section complete 1
+fi
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_getfattr = fake_bin / "getfattr"
+            fake_getfattr.write_text(
+                "#!/bin/sh\n"
+                "for arg in \"$@\"; do path=$arg; done\n"
+                "case \"$path\" in *query-error) exit 7;; esac\n"
+                "case \" $* \" in\n"
+                "  *' --dump '*)\n"
+                "    case \"$path\" in\n"
+                "      *attribute-absent) exit 0;;\n"
+                "      *) case \" $* \" in\n"
+                "           *SMACK64EXEC*) printf 'security.SMACK64EXEC=\\\"\\\"\\n';;\n"
+                "           *) printf 'security.SMACK64=\\\"\\\"\\n';;\n"
+                "         esac;;\n"
+                "    esac;;\n"
+                "  *' --only-values '*)\n"
+                "    case \"$path\" in\n"
+                "      *empty) exit 0;;\n"
+                "      *malformed) printf 'bad/label\\n';;\n"
+                "      *) case \" $* \" in\n"
+                "           *SMACK64EXEC*) printf 'App::Upgrade\\n';;\n"
+                "           *) printf 'Update::Source\\n';;\n"
+                "         esac;;\n"
+                "    esac;;\n"
+                "  *) exit 99;;\n"
+                "esac\n",
+                encoding="ascii",
+            )
+            fake_getfattr.chmod(0o700)
+            success = root / "success"
+            query_error = root / "query-error"
+            empty = root / "empty"
+            malformed = root / "malformed"
+            attribute_absent = root / "attribute-absent"
+            for path in (success, query_error, empty, malformed, attribute_absent):
+                path.write_text("contents-must-not-be-read", encoding="ascii")
+            path_absent = root / "path-absent"
+            env = dict(os.environ)
+            env["PATH"] = f"{fake_bin}:/usr/bin:/bin"
+            proc = subprocess.run(
+                [
+                    "/bin/sh",
+                    "-s",
+                    "--",
+                    str(success),
+                    str(query_error),
+                    str(empty),
+                    str(malformed),
+                    str(attribute_absent),
+                    str(path_absent),
+                ],
+                input=preamble + exercise,
+                text=True,
+                capture_output=True,
+                env=env,
+                check=False,
+            )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        report = MODULE.parse_capture(proc.stdout.encode())
+        records = [
+            (item["key"], item["value"])
+            for section in report["sections"]
+            for item in section["records"]
+        ]
+        self.assertIn(
+            ("smack-xattr", f"{success}|SMACK64|present|getfattr|Update::Source"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{success}|SMACK64EXEC|present|getfattr|App::Upgrade"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{query_error}|SMACK64|query-error|getfattr|status=7"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{empty}|SMACK64|malformed|getfattr|reason=empty"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{malformed}|SMACK64|malformed|getfattr|reason=invalid-label"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{attribute_absent}|SMACK64|attribute-absent|getfattr|"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{path_absent}|SMACK64|path-absent||"),
+            records,
+        )
+        self.assertIn(("collect-failure", "1"), records)
+        complete = next(
+            section for section in report["sections"] if section["name"] == "complete"
+        )
+        self.assertEqual(complete["end_status"], 1)
+
+    def test_smack_xattr_provider_unavailable_is_explicit(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+has_command() {
+    [ "$1" = getfattr ] && return 1
+    command -v "$1" >/dev/null 2>&1
+}
+begin_section smack
+capture_smack_xattr SMACK64 "$1"
+capture_smack_xattr SMACK64EXEC "$1"
+record collect-failure "$COLLECT_FAILURE"
+end_section smack "$COLLECT_FAILURE"
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "existing"
+            path.write_text("contents-must-not-be-read", encoding="ascii")
+            proc = subprocess.run(
+                ["/bin/sh", "-s", "--", str(path)],
+                input=preamble + exercise,
+                text=True,
+                capture_output=True,
+                env={**os.environ, "PATH": "/usr/bin:/bin"},
+                check=False,
+            )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        report = MODULE.parse_capture(proc.stdout.encode())
+        records = [
+            (item["key"], item["value"])
+            for section in report["sections"]
+            for item in section["records"]
+        ]
+        self.assertIn(
+            ("smack-xattr", f"{path}|SMACK64|provider-unavailable|getfattr|"),
+            records,
+        )
+        self.assertIn(
+            ("smack-xattr", f"{path}|SMACK64EXEC|provider-unavailable|getfattr|"),
+            records,
+        )
+        self.assertIn(("collect-failure", "0"), records)
+
+    def test_smack_xattr_records_survive_parsing_and_derive_facts(self) -> None:
+        values = [
+            ("smack-xattr", "/update|SMACK64|present|getfattr|Update::Source"),
+            (
+                "smack-xattr",
+                "/update|SMACK64EXEC|provider-unavailable|getfattr|",
+            ),
+            (
+                "smack-xattr",
+                "/update/usb|SMACK64|attribute-absent|getfattr|",
+            ),
+            (
+                "smack-xattr",
+                "/app/bin/AppUpgrade|SMACK64|query-error|getfattr|status=13",
+            ),
+        ]
+        report = MODULE.parse_capture(valid_capture({"smack": values}))
+        self.assertTrue(report["complete"])
+        smack = next(section for section in report["sections"] if section["name"] == "smack")
+        self.assertEqual(
+            smack["records"],
+            [{"key": key, "value": value} for key, value in values],
+        )
+        self.assertEqual(
+            report["facts"]["smack_xattrs"]["/update"]["SMACK64"],
+            {"state": "present", "provider": "getfattr", "value": "Update::Source"},
+        )
+        self.assertEqual(
+            report["facts"]["smack_xattrs"]["/app/bin/AppUpgrade"]["SMACK64"],
+            {"state": "query-error", "provider": "getfattr", "value": "status=13"},
+        )
 
     def test_perf_event_paranoid_success_is_emitted_before_state_reuse(self) -> None:
         preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
@@ -464,6 +702,31 @@ wpa_cli p2p_find
         self.assertGreaterEqual(len(violations), 4)
         self.assertTrue(any("redirection" in item for item in violations))
 
+        for path_qualified_write in (
+            "/bin/rm /tmp/x\n",
+            "/usr/bin/touch /tmp/x\n",
+            "/sbin/mount /dev/x /mnt\n",
+            "./mkdir /tmp/x\n",
+            "/usr/bin/curl https://example.invalid/\n",
+            "/usr/bin/systemctl restart dbus.service\n",
+        ):
+            with self.subTest(path_qualified_write=path_qualified_write):
+                self.assertTrue(MODULE.audit_script(path_qualified_write))
+
+        for xattr_write in (
+            "setfattr -n security.SMACK64 -v label /update\n",
+            "/usr/bin/setfattr -n security.SMACK64 -v label /update\n",
+            "chsmack -a label /update\n",
+            "/sbin/chsmack -a label /update\n",
+            "/usr/bin/chattr +i /update\n",
+            "/bin/chmod 777 /update\n",
+            "/bin/chown 1:1 /update\n",
+            "attr -Sq -s SMACK64 -V label /update\n",
+            "/usr/bin/attr --remove SMACK64 /update\n",
+        ):
+            with self.subTest(xattr_write=xattr_write):
+                self.assertTrue(MODULE.audit_script(xattr_write))
+
     def test_audit_rejects_non_allowlisted_environment_read(self) -> None:
         unsafe_lines = (
             '''P_PATH=$(cat < "$P_DIR/environ" 2>/dev/null)\n''',
@@ -484,7 +747,11 @@ wpa_cli p2p_find
                 "processes": [
                     (
                         "process",
-                        "12|0|0|App::bluetooth|/tmp/vbtd|vbtd|/app/bin/vbtd -d /dev/ttyS0",
+                        "12|100|200|App::bluetooth|/tmp/vbtd|vbtd|/app/bin/vbtd -d /dev/ttyS0",
+                    ),
+                    (
+                        "process-credentials",
+                        "12|100|101|102|103|200|201|202|203|4 5 44",
                     ),
                     ("process-path", "12|/usr/local/bin:/usr/bin:/bin"),
                 ],
@@ -504,6 +771,20 @@ wpa_cli p2p_find
         self.assertTrue(report["complete"])
         self.assertEqual(report["warnings"], [])
         self.assertEqual(report["facts"]["processes"][0]["smack_label"], "App::bluetooth")
+        self.assertEqual(
+            report["facts"]["process_credentials"]["12"],
+            {
+                "ruid": 100,
+                "euid": 101,
+                "suid": 102,
+                "fsuid": 103,
+                "rgid": 200,
+                "egid": 201,
+                "sgid": 202,
+                "fsgid": 203,
+                "supplementary_groups": [4, 5, 44],
+            },
+        )
         self.assertEqual(
             report["facts"]["process_paths"]["12"],
             "/usr/local/bin:/usr/bin:/bin",

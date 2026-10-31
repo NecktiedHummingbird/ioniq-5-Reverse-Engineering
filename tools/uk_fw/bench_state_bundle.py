@@ -55,17 +55,30 @@ RECORD_PREFIX = "@@R|"
 
 # The audit is deliberately stricter than shell syntax.  Every emitted probe is
 # checked before it is printed or written on the host.
+COMMAND_TOKEN = r"(?:^|[\s;&|()])(?:[^\s;&|()]*/)*"
 FORBIDDEN_LINE_PATTERNS = (
-    re.compile(r"(?:^|[\s;&|()])(?:mount|umount|mountpoint)\b"),
-    re.compile(r"\bsystemctl\s+(?:start|stop|restart|reload|enable|disable|mask|unmask)\b"),
-    re.compile(r"(?:^|[\s;&|()])(?:service|kill|pkill|killall|reboot|poweroff|halt)\b"),
-    re.compile(r"(?:^|[\s;&|()])(?:rm|mv|cp|install|touch|mkdir|mktemp|truncate|dd|tee)\b"),
-    re.compile(r"(?:^|[\s;&|()])(?:curl|wget|nc|ncat|socat|ssh|scp|ftp|tftp)\b"),
-    re.compile(r"(?:^|[\s;&|()])(?:apt|apt-get|dnf|yum|rpm|opkg|apk|pip|pip3)\b"),
-    re.compile(r"\bwpa_cli\b"),
-    re.compile(r"\biw\s+.*\b(?:scan|connect|disconnect|set)\b"),
-    re.compile(r"\bbluetoothctl\b"),
-    re.compile(r"\b(?:qmicli|mbimcli|mmcli)\b"),
+    re.compile(COMMAND_TOKEN + r"(?:mount|umount|mountpoint)\b"),
+    re.compile(
+        COMMAND_TOKEN
+        + r"systemctl\s+(?:start|stop|restart|reload|enable|disable|mask|unmask)\b"
+    ),
+    re.compile(
+        COMMAND_TOKEN
+        + r"(?:service|kill|pkill|killall|reboot|poweroff|halt)\b"
+    ),
+    re.compile(
+        COMMAND_TOKEN
+        + r"(?:rm|mv|cp|install|touch|mkdir|mktemp|truncate|dd|tee)\b"
+    ),
+    re.compile(r"\b(?:setfattr|chsmack|chattr|chmod|chown)\b"),
+    re.compile(r"\battr\b[^\n;&|]*(?:\s-[A-Za-z]*[sr][A-Za-z]*\b|\s--(?:set|remove)\b)"),
+    re.compile(r"\bsetfattr\b[^\n;&|]*(?:\s-[A-Za-z]*[nx][A-Za-z]*\b|\s--(?:name|remove)\b)"),
+    re.compile(COMMAND_TOKEN + r"(?:curl|wget|nc|ncat|socat|ssh|scp|ftp|tftp)\b"),
+    re.compile(COMMAND_TOKEN + r"(?:apt|apt-get|dnf|yum|rpm|opkg|apk|pip|pip3)\b"),
+    re.compile(COMMAND_TOKEN + r"wpa_cli\b"),
+    re.compile(COMMAND_TOKEN + r"iw\s+.*\b(?:scan|connect|disconnect|set)\b"),
+    re.compile(COMMAND_TOKEN + r"bluetoothctl\b"),
+    re.compile(COMMAND_TOKEN + r"(?:qmicli|mbimcli|mmcli)\b"),
 )
 
 PROBE_SCRIPT = r'''#!/bin/sh
@@ -224,6 +237,70 @@ file_meta() {
     else
         record file "$FM_PATH|absent"
     fi
+}
+
+capture_smack_xattr() {
+    SX_NAME=$1
+    SX_PATH=$2
+    if [ ! -e "$SX_PATH" ] && [ ! -L "$SX_PATH" ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|path-absent||"
+        return
+    fi
+    if ! has_command getfattr; then
+        record smack-xattr "$SX_PATH|$SX_NAME|provider-unavailable|getfattr|"
+        return
+    fi
+    SX_LIST=$(getfattr -h --absolute-names --dump --match="^security\\.$SX_NAME$" "$SX_PATH" 2>/dev/null)
+    SX_STATUS=$?
+    if [ "$SX_STATUS" -ne 0 ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|query-error|getfattr|status=$SX_STATUS"
+        COLLECT_FAILURE=1
+        return
+    fi
+    SX_PREFIX="security.$SX_NAME="
+    SX_FOUND=0
+    case "
+$SX_LIST
+" in
+        *"
+$SX_PREFIX"*) SX_FOUND=1 ;;
+    esac
+    if [ "$SX_FOUND" -ne 1 ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|attribute-absent|getfattr|"
+        return
+    fi
+    SX_VALUE=$(getfattr -h --only-values -n "security.$SX_NAME" "$SX_PATH" 2>/dev/null)
+    SX_STATUS=$?
+    if [ "$SX_STATUS" -ne 0 ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|query-error|getfattr|status=$SX_STATUS"
+        COLLECT_FAILURE=1
+        return
+    fi
+    if [ -z "$SX_VALUE" ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|malformed|getfattr|reason=empty"
+        COLLECT_FAILURE=1
+        return
+    fi
+    SX_INVALID=$(printf '%s' "$SX_VALUE" | LC_ALL=C tr -d '\041-\176' 2>/dev/null)
+    SX_VALIDATE_STATUS=$?
+    if [ "$SX_VALIDATE_STATUS" -ne 0 ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|validation-error|getfattr|status=$SX_VALIDATE_STATUS"
+        COLLECT_FAILURE=1
+        return
+    fi
+    SX_MALFORMED=0
+    if [ "${#SX_VALUE}" -gt 255 ] || [ -n "$SX_INVALID" ]; then
+        SX_MALFORMED=1
+    fi
+    case "$SX_VALUE" in
+        */*|*\"*|*\'*|*\\*) SX_MALFORMED=1 ;;
+    esac
+    if [ "$SX_MALFORMED" -ne 0 ]; then
+        record smack-xattr "$SX_PATH|$SX_NAME|malformed|getfattr|reason=invalid-label"
+        COLLECT_FAILURE=1
+        return
+    fi
+    record smack-xattr "$SX_PATH|$SX_NAME|present|getfattr|$SX_VALUE"
 }
 
 hash_file() {
@@ -466,15 +543,36 @@ do
         COLLECT_FAILURE=1
         continue
     fi
-    P_UID=$(awk '$1 == "Uid:" { print $2; exit }' "$P_DIR/status" 2>/dev/null)
-    P_STATUS=$?
-    P_GID=$(awk '$1 == "Gid:" { print $2; exit }' "$P_DIR/status" 2>/dev/null)
+    P_UID_FIELDS=$(awk '$1 == "Uid:" { print $2 " " $3 " " $4 " " $5; found=1; exit } END { if (!found) exit 2 }' "$P_DIR/status" 2>/dev/null)
+    P_UID_STATUS=$?
+    P_GID_FIELDS=$(awk '$1 == "Gid:" { print $2 " " $3 " " $4 " " $5; found=1; exit } END { if (!found) exit 2 }' "$P_DIR/status" 2>/dev/null)
     P_GID_STATUS=$?
-    if [ "$P_STATUS" -ne 0 ] || [ "$P_GID_STATUS" -ne 0 ] || [ -z "$P_UID" ] || [ -z "$P_GID" ]; then
-        record process-read-error "$P_PID|status-parse|uid=$P_STATUS|gid=$P_GID_STATUS"
+    P_GROUPS=$(awk '$1 == "Groups:" { for (i=2; i != NF + 1; i++) printf "%s%s", (i == 2 ? "" : " "), $i; print ""; found=1; exit } END { if (!found) exit 2 }' "$P_DIR/status" 2>/dev/null)
+    P_GROUPS_STATUS=$?
+    P_UID=${P_UID_FIELDS%% *}
+    P_UID_REST=${P_UID_FIELDS#* }
+    P_EUID=${P_UID_REST%% *}
+    P_UID_REST=${P_UID_REST#* }
+    P_SUID=${P_UID_REST%% *}
+    P_FSUID=${P_UID_REST#* }
+    P_GID=${P_GID_FIELDS%% *}
+    P_GID_REST=${P_GID_FIELDS#* }
+    P_EGID=${P_GID_REST%% *}
+    P_GID_REST=${P_GID_REST#* }
+    P_SGID=${P_GID_REST%% *}
+    P_FSGID=${P_GID_REST#* }
+    P_IDS_VALID=1
+    for P_ID in "$P_UID" "$P_EUID" "$P_SUID" "$P_FSUID" "$P_GID" "$P_EGID" "$P_SGID" "$P_FSGID"
+    do
+        case "$P_ID" in ''|*[!0-9]*) P_IDS_VALID=0 ;; esac
+    done
+    case "$P_GROUPS" in *[!0-9\ ]*) P_IDS_VALID=0 ;; esac
+    if [ "$P_UID_STATUS" -ne 0 ] || [ "$P_GID_STATUS" -ne 0 ] || [ "$P_GROUPS_STATUS" -ne 0 ] || [ "$P_IDS_VALID" -ne 1 ]; then
+        record process-read-error "$P_PID|status-parse|uid=$P_UID_STATUS|gid=$P_GID_STATUS|groups=$P_GROUPS_STATUS|valid=$P_IDS_VALID"
         COLLECT_FAILURE=1
         continue
     fi
+    record process-credentials "$P_PID|$P_UID|$P_EUID|$P_SUID|$P_FSUID|$P_GID|$P_EGID|$P_SGID|$P_FSGID|$P_GROUPS"
     read_scalar process-comm "$P_DIR/comm"
     P_COMM=$RS_VALUE
     if [ "$RS_STATE" != present ]; then
@@ -520,6 +618,13 @@ capture_file smack-mounts /proc/mounts
 capture_file smack-rule /sys/fs/smackfs/load2
 capture_file smack-onlycap /sys/fs/smackfs/onlycap
 capture_file smack-ambient /sys/fs/smackfs/ambient
+for SX_PATH in /update /update/usb /update/usb/bin /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /app/bin/AppDMClient /app/bin/AppUpgrade /app/share/AppUpgrade/teruten5_pub.key
+ do
+    for SX_NAME in SMACK64 SMACK64EXEC
+    do
+        capture_smack_xattr "$SX_NAME" "$SX_PATH"
+    done
+ done
 end_section smack 0
 
 begin_section units
@@ -606,7 +711,7 @@ for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo fota_status sh
  do
     capture_file update-flag "/update/$S_FLAG"
  done
-for S_DIR in /update/sysroot /update/usb/upgrade /update/usb/bin
+for S_DIR in /update /update/usb /update/sysroot /update/usb/upgrade /update/usb/bin
  do
     file_meta "$S_DIR"
  done
@@ -706,12 +811,14 @@ def _derive_facts(sections: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "hashes": {},
         "units": {},
         "processes": [],
+        "process_credentials": {},
         "process_paths": {},
         "interfaces": [],
         "files": {},
         "update_flags": [],
         "listeners": [],
         "local_sdp": [],
+        "smack_xattrs": {},
     }
     for section in sections:
         for record in section["records"]:
@@ -720,6 +827,13 @@ def _derive_facts(sections: Iterable[dict[str, Any]]) -> dict[str, Any]:
             if key == "hash":
                 path, digest = _split_fields(value, 2)
                 facts["hashes"][path] = digest
+            elif key == "smack-xattr":
+                path, name, state, provider, detail = _split_fields(value, 5)
+                facts["smack_xattrs"].setdefault(path, {})[name] = {
+                    "state": state,
+                    "provider": provider,
+                    "value": detail,
+                }
             elif key == "unit":
                 name, state = _split_fields(value, 2)
                 facts["units"][name] = state
@@ -736,6 +850,33 @@ def _derive_facts(sections: Iterable[dict[str, Any]]) -> dict[str, Any]:
                         "cmdline": cmdline,
                     }
                 )
+            elif key == "process-credentials":
+                (
+                    pid,
+                    ruid,
+                    euid,
+                    suid,
+                    fsuid,
+                    rgid,
+                    egid,
+                    sgid,
+                    fsgid,
+                    groups,
+                ) = _split_fields(value, 10)
+                facts["process_credentials"][pid] = {
+                    "ruid": int(ruid) if ruid.isdigit() else ruid,
+                    "euid": int(euid) if euid.isdigit() else euid,
+                    "suid": int(suid) if suid.isdigit() else suid,
+                    "fsuid": int(fsuid) if fsuid.isdigit() else fsuid,
+                    "rgid": int(rgid) if rgid.isdigit() else rgid,
+                    "egid": int(egid) if egid.isdigit() else egid,
+                    "sgid": int(sgid) if sgid.isdigit() else sgid,
+                    "fsgid": int(fsgid) if fsgid.isdigit() else fsgid,
+                    "supplementary_groups": [
+                        int(group) if group.isdigit() else group
+                        for group in groups.split()
+                    ],
+                }
             elif key == "process-path":
                 pid, path = _split_fields(value, 2)
                 facts["process_paths"][pid] = path

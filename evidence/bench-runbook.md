@@ -36,7 +36,7 @@ Evidence to keep: `boot.log`, a note of the exact `ABL.oemkm=` value observed.
 Generate the probe on the analyst host and review it before use:
 
 ```sh
-PY="${PYTHON:-/opt/homebrew/bin/python3.13}"
+PY="${PYTHON:-$HOME/.platformio/penv/bin/python3}"
 "$PY" tools/uk_fw/bench_state_bundle.py emit -o work/bench/state-probe.sh
 "$PY" tools/uk_fw/bench_state_bundle.py audit work/bench/state-probe.sh
 ```
@@ -55,7 +55,8 @@ host:
 ```
 
 This single capture records installed hashes, process uid/gid and effective
-SMACK labels, unit activation, listeners, interfaces, passive Wi-Fi/P2P state,
+SMACK labels, real/effective/saved/filesystem uid/gid values, supplementary
+groups, unit activation, listeners, interfaces, passive Wi-Fi/P2P state,
 oFono device/unit state, local Bluetooth SDP/profile state, Dropbear chain
 completeness, and A/B/update flags. Update-specific records include the live
 command lines for AppLauncher/AppDMClient/AppScomoDM/AppUpgrade and hashes for
@@ -65,9 +66,14 @@ BusyBox, both unzip providers, those applications, `CarOption.csv`,
 metadata, and file metadata only for `/tmp/session_appmgr{,.env}`. It does not
 read or replay the private bus address, connect to the bus, inspect method state,
 or send a launch request. It also records the FUMO relaunch and
-completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
-`/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
-`/tmp/AppUpgrade`. It passively records `/dev/ptmx`, `/dev/pts`, and
+completion markers; metadata for `/update`, `/update/usb`, `/update/sysroot`,
+`/update/usb/upgrade`, and `/update/usb/bin`; and metadata/hashes for staged
+AppUpgrade/XML and `/tmp/AppUpgrade`. Read-only `getfattr` listing/value queries
+record `SMACK64` and `SMACK64EXEC` state for the update namespace, staged
+updater/XML, installed AppDMClient/AppUpgrade, and the persistent public key.
+Provider absence, path absence, attribute absence, query failure, malformed
+output, and successful labels remain separate records. It passively records
+`/dev/ptmx`, `/dev/pts`, and
 `/dev/pts/ptmx` metadata—including device major/minor numbers—plus
 `/proc/mounts`, so intended UNIX98 PTY exposure can be separated from an
 observed major-5/minor-2 runtime endpoint before any TTY testing. It also
