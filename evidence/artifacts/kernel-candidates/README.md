@@ -112,6 +112,7 @@ commits:
   `e4ec8cc8039a7063e24204299b462bd1383184a5`, and completeness follow-up
   `a8c006aafead3c45ae5d5601e3717055bccf41bc`;
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
+- CVE-2016-4997: `ce683e5f9d045e5d67d1312a42b359cb2ab2a13c`, with related compat-validation fix `09d9686047dbbe1cf4faa558d3ecc4aae2046054`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2016-7910: `77da160530dd1dc94f6ae15a981f24e5f0021e84`;
 - CVE-2016-7911: `8ba8682107ee2ca3347354e018865d8e1967c5f4`;
@@ -176,6 +177,16 @@ binary does not establish commit provenance. SHA-256:
 `cve-2016-7910-fix.patch` is upstream commit
 `77da160530dd1dc94f6ae15a981f24e5f0021e84`; SHA-256:
 `701c7be0854836b8c7f2f4ff21e8e3d4a932809c2d32fe572215bdd5b03bcff0`.
+
+`kernel-netfilter-compat-cve-2016-4997.asm` retains complete
+`sys_ni_syscall` machine code and authoritative-map identities for its weak
+`compat_sys_setsockopt` alias plus native IPv4/IPv6 iptables control routines.
+The compat alias returns `-ENOSYS`; configuration and the full map have no
+compiled compat iptables translation path. SHA-256:
+`3f548b2cdac454999d919b8f1d88a696810ee1bbbfa94693fc6060f8214a75f9`.
+The primary and related patches have SHA-256
+`4a30140d96c857a4cebf0ccdfd6e7a4b80d1d0aed01c002af8a490d33f7afec0`
+and `b42c9a22f04883903c3a8b9f86efe22dc4b790c95e8f1a1d83ab8053fabaadd7`.
 
 `kernel-key-read-revoke-cve-2015-7550.asm` retains complete
 embedded-kallsyms-bounded `key_revoke`, `keyctl_revoke_key`,

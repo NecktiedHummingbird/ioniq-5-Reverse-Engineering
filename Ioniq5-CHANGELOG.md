@@ -3,6 +3,13 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.68.0 - reject the compat netfilter replace CVE by absent compiled path
+
+- Rejected CVE-2016-4997 for exact recovered `vmlinux`: IA32 emulation is disabled, `CONFIG_COMPAT=y` is absent, weak `compat_sys_setsockopt` aliases exact `sys_ni_syscall` and returns `-ENOSYS`, and no compat iptables translation/check symbol occurs in the authoritative map.
+- Retained native `do_ipt_set_ctl` and `do_ip6t_set_ctl` identities to keep the verdict narrow: native IPv4/IPv6 iptables remains compiled, and this is not a general netfilter safety claim.
+- Added the authoritative primary/related patches and a five-input schema-v2 tri-state model with exhaustive output assertions. Focused validation passed `6 tests, 36 subtests`; the complete suite passed `570 tests, 148606 subtests`; the public harness passed; corrected independent exact-binary/package review returned **ACCEPT**.
+- No target syscall, socket, namespace, packet, filter table, target execution, crash, corruption, privilege transition, or persistence action was created.
+
 ## 1.67.0 - reject the key read/revoke race by exact same-rwsem effects
 
 - Rejected CVE-2015-7550 for exact recovered `vmlinux`: `keyctl_read_key` takes `key +0x20` for reading before validation and retains it through the optional read callback; `key_revoke` takes the same rwsem for writing across revoked-state mutation and the optional revoke callback.

@@ -6,6 +6,12 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## compat netfilter path checkpoint — 2026-11-03
+
+- CVE-2016-4997 is rejected for exact recovered `vmlinux` by an absent compiled prerequisite: IA32 emulation is disabled, `CONFIG_COMPAT=y` is absent, weak `compat_sys_setsockopt` aliases exact `sys_ni_syscall` and returns `-ENOSYS`, and no compat iptables translation/check symbol occurs in the authoritative map.
+- Native `do_ipt_set_ctl` and `do_ip6t_set_ctl` remain compiled, so the conclusion is limited to the CVE-specific 32-bit compat implementations and is not a general netfilter safety claim. `CONFIG_USER_NS=n` separately removes the public in-container-root setup.
+- Added exact stub evidence, authoritative upstream fixes, and a five-input schema-v2 model. Focused validation passed `6 tests, 36 subtests`; the complete suite passed `570 tests, 148606 subtests`; the public harness passed; corrected independent exact-binary/package review returned **ACCEPT**. No target syscall, socket, namespace, packet, filter table, target execution, crash, or privilege action was created.
+
 ## key read/revoke race checkpoint — 2026-11-03
 
 - CVE-2015-7550 is rejected for exact recovered `vmlinux` by same-rwsem effects matching upstream `b4a1b4f5047e4f54e194681125c74c0aa64d637d`; stripped code cannot establish commit provenance.
