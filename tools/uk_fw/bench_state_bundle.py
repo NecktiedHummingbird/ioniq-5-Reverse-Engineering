@@ -388,6 +388,21 @@ begin_section identity
 capture_command uname uname -a
 capture_file os-release /etc/os-release
 capture_file modules /proc/modules
+read_scalar perf-event-paranoid /proc/sys/kernel/perf_event_paranoid
+if [ "$RS_STATE" = present ]; then
+    I_PERF_VALUE=$RS_VALUE
+    case "$I_PERF_VALUE" in
+        -*) I_PERF_DIGITS=${I_PERF_VALUE#-} ;;
+        *) I_PERF_DIGITS=$I_PERF_VALUE ;;
+    esac
+    case "$I_PERF_DIGITS" in
+        ''|*[!0-9]*)
+            record malformed-scalar "perf-event-paranoid|$I_PERF_VALUE"
+            COLLECT_FAILURE=1
+            ;;
+        *) record perf-event-paranoid "$I_PERF_VALUE" ;;
+    esac
+fi
 read_scalar kernel-cmdline /proc/cmdline
 if [ "$RS_STATE" = present ]; then
     I_CMDLINE=$RS_VALUE

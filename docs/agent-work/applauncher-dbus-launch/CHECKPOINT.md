@@ -21,7 +21,7 @@ V-028 records an exact caller-path route that bypasses both identified AppLaunch
 ## Deterministic artifacts
 
 - Model default-report SHA-256: `ee8949cec8c7a9832f7794b59f3552a3237c5f3b0e00777ae95bc5487e629530`
-- Current emitted passive probe SHA-256: `5a81fb9f0f5a6ba793672fc3323489f58239de56782598f64e964642cbaa0b84`
+- Current emitted passive probe SHA-256: `ae8394910bf5e6bd8577ee921c2319afdbb46e4d87e11acb5952051223d2dd47` (later read-only extension adds `/proc/sys/kernel/perf_event_paranoid`; AppLauncher fields are unchanged)
 - Focused validation: `29 passed, 131104 subtests passed`; emitted probe passed POSIX shell syntax.
 
 ## Acceptance status

@@ -150,6 +150,16 @@ the mmap boundary rejection, and exact rejection of every vector large enough
 to reach a negative signed index. SHA-256:
 `f7097d97fc2e29671673aa67c0cd34df7241e60e0fb49d6d782376fca37d9994`.
 
+`kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
+`perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former
+shows the compiled reference/lock/identity/retry discipline; the affected
+move-group path loads its group context before the double-mutex wait and omits
+those effects and post-lock move-state revalidation. SHA-256:
+`6f171c2c89ed13f641f4a5084fd40a90d23f7deeb644a00de8c5eed1a1ef6863`.
+`cve-2017-6001-fix.patch` is upstream commit
+`321027c1fe77f892f4ea07846aeae08cefbbb290`; SHA-256:
+`3349b60feb8808444a3905369e4d4d7660690f2223c6b8e3cbabb9b0e7c6be99`.
+
 `kernel-inotify-cve-2017-7533.asm` binds snapshot dominance around exact parent
 and rename notification paths, short-name copying under the dentry lock,
 external-name reference retention/release, and the stable pointer passed to the

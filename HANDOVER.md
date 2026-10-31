@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## perf move-group race checkpoint — 2026-11-03
+
+- V-030 records the exact CVE-2017-6001 mechanism in recovered `vmlinux`: the `perf_event_open` software-group-to-hardware-context path loads `group_leader->ctx` before waiting for old/new context mutexes, then removes/migrates through the saved context without a nonzero reference, identity revalidation/retry, or post-lock move-state validation.
+- Exact `perf_event_ctx_lock_nested.isra.60` in the same binary independently contains the safe reference → lock → identity check → unlock/drop/retry discipline, but the move-group path neither calls nor inlines it.
+- `CONFIG_PERF_EVENTS=y`; the exact initialized `perf_event_paranoid` value is 1. Installed identity, mutable runtime policy, production PMU/event support, successful unprivileged event creation, a winning race, stale/dead-context use, controlled corruption, root and persistence remain unobserved.
+- Added complete exact FDE evidence, upstream fix `321027c1fe77f892f4ea07846aeae08cefbbb290`, and a nine-input Boolean-only model with an exhaustive 512-state truth table. No syscall, event, thread, race or target execution was performed.
+
 ## AF_PACKET frame-count residual checkpoint — 2026-11-03
 
 - Closed the formerly unresolved V1/V2 consequence of the absent `frames_per_block * tp_block_nr` overflow guard. Exact allocation uses the full block count; every logical position bounded by wrapped `frame_max` still yields a vector index below that count and an in-block offset below block size, including wrapped frame count zero.

@@ -106,9 +106,58 @@ class BenchStateBundleTests(unittest.TestCase):
         for pty_path in ("/dev/ptmx", "/dev/pts", "/dev/pts/ptmx"):
             self.assertIn(pty_path, script)
         self.assertIn("capture_file modules /proc/modules", script)
+        self.assertIn("read_scalar perf-event-paranoid /proc/sys/kernel/perf_event_paranoid", script)
         self.assertIn("/lib/modules/4.1.27-abl/kernel/net/unix/unix.ko", script)
         self.assertIn('read_scalar interface-operstate', script)
         self.assertIn('record unreadable-file', script)
+
+    def test_perf_event_paranoid_success_is_emitted_before_state_reuse(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+begin_section identity
+read_scalar perf-event-paranoid "$1"
+if [ "$RS_STATE" = present ]; then
+    I_PERF_VALUE=$RS_VALUE
+    case "$I_PERF_VALUE" in
+        -*) I_PERF_DIGITS=${I_PERF_VALUE#-} ;;
+        *) I_PERF_DIGITS=$I_PERF_VALUE ;;
+    esac
+    case "$I_PERF_DIGITS" in
+        ''|*[!0-9]*)
+            record malformed-scalar "perf-event-paranoid|$I_PERF_VALUE"
+            COLLECT_FAILURE=1
+            ;;
+        *) record perf-event-paranoid "$I_PERF_VALUE" ;;
+    esac
+fi
+read_scalar reused-state "$2"
+end_section identity "$COLLECT_FAILURE"
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            perf_value = root / "perf-event-paranoid"
+            perf_value.write_text("1\n", encoding="ascii")
+            reused = root / "reused"
+            reused.write_text("overwritten\n", encoding="ascii")
+            run = subprocess.run(
+                ["/bin/sh", "-s", "--", str(perf_value), str(reused)],
+                input=preamble + exercise,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+        self.assertIn("@@R|perf-event-paranoid|31\n", run.stdout)
+        emitted_records = [
+            line for line in run.stdout.splitlines() if line.startswith("@@R|")
+        ]
+        self.assertEqual(emitted_records, ["@@R|perf-event-paranoid|31"])
+        placeholder = framed_record("perf-event-paranoid", "placeholder").encode()
+        capture = valid_capture({"identity": [("perf-event-paranoid", "placeholder")]})
+        capture = capture.replace(placeholder, emitted_records[0].encode(), 1)
+        report = MODULE.parse_capture(capture)
+        identity = next(section for section in report["sections"] if section["name"] == "identity")
+        self.assertIn({"key": "perf-event-paranoid", "value": "1"}, identity["records"])
 
     def test_probe_helpers_fail_closed_on_collection_errors(self) -> None:
         preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]

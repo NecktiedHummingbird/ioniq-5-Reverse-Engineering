@@ -238,14 +238,22 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
   allocation order 23 and exact `__rmqueue` plus `__alloc_pages_nodemask` reject
   every order above 10. `__kmalloc` returns null before setup, cleanup, or mmap
   can reach a negative index.
+- V-030/CVE-2017-6001 is now the highest-priority exact local-kernel escalation
+  candidate. The perf move-group path loads a group context before waiting for
+  two mutexes and lacks live-reference, identity-revalidation/retry, and
+  post-lock move-state checks; the exact safe single-context helper exists
+  elsewhere in the same binary. Public impact is local privilege gain and the
+  initialized policy is `perf_event_paranoid=1`, but installed/runtime policy,
+  PMU support, accepted event combinations, a winning race, stale/dead-context
+  use, controlled corruption and root remain unobserved. Keep all active race
+  validation off the owner unit.
 - V-022/CVE-2018-17182 is exact pre-fix code on an ordinary MMU/thread surface:
   32-bit generations wrap into a live single-user flush helper that can retain
   cache pointers, and lookup validates only the same 32-bit generation. Public
   impact includes possible privilege gain. It requires a 2^32-state cycle and
   careful lifetime conditions; no target wrap, stale VMA, controlled reuse,
-  corruption, or root is established. This is the highest-priority remaining
-  local-kernel escalation candidate for a disposable instrumented environment,
-  not the owner unit.
+  corruption, or root is established. It remains a priority only for a
+  disposable instrumented environment, not the owner unit.
 - V-029/CVE-2017-9242 is exact pre-fix IPv6 append-data ordering on an ordinary
   UDPv6 call path: skb allocation and the fraggap copy precede the signed
   remaining-copy rejection. It is a strong static local memory-corruption/DoS

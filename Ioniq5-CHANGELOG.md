@@ -16,7 +16,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - The useful lesson is procedural: an automated CVE match is a lead, not a finding. The first one this exercise
   produced was wrong, and it would have looked authoritative in a report.
 
-## 1.57.0 - identify exact CVE-2017-6001 perf move-group race
+## 1.58.0 - identify exact CVE-2017-6001 perf move-group race
 
 - Added V-030 after binding complete exact `SYSC_perf_event_open` and `perf_event_ctx_lock_nested.isra.60` machine code.
 - The software-group-to-hardware-context path reads `group_leader->ctx` before a potentially blocking double-mutex acquisition and then removes/migrates through that saved context without acquiring a live reference, revalidating identity/retrying, or checking post-lock whether another caller already moved the group.
