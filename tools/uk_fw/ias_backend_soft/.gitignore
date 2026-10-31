@@ -3,3 +3,6 @@ headless-probe.so
 ias-shot
 ias-shot
 *.ppm
+ihu-shim
+micom-responder
+ias-shot
