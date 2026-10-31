@@ -2361,3 +2361,15 @@ and are superseded by corrections rather than silently rewritten.
   is a self-inflicted blind spot: the very failure mode I needed to see was the one I had routed nowhere.
 - The lesson is small and repeatable: instrument the failure path before the success path, because the
   failure path is the one you will need when nothing appears.
+
+## 2026-10-31 — the program is fine, the context is not
+
+- The peer listens and stays alive when a shell runs it, and does nothing when systemd does. Same binary,
+  same device, different launcher. That is not a protocol problem any more.
+- Two escalation attempts changed nothing, which is itself informative: the wrapper ran, the daemon started,
+  and the read counter stayed at zero. The failure is below the service definition.
+- The most likely suspect is the security module. This image runs SMACK, audit lines are visible, and every
+  silent-denial theory fits the evidence exactly: nothing crashes, nothing logs, nothing happens.
+- The lesson from earlier in the session repeats: the instrumented channel has to be one that works in the
+  failing context. kmsg looked like the universal answer and it is not, when the thing blocking the write is
+  the same thing I am trying to observe.

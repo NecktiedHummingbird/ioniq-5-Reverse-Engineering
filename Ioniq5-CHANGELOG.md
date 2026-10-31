@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.33.0 - responder works from a shell, still silent under systemd
+
+- Verified the responder is correct as a program: launched from a research shell it reports
+  `listening on /dev/ttyS1` and stays alive. So the binary, the framing code and the retry logic are not the
+  problem.
+- Escalated the systemd integration from `ExecStartPre` to an `ExecStart` override wrapper
+  (`/usr/bin/micom-up.sh`, which backgrounds the peer then `exec`s the vendor daemon unchanged). The daemon
+  still reports **103 writes / 0 reads**, with `Started System service for micommanager` at 18.2 s, so the
+  wrapper ran and the daemon registered — the peer simply never answered.
+- **kmsg logging is not available as an evidence channel here.** Even a successful run from the shell wrote
+  `listening` to stderr but produced no `/dev/kmsg` line in the console log, and SMACK is active on this
+  system (`lsm=SMACK` audit lines are visible in the console). Any silent denial of exec or of the kmsg write
+  would therefore look exactly like what is observed.
+- Remaining hypotheses, in order of likelihood, each with a cheap test: (1) SMACK denies execution of our
+  binaries under a systemd-spawned context — testable from the SMACK audit lines in the console; (2) the
+  daemon reconfigures termios after the peer opens the port, so the peer's reads never see frame starts —
+  testable by having the peer reopen after the daemon's first write; (3) the peer starts before
+  `dev-ttyS1.device` exists and its 120 s retry window expires — already mitigated, so least likely.
+- Recorded plainly: this is a debugging loop with a named suspect (SMACK) rather than an unexplained
+  silence, and the next action is to read the SMACK audit trail for denials of `/usr/bin/micom-responder`.
+
 ## 1.32.0 - the daemon counts its own failures: 103 writes, 0 reads
 
 - Ran the authentic systemd boot with the responder wired in via a drop-in on

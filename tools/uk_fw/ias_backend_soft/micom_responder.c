@@ -16,6 +16,7 @@
 #include <termios.h>
 #include <time.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #define BOOTINFO_LEN 35
 
@@ -66,12 +67,25 @@ static void note(const char *fmt, ...)
 int main(int argc, char **argv)
 {
 	const char *dev = argc > 1 ? argv[1] : "/dev/ttyS1";
-	int fd = open(dev, O_RDWR | O_NOCTTY);
+	int fd = -1;
 	struct termios tio;
-	unsigned int answered = 0, bootinfo = 0;
+	unsigned int answered = 0, bootinfo = 0, attempt;
 
+	/* Open the log channel first: under systemd there is no console, so anything
+	 * written before this exists is lost, including an open failure. */
+	kmsg = open("/dev/kmsg", O_WRONLY);
+
+	for (attempt = 0; attempt < 120; attempt++) {
+		fd = open(dev, O_RDWR | O_NOCTTY);
+		if (fd >= 0)
+			break;
+		if (attempt == 0 || (attempt % 10) == 9)
+			note("open %s failed: %s (attempt %u)\n", dev,
+			     strerror(errno), attempt + 1);
+		sleep(1);
+	}
 	if (fd < 0) {
-		perror("open");
+		note("giving up on %s\n", dev);
 		return 1;
 	}
 	if (tcgetattr(fd, &tio) == 0) {
@@ -80,7 +94,6 @@ int main(int argc, char **argv)
 		cfsetospeed(&tio, B115200);
 		tcsetattr(fd, TCSANOW, &tio);
 	}
-	kmsg = open("/dev/kmsg", O_WRONLY);
 	note("listening on %s\n", dev);
 
 	for (;;) {
