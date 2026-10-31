@@ -2602,3 +2602,16 @@ and are superseded by corrections rather than silently rewritten.
 - Exact PTE transfer and lock identities show source/destination page-table locks are released before the old-range TLB flush.
 - This matches CVE-2018-18281 pre-fix ordering and adds V-023 as a second generic MMU candidate.
 - The finding stops at the code-level window: no concurrent invalidation, page release/reuse, stale access, corruption, or root was run or proved.
+
+## 2026-10-31 — merged an outside PR, and found a contradiction worth more than the merge
+
+- Merged Harald Aarseth's register PR into the older research repository. It is genuinely good work: the
+  update trust-anchor entry and the environment-file entry are both the kind of finding that matters, and both
+  are stated with the right hedging about what was and was not demonstrated.
+- One item disagrees with our own measurement. They report USB-to-root execution with a serial string that our
+  instrumentation shows being rewritten to underscores by udev before it reaches the sink. Both runs are on the
+  same image.
+- Rather than pick a winner, the discrepancy is written down with the hypothesis that best explains it: a
+  synthetic event with a pre-supplied property bypasses the sanitiser that a real descriptor cannot. If so,
+  their demonstration is real in the harness and not reachable from a device, which changes its severity from
+  critical to informational. That distinction is the whole point of the register.

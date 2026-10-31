@@ -3,6 +3,33 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.44.0 - merged haraldaarz's register PR, and a V-006 contradiction to resolve
+
+- Merged `JaredReabow/ioniq-5-Reverse-Engineering#1` ("Document additional Ioniq 5 findings", Harald
+  Aarseth) as squash commit `ebacec0`. Note the PR targets the **older** repository, not the one this
+  project commits to.
+- **Their findings (5 new entries plus two upgrades):** V-009 launcher can start binaries without the
+  signature routine executing (state-gated, failure not terminal, keys on world-accessible media); V-010
+  engineering keypad gate reduces to unsalted digests of static default codes; V-011 world-writable marker
+  files drive systemd path units including a forced reboot (local DoS, cheap persistence); V-012 eleven root
+  services take `EnvironmentFile=` from a world-writable runtime path, admitting `LD_PRELOAD`-class injection
+  on restart; V-013 update signature **trust anchor** is a plain file on the rw root, so a privileged write
+  primitive substitutes the key and every future update (USB and OTA) trusts a substitute. V-008 upgraded: the
+  serial console is enabled by default on every boot rather than being an exception.
+- **The important conflict, recorded rather than resolved by fiat.** Their V-006 is upgraded to "root command
+  execution demonstrated end-to-end in the QEMU harness" using an `ID_SERIAL_SHORT` of
+  `pwn;id>/tmp/VM-PWNED` with `ID_USB_INTERFACES=":060101:"`. Our measurement on the same image contradicts
+  that: udev delivered `a_id__tmp_v006.id_echo__IFS_V006KMSG__dev_kmsg_#` for a comparable payload, with an
+  allow-list of alphanumerics plus `#+-.:=@_` verified present in `systemd-udevd` and `libudev`, and a positive
+  control showing the same string executes correctly when handed straight to `/bin/sh`.
+- Both cannot be true of the same code path. The most likely reconciliation is that a **synthetic udev event
+  carrying a pre-set `ID_SERIAL_SHORT`** bypasses `builtin_usb_id` entirely, whereas a real device descriptor
+  does not — which would make their result an artefact of the harness rather than a device-reachable path.
+  That is a testable distinction and is the next thing to settle, because "USB → root" and "root → root" have
+  completely different severity.
+- Numbering collides with this project's register (our V-009..V-012 are different findings). Out of scope for
+  the merge — different repository — but it must be reconciled before the two registers are ever combined.
+
 ## 1.43.0 - strace gave the real segment names; the shim now targets them
 
 - **Stopped guessing Qt's naming.** `strace -e trace=openat` on `AppHomeScreen` with the compositor up produced
