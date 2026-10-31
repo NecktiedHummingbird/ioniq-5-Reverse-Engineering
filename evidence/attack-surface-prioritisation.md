@@ -228,11 +228,17 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
   CVE-2017-7533 is also rejected semantically: exact parent and rename paths
   stabilize both inline and external dentry names before the separate inotify
   length/copy operations.
-  The companion AF_PACKET frame-count multiplication guard is absent. Reviewed
-  public sources document no standalone corruption, escalation, or DoS from the
-  redundant TPACKET_V3 field, but exact V1/V2 paths share the unchecked
-  multiplication and later retain `frame_max`; their consequences remain
-  impact-unknown and gated by `CAP_NET_RAW`.
+  The companion AF_PACKET frame-count multiplication guard is absent, but the
+  exact V1/V2 consumer trace is now complete. Allocation uses the full block
+  count, and every position bounded by wrapped `frame_max` remains inside the
+  allocated vector and block, including wrapped count zero. Separate mmap size
+  wrap reaches exact `vm_insert_page` VMA rejection. This is a correctness and
+  early-rejection gap, not a demonstrated OOB/root path. A distinct
+  three signed vector-index residuals begin at block count `0x80000001`; the
+  weakest `free_pg_vec` route needs only a strictly-greater-than-16-GiB vector
+  plus an early block failure; `packet_set_ring` needs the preceding
+  `0x80000000` blocks, and mmap needs successful publication of the whole ring. Allocator feasibility is
+  unproved and these are not attributable solely to the missing guard.
 - V-022/CVE-2018-17182 is exact pre-fix code on an ordinary MMU/thread surface:
   32-bit generations wrap into a live single-user flush helper that can retain
   cache pointers, and lookup validates only the same 32-bit generation. Public

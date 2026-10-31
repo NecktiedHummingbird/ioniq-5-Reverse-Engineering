@@ -16,13 +16,14 @@ The module also contains the 64-bit private-area arithmetic from the primary
 CVE-2017-7308 fix `2b6867c2ce76c596676bec7d2d525af525fdc6e2`, rejecting the
 published `tp_sizeof_priv` signedness/overflow primitive. It does **not** contain
 the companion `tp_frame_nr` multiplication guard from
-`8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`. Public-source follow-up found no
-documented standalone corruption, privilege escalation, or denial of service
-from that omitted guard. However, exact code places the multiplication on the
-common V1/V2/V3 ring path and later retains `tp_frame_nr - 1` as `frame_max`;
-V1/V2 allocation/indexing consequences remain unresolved. It is therefore an
-impact-unknown validation gap, not an assigned exploit primitive or a proved
-hardening-only defect.
+`8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`. Follow-up exact tracing now closes
+the former V1/V2 impact gap: allocation uses the unwrapped block count, while
+all logical positions bounded by wrapped `frame_max` still produce a block index
+below that count and an offset below block size, including wrapped frame count
+zero. The separate mmap page-count multiplication can wrap, but exact
+`vm_insert_page` rejects addresses outside the VMA. The omission admits invalid
+geometry and earlier-rejectable allocation work, but no frame-lookup OOB,
+corruption, or local-root primitive was established.
 
 Module SHA-256:
 `c810265b3c22f95d2b90494cc206abd6b4e67b7710bff2adcb177ee4867f467b`.
@@ -92,9 +93,11 @@ at `.text+0x20c7` is on the common version path, and later code stores
 `tp_frame_nr - 1` as the ring's `frame_max` at `.text+0x226c..0x226e`. Later
 commit `fc62814d690cf62189854464f4bd07457d5e9e50` narrowed the over-broad
 original guard after it blocked 4 GiB rings, while preserving the non-wrapping
-invariant. Thus public sources do not assign a standalone impact, but they also
-do not settle V1/V2 consumers in this exact build. The missing check remains an
-impact-unknown validation candidate pending those allocation/indexing traces.
+invariant. Public sources do not assign a standalone impact. The completed exact V1/V2
+trace in `evidence/vendor-kernel-af-packet-frame-count.md` proves that accepted
+logical positions remain within the block vector and selected block. The missing
+check is therefore retained as a correctness/early-rejection gap, not an
+impact-unknown memory-safety candidate.
 
 Public references:
 
@@ -137,9 +140,10 @@ Retained local artifacts:
 ## Boundary
 
 This rejects CVE-2016-8655, CVE-2017-1000111, and CVE-2017-7308's published
-private-area primitive only. The missing companion frame-count guard remains a
-real validation gap: no standalone security impact was found in reviewed public
-sources, while exact V1/V2 consequences remain untraced. None of these static
+private-area primitive only. The missing companion frame-count guard remains a correctness validation gap,
+but its V1/V2 allocation, lookup, progression, poll, transmit, receive, and mmap
+consequences are now traced. No standalone memory-safety or privilege impact was
+established. None of these static
 checks establishes that an application has `CAP_NET_RAW`, that a packet-ring
 version is reachable under its effective SMACK/capability state, or that the
 owner's unknown installed build matches this module. CVE

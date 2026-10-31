@@ -139,6 +139,14 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
 
+`kernel-af-packet-frame-count.asm` retains complete module-relative FDEs for
+`free_pg_vec`, `packet_mmap`, `packet_lookup_frame`, `packet_rcv_has_room`, `packet_poll`,
+`packet_set_ring`, `tpacket_rcv`, and `packet_sendmsg`, plus the absolute-vmlinux
+`vm_insert_page` FDE in a separately labeled address namespace. It binds the
+formerly unresolved wrapped-frame-count producer to all V1/V2 address-sensitive
+consumers and the separate mmap boundary rejection. SHA-256:
+`e161ab73101fcd3279f99a5b5a6c10457af22c7b398a5a4304192b68c7673b8b`.
+
 `kernel-inotify-cve-2017-7533.asm` binds snapshot dominance around exact parent
 and rename notification paths, short-name copying under the dentry lock,
 external-name reference retention/release, and the stable pointer passed to the

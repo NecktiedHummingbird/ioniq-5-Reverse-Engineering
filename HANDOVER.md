@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## AF_PACKET frame-count residual checkpoint — 2026-11-03
+
+- Closed the formerly unresolved V1/V2 consequence of the absent `frames_per_block * tp_block_nr` overflow guard. Exact allocation uses the full block count; every logical position bounded by wrapped `frame_max` still yields a vector index below that count and an in-block offset below block size, including wrapped frame count zero.
+- Exact RX, TX, poll, readiness, and progression consumers are retained. The separate 32-bit mmap page-count multiplication can understate expected VMA size, but exact `vm_insert_page` rejects addresses at/above `vm_end`.
+- Three separate signed vector-index residuals begin at block count `0x80000001`. `packet_set_ring` needs the vector plus the preceding `0x80000000` blocks; mmap needs successful publication of the whole ring; the weakest `free_pg_vec` path needs only a strictly-greater-than-16-GiB zeroed vector before early block failure. Allocator feasibility is unproved. These are not effects universally prevented by the final frame-product guard and do not weaken the lookup proof.
+- The missing guard is now classified as a correctness/early-rejection gap, not a defensible frame-lookup corruption/root primitive. Independent review **ACCEPT**; focused validation `11 passed, 23 subtests`; complete validation `483 passed, 134451 subtests`; public harness **PASS**.
+
 ## Keystore status gates and boot-manifest parser checkpoint — 2026-11-02
 
 - `CONFIG_KEYSTORE_SECURE_BOOT_IGNORE=y` removes platform secure-boot-status prerequisites from exact `keystore_init` and `keystore_register`; it does not remove the separate manifest initcall or `verify_oem_signature → SHA-256 → manifest_key_verify_digest` chain.
@@ -162,11 +169,10 @@ followed by stateful service/CAN/persistence reconstruction.
 - Fable delegation remains unavailable: its catalog entry is not advertised for
   native subagents. DeepSeek Flash remains static-ready, but native dispatch
   rejected the configured model identifier; no route was substituted and no
-  private target details were delegated. Generic public-only child
-  `dd42daa1-9180-4b0f-8fa8-84c034330b6f` found no documented standalone impact
-  for the AF_PACKET frame-count check, while exact V1/V2 consequences remain
-  untraced. Earlier generic children cover public update-system evidence and
-  passive bench-collector design.
+  private target details were delegated. Generic public-only Astra child
+  `6c49c736-1356-475d-8773-8cfd1e1fd4f0` supplied the AF_PACKET proof plan; the
+  exact V1/V2 trace is now complete and independently accepted. Earlier generic
+  children cover public update-system evidence and passive bench-collector design.
 
 ## Filesystem/parser and kernel checkpoint — 2026-11-01
 
@@ -244,10 +250,11 @@ followed by stateful service/CAN/persistence reconstruction.
   clear, demonstrating why opcode absence alone is not a backport test. See
   `evidence/vendor-kernel-mq-notify-backport.md` and numeric-only
   `tools/uk_fw/mq_notify_retry_model.py`. The companion AF_PACKET
-  `tp_frame_nr` overflow guard is absent. Public follow-up found no standalone
-  impact assigned to the redundant TPACKET_V3 field, but exact V1/V2 paths share
-  the multiplication and retain `frame_max`; those consequences remain
-  impact-unknown and gated by `CAP_NET_RAW`.
+  `tp_frame_nr` overflow guard is absent, but its V1/V2 consumer trace is now
+  closed: allocation uses full block count and wrapped logical positions remain
+  within the vector and block. The separate mmap multiplication fails at exact
+  VMA insertion bounds. This is a correctness gap, not an established OOB/root
+  path; `CAP_NET_RAW`, installed bytes, and runtime allocation remain separate.
 - **V-013 added:** exact `snd-seq.ko` lacks CVE-2017-15265's port use-lock fix.
   A tracked benign diagnostic confirmed numeric uid/gid 65534 can open
   `/dev/snd/seq` and complete one create/delete sequence under the recovered

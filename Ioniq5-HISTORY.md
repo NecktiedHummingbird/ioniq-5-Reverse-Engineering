@@ -2766,3 +2766,20 @@ and are superseded by corrections rather than silently rewritten.
   what the register has been for.
 - Ten attempts on the wrong channel, then one on the right one. The correction was the deliverable, and the
   demonstration followed from it.
+
+## 2026-11-03 — AF_PACKET frame-count residual closed
+
+- Completed exact producer/consumer tracing for the missing AF_PACKET
+  `tp_frame_nr` multiplication guard across allocation, V1/V2 RX/TX lookup and
+  progression, poll/readiness, mmap, and vmlinux `vm_insert_page`.
+- Proved wrapped logical positions remain inside the full block-count allocation,
+  including the zero-residue/`UINT_MAX` frame-max case; classified the missing
+  guard as a correctness/early-rejection gap rather than a frame-lookup OOB/root
+  primitive.
+- Separated three signed vector-index residuals beginning at block count
+  `0x80000001`: setup needs the preceding `0x80000000` blocks, mmap needs whole-
+  ring publication, and the weakest cleanup route needs only a strictly-greater-
+  than-16-GiB vector plus early block failure. Allocator feasibility is unresolved.
+- Added exact evidence, a deterministic non-operational arithmetic/Boolean model,
+  tests, and independent review; no packet socket, ring, mmap, crash, or target
+  action was performed.

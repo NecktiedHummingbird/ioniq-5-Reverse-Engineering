@@ -436,17 +436,21 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
   `BLK_PLUS_PRIV((u64)tp_sizeof_priv)` calculation in 64-bit registers before
   comparing it with block size, matching upstream fix `2b6867c2ce76`. The
   Project Zero private-area signedness/overflow primitive is therefore absent.
-- **Residual:** the same exact function still performs
+- **Residual, now resolved:** the same exact function still performs
   `frames_per_block * tp_block_nr` in 32 bits without the companion
-  `UINT_MAX / tp_block_nr` guard from `8f8d28e4d6d8`. Public-source follow-up
-  found no standalone crash, corruption, escalation, or DoS assigned to the
-  redundant TPACKET_V3 field. Exact V1/V2 paths share the multiplication and
-  later retain `frame_max`, so their allocation/indexing consequences remain
-  impact-unknown rather than being downgraded to hardening only.
+  `UINT_MAX / tp_block_nr` guard from `8f8d28e4d6d8`. Completed exact V1/V2
+  tracing proves allocation uses full block count and every wrapped logical
+  position remains within the vector and block, including wrapped count zero.
+  Separate mmap size wrap fails at exact VMA insertion bounds. The omission is a
+  correctness/early-rejection gap, not an impact-unknown frame-lookup primitive.
+  Three signed vector-index residuals beginning at block count `0x80000001` are
+  tracked separately because the final frame-product guard does not reject every
+  such `F=1` geometry; allocator feasibility remains unproved.
 - **Boundary:** all packet-socket paths still require `CAP_NET_RAW`, applicable
   ring-version reachability, and the owner's installed module identity. This does not reject
   unrelated AF_PACKET defects.
-- **Evidence:** `evidence/vendor-kernel-af-packet-backport.md`.
+- **Evidence:** `evidence/vendor-kernel-af-packet-backport.md` and
+  `evidence/vendor-kernel-af-packet-frame-count.md`.
 
 ---
 
