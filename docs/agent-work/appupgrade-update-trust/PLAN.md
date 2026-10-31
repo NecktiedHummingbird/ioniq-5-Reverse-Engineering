@@ -37,9 +37,11 @@ remain independent.
    signature/integrity, archive, version, and write decisions in the second
    embedded executable.
 6. **AppSetup and trust synthesis.** Bind `.lge.upgrade.xml` handling and version
-   eligibility to the selected updater route, then write a reviewed report that
-   keeps parsing, eligibility, payload authentication, inactive-slot writing,
-   slot selection, boot-time trust, health, and mark-good as separate verdicts.
+   eligibility to the selected updater route; distinguish pathname verification,
+   exact-object identity binding, runtime source mutability, and later
+   reauthentication; then write a reviewed report that keeps parsing,
+   eligibility, payload authentication, inactive-slot writing, slot selection,
+   boot-time trust, health, and mark-good as separate verdicts.
 
 ## Acceptance criteria
 
@@ -49,6 +51,8 @@ remain independent.
 - every address claim names its binary and address namespace;
 - control-flow claims are confirmed from exact instructions, with decompiler
   output used only as supporting evidence;
+- repeated pathname use is not described as substitution unless runtime
+  mutability and an object mismatch are separately established;
 - documentation explicitly retracts the broad claim that marker existence alone
   selects an unchecked production plaintext path;
 - no recovered executable is run and no original firmware artifact is modified.

@@ -2936,3 +2936,18 @@ and are superseded by corrections rather than silently rewritten.
   "the log was in the wrong place". Each was cheap to disprove once the right question was asked, and the
   questions were only obvious in hindsight.
 - The corrected hook point is a level lower, at the marshalling function every call actually goes through.
+
+## 2026-11-03 — pathname verification is not object identity
+
+- Exact AppDMClient caller review closed the static half of the updater source-
+  stability question. The verifier returns an integer; later AppUpgrade staging
+  and XML parsing resolve pathnames again, without carrying an open description
+  or revalidating object identity.
+- That is a necessary TOCTOU structure, not proof that a source can change in a
+  real run. Runtime mount policy, ownership, uid/SMACK access, serialization,
+  timing, a changed object, later inner authentication, update acceptance, root,
+  boot acceptance and persistence remain separate gates.
+- Added V-031, retained exact machine code, and an exhaustive bounded model that
+  leaves runtime substitution feasibility unknown absent explicit mutability or
+  immutability evidence. No updater, pathname race, launch request, package,
+  target execution, partition or slot operation was exercised.

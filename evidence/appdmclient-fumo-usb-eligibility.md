@@ -115,10 +115,13 @@ not tested. The output file still has to open and parse as XML.
 The source path is the caller-provided directory plus the fixed XML basename.
 It is substituted into shell text without visible quoting. The executable,
 options, pipe, `dd`, and temp-path base are fixed. The provenance and character
-constraints of the runtime source-directory string have not been proved here,
-and the earlier verifier call is not shown to hold an immutable snapshot across
-this second open. These are shell/TOCTOU boundary observations, not a command-
-injection or verifier-bypass finding.
+constraints of the runtime source-directory string have not been proved here.
+Exact caller review now establishes that only the verifier's integer result
+survives and that this branch performs a later pathname consumption without a
+retained open description or object-identity revalidation. Runtime mutability
+and object substitution remain unproved. These are shell/static-TOCTOU boundary
+observations, not a command-injection or verifier-bypass finding. See
+`evidence/appdmclient-source-identity-boundary.md`.
 
 ## Conditional marker semantics and the equal-path gate-skipping branch
 
@@ -218,8 +221,10 @@ successfully replaced.
 This proves normal software reachability and provenance of the equal local
 source. It does **not** prove that removable media directly controls
 `/update/usb/bin`, that an unauthenticated package can produce a valid upstream
-progress event, successful marker writes, or file immutability between initial
-staging and relaunch. In particular, `force_launch=run` has multiple origins and
+progress event, successful marker writes, or runtime file stability between
+initial staging and relaunch. Exact caller review now proves absence of an
+object-identity binding across the reviewed pathname reopens; it does not prove
+that the object changes. In particular, `force_launch=run` has multiple origins and
 alone does not establish completion: direct call sites follow a `processing`
 attempt, while the scheduled site has stronger local completion and
 schedule-state preconditions. The traced call sites consume no named signature
@@ -247,10 +252,11 @@ the AppUpgrade and XML verifier results and reject unless **both are zero**:
 Only then does the function obtain decryption key material and assemble the
 fixed `DecryptToPIPE` pipeline for AppUpgrade. These checks use results retained
 from the earlier calls at `0x802db`/`0x80320`, not the XML reader's later call at
-`0xe1ff7`. With a stable file and deterministic verifier they should agree, but
-no immutable snapshot is held across the opens. The equal-path branch skips
-these checks entirely. Therefore plaintext fallback is not itself proof of a
-bypass, but neither is it unconditionally bound by this pair check.
+`0xe1ff7`. Exact caller review proves that no open description or revalidated
+object identity binds those results to the later pathname consumer. Runtime
+source mutability and an actual object mismatch remain unproved. The equal-path
+branch skips these checks entirely. Therefore plaintext fallback is not itself
+proof of a bypass, but neither is it unconditionally bound by this pair check.
 
 ### Unequal path, marker present: explicit non-encrypted mode
 
@@ -324,8 +330,9 @@ interpreted conditionally later. Consequently:
   when the marker is absent or `-404/-404` when it is present;
 - the equal source/destination branch skips both pair contracts and is reached
   by the intended `/update/usb/bin` local-relaunch workflows described above;
-- the outer and XML-reader verifier calls are separate opens without a proved
-  immutable snapshot;
+- the outer and XML-reader verifier calls are separate pathname operations; exact
+  caller data flow proves no retained open description or object-identity
+  revalidation binds them, while runtime source mutability remains unknown;
 - eligibility success is not payload acceptance;
 - the inner AppUpgrade process remains responsible for substantial target,
   partition, firmware, and write decisions.
@@ -375,10 +382,10 @@ of these states; its deterministic no-input report has SHA-256
 
 ## Remaining work
 
-1. Analyze source-file stability from the initial unequal staging operation,
-   through the separate XML verifier/open sequences, into the now-proven local
-   relaunch; determine whether a named authentication state necessarily
-   precedes each valid progress event that can attempt `force_launch=run`.
+1. Determine runtime source immutability/mutability and whether a later inner
+   authentication step closes the now-proven static pathname-reopen boundary;
+   also determine whether a named authentication state necessarily precedes
+   each valid progress event that can attempt `force_launch=run`.
 2. Recover the second stored version reference and boot-state enum names.
 3. Trace the XML destination helper and prove whether encrypted XML is copied or
    transformed at each branch.

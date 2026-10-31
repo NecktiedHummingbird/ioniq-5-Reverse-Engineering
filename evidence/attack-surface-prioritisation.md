@@ -192,6 +192,23 @@ V-028 corrects a literal-path-only negative. Exact `com.lge.avn.applauncher` Req
 
 This does not yet outrank V-014 as a physical entry because it starts after local code execution. It is stronger than the V-012 service-restart amplifier if its runtime gates hold: the private session bus defaults to the daemon's uid, many HMI applications/services are configured uid zero but SMACK-separated, and effective bus/socket/target labels remain unobserved. Prioritize passive installed hash, service/unit state, AppLauncher/caller uid and labels, `/tmp/session_appmgr{,.env}` metadata, and target-path execute access; leave service-name ownership and Request registration unknown because the probe does not connect to the bus. Do not send a launch request on the owner unit. See `evidence/applauncher-dbus-launch-bypass.md`.
 
+### 8.6. AppDMClient update source identity — exact static boundary, runtime substitution unknown
+
+V-031 establishes that the recovered AppDMClient verifier contract carries only
+integer status, while later staging and XML parsing resolve pathnames again.
+Exact staging calls verify at `0x802db`/`0x80320` and later execute a pathname
+copy at `0x8296b`; the XML reader verifies at `0xe1ff7` and separately opens at
+`0xe22d5` or `0xe281f`. No retained open description or identity revalidation
+binds the consumed object to the verified object.
+
+This is a conditional update-path TOCTOU structure, not a root or signature-
+bypass result. Runtime filesystem mutability, actor permission, serialization,
+an actual object mismatch, successful staging/launch, and later inner FUMO
+authentication remain unknown. Prioritize passive installed identity, mount,
+uid/SMACK, and staged-file metadata collection. Do not attempt a pathname race
+or modified update on the owner unit. See
+`evidence/appdmclient-source-identity-boundary.md`.
+
 ### 9. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).

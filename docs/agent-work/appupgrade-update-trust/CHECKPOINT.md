@@ -74,7 +74,18 @@ Date: 2026-11-01
     `/update/disableEncryptionUpdate` sets the same byte later used by the
     navigation-map non-encrypted skip branch. Added a separate numeric-only gate
     model and exact retained evidence without claiming universal signature or
-    payload acceptance.
+    payload acceptance;
+  - completed the AppDMClient caller-side source-identity audit: verifier wrapper
+    `[0x34870,0x34d43)` returns integer status only; staging later constructs a
+    pathname copy and calls `QProcess::execute` at `0x8296b`; the XML reader
+    separately verifies at `0xe1ff7` and later opens at `0xe22d5` or `0xe281f`.
+    No retained open description or identity revalidation binds those consumers
+    to the verified object. Added exact retained assembly, an eleven-input schema-v2
+    model, and exhaustive valid-state tests. Runtime mutability, object mismatch,
+    later reauthentication, update acceptance, root, and persistence remain
+    unproved. Focused validation passed `9 tests, 2056 subtests`; the full suite
+    passed `543 tests, 140279 subtests`; the public harness passed, and
+    independent corrected package review returned **ACCEPT**.
 - Wrote `evidence/appupgrade-update-trust.md`,
   `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
@@ -93,10 +104,10 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    complete enough for the current route verdict.
 2. Name the second stored AppDMClient version reference and numeric boot-state
    values from exact code; trace the XML destination helper.
-3. Trace source stability across initial staging, repeated verifier/parser opens,
-   and the now-proven local relaunch; continue upstream from
-   `DeltaUpdateProgressHandler` to determine whether a named authentication
-   state necessarily precedes each valid progress event.
+3. Determine runtime source mutability/immutability and whether inner FUMO
+   reauthentication closes the now-proven pathname-reopen boundary; continue
+   upstream from `DeltaUpdateProgressHandler` to determine whether a named
+   authentication state necessarily precedes each valid progress event.
 4. Continue from the now-named navigation-map signature use into other FUMO
    mode-byte decryption, digest, archive, and write functions; map inner
    AppUpgrade `car-variant`/system-version decisions without inferring that one

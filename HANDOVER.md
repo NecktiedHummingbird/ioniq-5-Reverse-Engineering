@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## AppDMClient source-identity checkpoint — 2026-11-03
+
+- V-031 records an exact caller-side pathname-reopen boundary in recovered AppDMClient. Verifier wrapper `[0x34870,0x34d43)` returns integer status only; staging verifies AppUpgrade/XML at `0x802db`/`0x80320` and later executes a pathname copy at `0x8296b`; the XML reader verifies at `0xe1ff7` and separately opens at `0xe22d5` or `0xe281f`.
+- No retained open description, inode/device comparison, or identity revalidation binds those later consumers to the object examined by the earlier verifier. This proves static TOCTOU structure, not runtime substitution.
+- Runtime source mutability/immutability, an actual object mismatch, successful staging/launch, later inner authentication, update acceptance, partition writes, slot switching, boot acceptance, root and persistence remain unobserved.
+- Added retained exact assembly, `evidence/appdmclient-source-identity-boundary.md`, and an eleven-input schema-v2 Boolean model. The pre-recorded state reports the static boundary and conditional launch structure while runtime feasibility remains `null`. Focused validation passed `9 tests, 2056 subtests`; the full suite passed `543 tests, 140279 subtests`; the public harness passed. Independent corrected package review returned **ACCEPT**. No updater, source path, race, launch request, target execution, package, partition, or slot was exercised.
+
 ## exec argument-stack cap checkpoint — 2026-11-03
 
 - CVE-2018-14634's oversized argument-space prerequisite is rejected for exact recovered `vmlinux` by preventive cap effects matching upstream `da029c11e6b12f321f36dac8771e833b65cec962`; the stripped binary does not establish commit provenance.

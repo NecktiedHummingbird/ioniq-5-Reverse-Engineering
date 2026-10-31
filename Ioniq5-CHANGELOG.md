@@ -3,6 +3,15 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.64.0 - prove AppDMClient's pathname/object-identity boundary
+
+- Bound verifier wrapper `[0x34870,0x34d43)`, staging `[0x7ff60,0x830e4)`, and XML reader `[0xe1e90,0xe3166)` in exact recovered AppDMClient machine code.
+- The wrapper returns only integer status. Staging later constructs a two-path copy and calls a separate process at `0x8296b`; the XML reader verifies at `0xe1ff7` and later opens at `0xe22d5` or `0xe281f`. No retained open description or identity revalidation connects those operations.
+- Added V-031 as an exact static pathname-reopen/conditional TOCTOU candidate. Runtime source mutability, changed-object observation, later inner authentication, accepted update, partition writes, slot/boot acceptance, root and persistence remain unproved.
+- Added retained assembly, a dedicated evidence report, and an eleven-input Boolean-only schema-v2 model. Contradictory runtime mutability/immutability fails closed; absent runtime source-state evidence leaves substitution feasibility `null` rather than asserting a bypass.
+- Focused validation passed `9 tests, 2056 subtests`; the full suite passed `543 tests, 140279 subtests`; the public harness passed, and independent corrected package review returned **ACCEPT**.
+- No updater, verifier, source pathname, race, command, launch request, target executable, update package, partition, slot, root action, or persistence mechanism was exercised.
+
 ## 1.61.0 - why the shim silently did nothing: the symbol it interposes is never called
 
 - The shim is **loaded** — verified directly with `grep vnbuf /proc/<pid>/maps` (**4 mappings**) alongside

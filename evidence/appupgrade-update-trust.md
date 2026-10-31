@@ -315,8 +315,11 @@ recognized fixed-size encrypted/authentication trailer. It does not treat
 `-404` as successful cryptographic verification. The later 32-byte comparison
 uses distinct error `-403` at `0x120f73..0x120f7a`.
 
-The XML parser performs a separate later verifier/open sequence. No immutable
-snapshot binds it to the earlier retained result. Numeric-only tool
+The XML parser performs a separate later verifier/open sequence. Exact caller
+review now proves that only integer status survives and that no retained open
+description or object-identity revalidation binds the later consumer to the
+earlier verified object. Runtime source mutability and an actual object mismatch
+remain unproved. Numeric-only tool
 `tools/uk_fw/appdmclient_fumo_gate_model.py` models these trailer and pair-gate
 conditions without reading or creating update material and keeps parser
 continuation distinct from cryptographic success or update acceptance.
@@ -363,9 +366,10 @@ completion and schedule-state preconditions. Those conditions are not named
 cryptographic results. `DeltaUpdateProgressHandler` routes some events into
 callback FDE `[0x11f1b0,0x120a9e)`, but the traced write-site evidence does not
 itself establish authentication and valid upstream event authentication remains
-unresolved. The separate-open
-TOCTOU boundary remains unresolved, but normal equal-path software reachability
-no longer is. Marker presence is still an explicit local non-encrypted-mode
+unresolved. The static pathname-reopen/TOCTOU structure is now proven, while runtime source
+mutability, object substitution, and later inner reauthentication remain
+unresolved. Normal equal-path software reachability is also proven. Marker
+presence is still an explicit local non-encrypted-mode
 contract on the unequal path, not proof that USB media can create it or that
 later payloads are accepted. See
 `evidence/appdmclient-fumo-usb-eligibility.md`.
@@ -499,7 +503,7 @@ The verdicts below are deliberately separate.
 | model/region eligibility | Filename syntax only in AppScomoDM; FUMO explicit section-zero vehicle check is disabled at reviewed USB calls, but P5-family and later AppUpgrade `car-variant`/target checks remain |
 | FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and is proven reachable through intended local `/update/usb/bin` relaunch state |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks. Inner FUMO has a distinct navigation-map signature gate that skips for an explicit marker, absent provider, non-encrypted mode, or no map candidate; this is not a universal package-signature bypass. Signed ranges, source stability, authentication state before `force_launch=run`, and remaining child payload binding remain incomplete |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks. Exact caller review proves a pathname-reopen boundary with no retained open description or identity revalidation, but runtime source mutability and object substitution remain unproved. Inner FUMO has a distinct navigation-map signature gate that skips for an explicit marker, absent provider, non-encrypted mode, or no map candidate; this is not a universal package-signature bypass. Signed ranges, authentication state before `force_launch=run`, later reauthentication, and remaining child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |
