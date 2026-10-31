@@ -542,10 +542,25 @@ then a parser bug". Because `/media` is world-writable, a **local unprivileged p
 without any removable medium at all, and the root scanner will parse them on its next scan. That removes the
 physical precondition for the parsing step and leaves only the parser defect itself.
 
-**Chain status.** First stage candidate confirmed at the configuration level: root parser over attacker-supplied
-content, reachable locally via `/media`. What remains unproven is a memory-safety defect in the parsing stack
-that converts a parsed file into execution; that is a bug-hunt, not a configuration question, and this register
-does not claim one exists. Stated precisely: the separation is absent, the reachability is local, and the
+**Live confirmation of the identity claim.** The static inference was checked on a running guest rather than
+left as an absence-of-`User=` argument:
+
+- `mediamanager` start → `pid=718 Uid: 0 0 0 0`
+- `lightmediascannerd` driven directly → `pid=709 Uid: 0 0 0 0`
+
+Both run as **root**, measured. So the separation is genuinely absent, not merely unset in a unit file.
+
+**What is *not* demonstrated, and why it matters.** With a probe file placed at `/media/usb/probe.mp3`, no
+scanner database was produced and no probe marker appeared in any database on the image. `lightmediascanner.conf`
+ships its `db-path` **commented out**, so the daemon had no destination to write to in this harness. The parsing
+step — the one that would consume attacker-supplied bytes — is therefore **not** demonstrated here. This register
+does not claim it happened.
+
+**Chain status.** First stage candidate confirmed at the configuration level, with the root identity now measured:
+root parser over attacker-supplied content, reachable locally via `/media`. What remains unproven is (a) that the
+scan completes in a production configuration, and (b) a memory-safety defect in the parsing stack that converts a
+parsed file into execution. Both are bug-hunts rather than configuration questions, and this register claims
+neither. Stated precisely: the separation is absent, the reachability is local, and the
 missing piece is a single parser vulnerability rather than any missing access.
 
 ## Rejected / out-of-scope items

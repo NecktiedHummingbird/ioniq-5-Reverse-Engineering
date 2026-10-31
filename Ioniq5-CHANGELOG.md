@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.50.0 - V-007's root identity measured live; the parse itself still not demonstrated
+
+- Stopped inferring the privilege from an absent `User=` and measured it on a running guest:
+  `mediamanager` → `pid=718 Uid: 0 0 0 0`, and `lightmediascannerd` driven directly → `pid=709 Uid: 0 0 0 0`.
+  Both are **root**, confirmed rather than deduced.
+- **The parse is still not demonstrated.** With `/media/usb/probe.mp3` in place, no scanner database was produced
+  and no probe marker appeared in any database on the image — `lightmediascanner.conf` ships its `db-path`
+  **commented out**, so the daemon had nowhere to write. The step that would consume attacker-supplied bytes did
+  not run in this harness.
+- Recorded as a partial confirmation: the root identity claim is now measured; the reachability claim remains
+  configuration-level plus two open bug-hunts (scan completion in production config, and a parser defect). The
+  register still claims neither.
+- This is the fifth time this project has had to separate "the process was running" from "the code path executed"
+  — here the distinction is between root identity (proven) and parsing (not), and conflating them would have
+  produced a materially overstated entry.
+
 ## 1.52.0 - identify exact CVE-2017-9242 IPv6 append-data ordering
 
 - Added V-029 after binding exact ordinary UDPv6 call flow and the complete recovered `__ip6_append_data` control flow.

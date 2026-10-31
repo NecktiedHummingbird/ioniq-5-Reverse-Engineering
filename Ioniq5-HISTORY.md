@@ -2701,3 +2701,12 @@ and are superseded by corrections rather than silently rewritten.
 - The negative branch does eventually return `-EINVAL` and free the current skb, but only after the copy that upstream reports can overwrite skb head/shared-info state. Branch-complete review found no equivalent early rejection.
 - This survives exact binary scrutiny as V-029, unlike the inotify candidate rejected immediately before it. Public evidence supports local crash/memory corruption; crafted-state achievement, actual overwrite, controlled corruption, code execution, root and persistence remain open.
 - No socket, syscall, packet, IPv6 option/fragment state, heap manipulation, target execution, overwrite, crash, privilege transition, or persistence action was performed.
+
+## 2026-10-31 — measured the identity, refused to claim the parse
+
+- Both media daemons were confirmed root on a live guest, which upgrades an inference to a measurement.
+- The interesting part is what did not happen. A probe file sat in the scan path and nothing parsed it, because
+  the daemon's database path ships commented out. Writing this down as a partial result is what keeps the chain
+  from reading as stronger than it is.
+- Twice now the same discipline has paid: separate whether the process ran from whether the code path ran, and
+  report only what was observed.
