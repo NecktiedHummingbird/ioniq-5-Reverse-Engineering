@@ -2755,3 +2755,14 @@ and are superseded by corrections rather than silently rewritten.
   to the wrong subsystem, and finding it by measurement is worth more than the confirmation I was looking for.
 - Ten configurations is a lot, but the last one produced a fact rather than another silence, which is the only
   reason the count is defensible.
+
+## 2026-10-31 — the parse is real
+
+- After correcting the channel, the scanner did exactly what the configuration implied: it read a file from the MTP
+  mount point as root, copied it into its own store and indexed it into a root-only database. The progress line and
+  the row count agree, which is the kind of agreement that makes a result trustworthy.
+- The important part is the boundary. This proves the parsing path is reachable with attacker bytes at full
+  privilege; it proves nothing about whether that parsing is vulnerable. Keeping those two statements separate is
+  what the register has been for.
+- Ten attempts on the wrong channel, then one on the right one. The correction was the deliverable, and the
+  demonstration followed from it.

@@ -610,6 +610,33 @@ parsed file into execution. Both are bug-hunts rather than configuration questio
 neither. Stated precisely: the separation is absent, the reachability is local, and the
 missing piece is a single parser vulnerability rather than any missing access.
 
+## V-007 — parse reachability DEMONSTRATED (2026-10-31)
+
+The configuration finding is now backed by a demonstration of the parsing itself, on the corrected channel.
+
+Setup: `lightmediascannerd` started as root with a session bus and `lightmediascannerctl scan`; a genuine MP3 placed
+at `/media/mtp/mtptest.mp3` on a filesystem mounted there.
+
+Result, from the scanner's own progress line and the resulting database:
+
+```
+Scan Progress audio:/media/mtp/ commit=1, uptodate=1, processed=0, deleted=0, skipped=0, errors=0
+mtptest rows: 5        (in /root/.config/lightmediascannerd/db.sqlite3, mode 0600, root:root)
+```
+
+So: **a root process read attacker-supplied content from a removable-media mount point, copied it into its store,
+and indexed it into a root-owned database.** The parse is no longer "configured but unproven" — it is observed.
+
+**What this does and does not establish.** It establishes reachability of the parsing path with attacker-controlled
+bytes and full privilege, which is the precondition any parser memory-safety defect needs in order to matter. It
+does **not** establish a parser vulnerability: no malformed input was crafted and no memory corruption was attempted.
+The remaining step for a complete chain is a bug in the parsing stack, and that is a dedicated fuzzing exercise
+rather than a reachability question.
+
+**Corrected channel.** This was demonstrated via `/media/mtp` after `/media/usb` was proven not to be scanned. The
+MTP mount point sits under the same world-writable `/media`, so a local process can populate it without any physical
+device, subject to the listing above showing `/media/mtp` as scanned when mounted.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

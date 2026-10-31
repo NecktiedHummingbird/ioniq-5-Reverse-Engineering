@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.55.0 - V-007 parse reachability demonstrated
+
+- The corrected channel worked. With a genuine MP3 at `/media/mtp/mtptest.mp3` on a filesystem mounted there, and
+  `lightmediascannerd` running as root under a session bus:
+
+  ```
+  Scan Progress audio:/media/mtp/ commit=1, uptodate=1, processed=0, deleted=0, skipped=0, errors=0
+  mtptest rows: 5     → /root/.config/lightmediascannerd/db.sqlite3  (0600 root:root)
+  ```
+
+- So a **root process read attacker-supplied content from a removable-media mount point, copied it into its store,
+  and indexed it into a root-owned database**. V-007 moves from "configuration confirmed, parse unproven" to **parse
+  observed**.
+- Stated precisely: this establishes reachability of the parsing path with attacker bytes at full privilege, which is
+  the precondition any parser defect needs to matter. It does **not** establish a parser vulnerability — no malformed
+  input was crafted and no corruption attempted. What remains is a dedicated fuzzing exercise, not a reachability
+  question.
+- The `/media/usb` dead end was what made this possible: correcting the channel to MTP is what produced a result
+  after ten attempts on the wrong path.
+
 ## 1.54.0 - V-007 corrected: the scanner walks MTP, not USB
 
 - Ten configurations later, the scanner's own progress output settles it:
