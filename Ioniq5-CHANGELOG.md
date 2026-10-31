@@ -3,6 +3,27 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.72.0 - registry hypothesis tested and did not produce execution
+
+- Placed `/app/bin/AppProbe` (a script writing `/tmp/L_probe`) **before** the launcher started, so its startup sweep
+  of `/app/bin` must have included it, then called the exact signature with
+  `applocation=/app/bin/AppProbe`. **No marker was created.**
+- So the registry hypothesis is tested and does not explain the silence. V-028 runtime execution remains unobserved
+  after: correct signature (introspected, not guessed), correct sequencing (after registration and after the sweep),
+  and a target that existed before the registry was built.
+- Remaining candidate causes, now narrow and explicitly listed: (a) **SMACK** denies the launcher executing a file it
+  did not ship with, which is plausible given the label-aware behaviour seen elsewhere in this image; (b) the
+  dispatcher requires the appid to be **one it assigned** during the sweep rather than a caller-supplied number, so
+  appid 999 or 5 maps to nothing; (c) the two boolean gates are not the real precondition and some further state
+  (capture mode, engineering mode, profile) is needed.
+- **Status of the chain:** three links remain evidenced — same-uid D-Bus service with a caller-supplied path (V-028,
+  static), world-writable `EnvironmentFile` for eleven root services (V-012, confirmed in the vendor's own
+  `Dbuslaunch.sh`), and a mutable, persistent update trust anchor (V-034). The runtime link between them is **not**
+  demonstrated, and this thread's attempts to demonstrate it in the emulated environment have not succeeded.
+- Recorded plainly: V-028 stays at "exact static route, runtime exec unobserved" — its original status, unchanged by
+  this work. The static finding is not weakened; the runtime claim is simply not mine to make without a unit or a
+  working launcher dispatch.
+
 ## 1.71.0 - sequenced calls fire and still do not execute; the registry hypothesis
 
 - With registration confirmed and a settle window before issuing requests, the calls now reach the launcher:

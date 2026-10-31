@@ -3047,3 +3047,12 @@ and are superseded by corrections rather than silently rewritten.
   the registry cannot succeed whatever appid is supplied.
 - This is the same class of error that has dogged the whole VM thread — the instrument and the target disagreeing
   about when things exist — and it is now a one-line fix rather than a mystery.
+
+## 2026-10-31 — the hypothesis was good and the answer was still no
+
+- The registry explanation was tidy and testable, and testing it produced another silent no. Three attempts now, each
+  with a better-founded setup than the last, and none executed.
+- The right response is to stop rather than invent a fourth. What remains is either a security module decision that
+  needs a real unit to observe, or a dispatch precondition buried in vendor logic we cannot see.
+- Being clear that the static finding stands while the runtime claim is unmade is the whole discipline of this
+  register. A plausible route is not an exploit, and three failed reproductions are the evidence for saying so.
