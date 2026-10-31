@@ -2644,3 +2644,12 @@ and are superseded by corrections rather than silently rewritten.
 - Exact setup and removal update one context membership state outside the static global-list lock; the fixed per-context lock is absent.
 - Built-in timerfd makes the premise broadly reachable in principle, but no harmful same-context interleaving was exercised.
 - List corruption, UAF, crash, corruption, and privilege gain all remain unproved; public impact supports DoS more clearly than root.
+
+## 2026-10-31 — an outside finding that survived contact with the image
+
+- The merged entry about the update trust anchor was the one claim from that PR worth testing hardest, because
+  it is the kind that survives reboots. It held up, and the details make it worse rather than better: the root
+  is read-write by default and every mechanism that would have remounted it read-only is commented out.
+- The part worth keeping is the caveat. The live guest reports a file owner that is ours, not the vendor's,
+  and saying so keeps the finding at the strength the evidence supports: one privileged write, not one local
+  user.

@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.46.0 - V-013 runtime question answered: root stays writable, so the anchor is mutable and persistent
+
+- Checked the merged PR's update trust-anchor entry against the image and a live boot:
+  - kernel cmdline mounts root **`rw`**; live `/proc/mounts` reports `ext4 rw,noatime,data=ordered`
+  - `etc/fstab` is **empty**, and the root line in `etc/fstab_emmc` is **commented out**
+  - `esinit` lines 12-13, which would `remount,ro /`, are **commented out**
+  - `app/share/AppUpgrade/teruten5_pub.key` is mode **0755** on that writable root, and writing into its
+    directory from a root context succeeded on the live guest
+- So the anchor is mutable at runtime **and the substitution survives reboot**, because it lives on eMMC rather
+  than tmpfs. That is worse than a transient exposure and strengthens the merged finding.
+- **Caveat recorded:** the live guest shows the file owned by uid 501/`dialout`, which is an extraction artefact
+  from this project, not vendor truth. Only mode, path and the rw mount are established, so the precondition
+  remains "a privileged write primitive", not "any local user".
+- Nothing here demonstrates a write primitive; it establishes that one would be sufficient and durable.
+
 ## 1.45.0 - V-006 settled by experiment: the payload is not deliverable from a device
 
 - Re-ran the merged PR's exact claim. QEMU `usb-mtp` with `serial=pwn;id>/tmp/VM-PWNED` presents a real

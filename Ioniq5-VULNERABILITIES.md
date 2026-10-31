@@ -424,6 +424,36 @@ bring-up defect. That question is open.
   server with access control. Verify the release build does not carry `-g` into the image, and audit other
   binaries in the image for the same condition.
 
+## V-013 (merged) — update trust anchor sits on a writable root; runtime check
+
+The merged register entry states the update pipeline verifies its manifest against a public key held as an
+ordinary file, and that replacing that file would let substitute-signed packages be accepted. Its stated
+precondition is an existing privileged local write primitive. Both halves of that were checked here.
+
+**The design claim holds.** Reconstructed pipeline agreement with the merged entry: manifest verified before
+any payload is unpacked, which is sound; the weakness is the anchor's protection, not the verification order.
+
+**The filesystem question is now answered, and it favours the finding.** Measured in the recovered image and
+confirmed on a live boot:
+
+- Kernel cmdline mounts root **`rw`**, and the running system reports `/ -> ext4 rw,noatime,data=ordered`.
+- `etc/fstab` is **empty**, and the root line in `etc/fstab_emmc` (`#/dev/root / auto ro,…`) is **commented
+  out**, so nothing remounts root read-only.
+- `lib/systemd/esinit` lines 12-13, which would `mount -o remount,ro /`, are **commented out** as well.
+- `app/share/AppUpgrade/teruten5_pub.key` is mode **0755**, 294 bytes, inside `/app` on that writable root.
+  Writing into that directory from a root context succeeded on the live guest.
+
+So the anchor is mutable at runtime **and the change persists across reboot**, because it lives on the eMMC root
+rather than tmpfs. That is materially worse than a transient exposure: a substituted anchor survives the power
+cycle that would otherwise clear an in-memory compromise.
+
+**Caveat, stated rather than glossed:** the live guest reports the file as owned by uid 501 / group `dialout`,
+which is an artefact of this project's extraction (ownership from the extracting user), not evidence about the
+shipped image. The vendor's ownership is unverified here; only the mode (0755), the path, and the rw mount are
+established. The precondition therefore remains "a privileged write primitive", not "any local user".
+
+**Status:** precondition confirmed at the filesystem level; no write primitive demonstrated by this project.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).
