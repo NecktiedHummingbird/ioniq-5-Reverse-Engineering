@@ -3,7 +3,33 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.49.0 - V-007 confirmed, and its precondition is weaker than assumed
+
+- `mediamanager.service` starts `/app/bin/mediamanager` with **no `User=`** → runs as **root**.
+- `app/bin/lightmediascanner.conf` ships `startup-scan=true` with
+  `directory=audio:/usr_data/media/;audio:/media/usb/;audio:/media/mtp/` — removable-media mount points are
+  parsed **by default at startup**, before any user action.
+- Combined with the earlier finding that `/media` is a `tmpfs` at mode `01777`, the physical-media precondition
+  disappears for this step: a **local unprivileged process can drop files into `/media`** and the root scanner
+  parses them on its next scan.
+- So the first stage is confirmed **at the configuration level** — root parser over attacker-supplied content,
+  locally reachable — and the only remaining piece is a memory-safety defect in the parsing stack. That is a
+  bug-hunt, not an access question, and the register says so rather than implying an exploit exists.
+- Chain now reads: local file drop into `/media` → root media parser (needs one parser bug) → root →
+  `/tmp/session_appmgr.env` (V-012) → update trust anchor (V-013) → persistent compromise. Two of those four
+  links are confirmed configuration, one is confirmed-with-precondition, and one is a hypothesis.
+
+## 1.50.0 - exact AppLauncher D-Bus path overturns the V-009 negative
+
+- Added V-028 after tracing the exact exported `launch(appid, appname, applocation, ...)` session-bus methods. The caller's runtime `applocation` is copied into the AppProcess program field, byte `+0x1c` is set to one, and the direct branch reaches a `QProcess::start` call site without either identified verifier call.
+- Corrected commit `3090f69`: its literal-string scan saw only fixed read-only `/navi` targets, but literal references cannot exclude a runtime QString argument. The route is not limited to replacing a binary on `/navi`.
+- Corrected the older public description in the opposite direction as well: both exact verifier paths treat false as terminal. The defect is the separate on-demand dispatcher that bypasses both identified verifier calls, not fail-open behavior after either verifier returns false.
+- Preserved the real authorization boundary. The private session bus defaults to connections from the daemon's uid; this is not arbitrary cross-uid access. It is relevant to the many uid-zero, SMACK-separated HMI processes only if service ownership, Request-object registration, same-uid authentication, effective SMACK access, a relevant AppProcess object, QProcess acceptance, exec-time target control/access and effective launcher privilege all hold at runtime.
+- Added a reviewed machine-code/configuration excerpt, a Boolean-only 131,072-state model, focused tests, and passive metadata for `Dbuslaunch.service` and `/tmp/session_appmgr`. No D-Bus request, executable, target launch, credential/label transition, trust-anchor write, update, or persistence action was created.
+
 ## 1.48.0 - V-009 tested as the missing first stage: it is not one
+
+> **Superseded by 1.50.0 / V-028:** this test considered literal paths only and missed the runtime D-Bus `applocation` argument.
 
 - The open question was whether the merged V-009 (launcher starts binaries without the signature routine) could
   supply the first-stage execution that V-012 → V-013 needs. It cannot.

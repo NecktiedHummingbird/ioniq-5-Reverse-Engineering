@@ -2671,3 +2671,19 @@ and are superseded by corrections rather than silently rewritten.
 - Negative results like this are worth the run they cost. The register is now narrower and more honest: three
   candidates for the first stage, one eliminated with evidence, and the remaining two are the ones that actually
   take unprivileged input.
+
+## 2026-11-01 — the launcher negative failed because strings are not data flow
+
+- The previous pass proved the fixed `/navi` paths were read-only, then incorrectly treated those literals as the complete target set. Exact D-Bus adaptor flow now shows `applocation` arrives as a runtime QString, replaces the program field, sets the direct-launch byte and reaches `QProcess::start` without either verifier.
+- Exact verifier branches also corrected the outside description: false is terminal on both; the bypass is a separate dispatch route.
+- The finding remains bounded by same-daemon-uid session authentication, SMACK and executable-control gates. No request or child was created. The lesson is the same one that fixed several kernel reviews: strings and fix-shaped instructions are leads, not complete semantic proofs.
+
+## 2026-10-31 — the weakest link is now a missing bug rather than a missing door
+
+- The media scanner runs as root, scans at startup, and scans paths that a local process can write to. The
+  configuration side of the chain is as bad as it could be without an actual vulnerability.
+- What holds the whole thing back is now a single memory-safety defect in the parsing stack. That is a very
+  different finding from a missing access, and the register says so plainly rather than letting a strong chain
+  imply a demonstrated exploit.
+- This is the honest shape of a mature finding: everything verified except the one thing that would make it an
+  attack, with that one thing named.

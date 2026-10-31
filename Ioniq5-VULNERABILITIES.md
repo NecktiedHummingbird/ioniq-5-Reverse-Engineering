@@ -412,6 +412,17 @@ bring-up defect. That question is open.
 - **Remediation:** backport `c8bcd9c5be24fb9e6132e97da5a35e55a83e36b9` or equivalent consistent session-field locking/reference ownership; validate only on a disposable instrumented kernel.
 - **Evidence:** `evidence/vendor-kernel-tty-session-cve-2020-29660.md`; focused instructions `evidence/artifacts/kernel-candidates/kernel-tty-session-cve-2020-29660.asm`; Boolean-only model `tools/uk_fw/tty_session_lock_model.py`.
 
+## V-028 — AppLauncher D-Bus caller path bypasses both identified verifier calls (EXACT STATIC ROUTE; RUNTIME EXEC UNOBSERVED)
+
+- **Status:** exact recovered AppLauncher exports session-bus `launch(appid, appname, applocation, ...)` methods. The runtime `applocation` reaches the AppProcess program field; the dispatcher sets byte `+0x1c`; and that byte selects a route to a `QProcess::start` call site without either identified verifier call. No D-Bus request, executable, target launch, credential/label transition, trust-anchor write, update, or persistence action was created.
+- **Component:** `/app/bin/AppLauncher`, SHA-256 `c8d6d56bc254ad0731e81f40bd83aa9b3be6b49bcbd8efb291157a06c4a84268`, Build ID `0452df1033bd1bbae15727a83d4d56576d8b9444`; x86-64 `ET_DYN`.
+- **Exact mechanism:** startup registers service `com.lge.avn.applauncher`; `/Request` exports the caller path. Relocation-bound vtable slot `+0x68` reaches dispatcher `[0x1ffd0,0x205b3)`. Existing objects have path `+0x58` overwritten directly; new objects accept appids 1..1024 and require only `QFile(applocation).exists()`. The dispatcher stores one to `+0x1c` and calls start routine `[0x163f0,0x1854d)`, where nonzero falls through to `QProcess::start` at `0x1745d` and zero selects verification.
+- **Correction boundary:** commit `3090f69` incorrectly constrained launch targets from literal strings on read-only `/navi`; the path is a runtime QString. Conversely, the older public claim that failed verification does not stop launch is too broad: false from the ordinary helper at `0x17e78` or navigation helper at `0x1812f` branches to failure, while only true reaches their start sites. V-028 is a separate bypass path.
+- **Authorization/runtime boundary:** the service has configured uid-zero default. The recovered session bus uses EXTERNAL and, with no user connection rule, defaults to the daemon's uid; it is not arbitrary cross-uid access. The candidate is relevant to same-uid, SMACK-separated HMI code only if service-name ownership, Request-object registration, successful bus authentication, effective SMACK access, a relevant existing or successfully constructed AppProcess object, caller control of executable bytes at exec time, launcher execute access, QProcess acceptance and effective launcher privilege retention hold. Runtime uid/capabilities/sandbox state, resulting label and installed owner identity remain unobserved.
+- **Impact boundary:** exact static evidence establishes a caller-selected route that bypasses both identified AppLauncher verifier calls and can reach `QProcess::start` after the runtime gates. It does not establish that no other platform enforcement exists, successful `exec`, unrestricted root/SMACK escape, controlled update-anchor substitution, modified-update acceptance, partition writes, slot switching, boot acceptance, mark-good or persistence.
+- **Remediation:** eliminate caller-supplied executable paths; resolve appids through an immutable root-owned registry; authorize senders explicitly; run applications under distinct non-root uids; and bind mandatory verification to the exact opened executable immediately before every exec.
+- **Evidence:** `evidence/applauncher-dbus-launch-bypass.md`; reviewed excerpt `evidence/artifacts/application-candidates/applauncher-dbus-launch-evidence.txt`; Boolean-only model `tools/uk_fw/applauncher_dbus_launch_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.
@@ -490,16 +501,42 @@ of `User=`, the anchor's mutability and persistence, and that the directory chai
 throughout (so step 3 genuinely needs step 2's root, not merely a local user). Not established: a concrete
 first-stage execution primitive, and any service restart trigger in practice.
 
-**V-009 was tested as that first stage and does not supply it.** The merged entry describes a launcher dispatcher
-that can start a binary without the signature routine running. Checking what it actually launches settles the
-reachability: `AppLauncher` references `/navi`, `/navi/navi/Bin/AppNavi`, `/navi/navi_1`, `/navi/navi_2` and
-`/navi/system/system` — all on partitions mounted **`ro`**, confirmed both in `fstab_emmc:19-20`
-(`ro,noatime,nouser,auto,exec,suid`) and on a live boot (`/dev/root /navi ext4 ro,noatime,data=ordered`). Its
-only other path reference is `navi_public.key`. So replacing a launch target requires a write to read-only media,
-i.e. the root step it was being proposed to bypass. V-009 is a defence-in-depth failure that **presupposes** a
-privileged write, not a standalone way in, and the chain still needs a genuine first stage. The chain therefore raises
-V-013's severity from "requires root" to "requires local code execution plus one service restart", which is a
-material change, and it should be read that way rather than as a demonstrated exploit.
+**The prior V-009 negative was incomplete and is superseded by V-028.** Commit `3090f69` searched literal path
+references and correctly established that fixed `/navi` targets live on read-only partitions. It did not trace the
+exported D-Bus `applocation` QString. Exact code now proves that this runtime caller path overwrites the launcher's
+program field, sets its direct-launch byte, and reaches a `QProcess::start` attempt without either identified verifier call.
+
+This removes the claimed fixed-read-only-path precondition, but it does not round the chain up to demonstrated root.
+The private session bus defaults to the daemon's uid, and runtime service ownership, Request-object registration,
+same-uid authentication, SMACK access, relevant AppProcess-object availability, QProcess acceptance, exec-time target
+control/access, effective launcher privilege, successful exec, and resulting credentials/label remain unobserved. If
+those gates hold for a compromised uid-zero/SMACK-separated HMI application, V-028 could supply a controlled privileged-
+exec candidate without waiting for the V-012 service-restart route. Otherwise the established V-012 → V-013 chain still requires local code
+execution plus one privileged service restart. See `evidence/applauncher-dbus-launch-bypass.md`.
+
+## V-007 (merged) — confirmed: the media scanners run as root over removable and world-writable paths
+
+The merged register records media parsing without privilege separation. The service identity and the scan
+targets were checked here and both confirm it:
+
+- `lib/systemd/system/mediamanager.service` starts `/app/bin/mediamanager` with **no `User=` directive**, so it
+  runs as **root** (the system-service default).
+- `app/bin/lightmediascanner.conf` ships `startup-scan=true` and
+  `directory=audio:/usr_data/media/;audio:/media/usb/;audio:/media/mtp/` — the scanner parses removable-media
+  mount points by default **at startup**, before any user action.
+- `/media` is a `tmpfs` mounted with `defaults` (established under V-011/V-013), i.e. kernel default root mode
+  `01777`.
+
+**Why the last point matters more than it looks.** The obvious reading of V-007 is "physical USB access required,
+then a parser bug". Because `/media` is world-writable, a **local unprivileged process can place files there**
+without any removable medium at all, and the root scanner will parse them on its next scan. That removes the
+physical precondition for the parsing step and leaves only the parser defect itself.
+
+**Chain status.** First stage candidate confirmed at the configuration level: root parser over attacker-supplied
+content, reachable locally via `/media`. What remains unproven is a memory-safety defect in the parsing stack
+that converts a parsed file into execution; that is a bug-hunt, not a configuration question, and this register
+does not claim one exists. Stated precisely: the separation is absent, the reachability is local, and the
+missing piece is a single parser vulnerability rather than any missing access.
 
 ## Rejected / out-of-scope items
 
