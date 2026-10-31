@@ -2687,3 +2687,10 @@ and are superseded by corrections rather than silently rewritten.
   imply a demonstrated exploit.
 - This is the honest shape of a mature finding: everything verified except the one thing that would make it an
   attack, with that one thing named.
+
+## 2026-11-01 — CVE-2017-7533 was fixed in machine code despite the old banner
+
+- Public version data made the inotify rename race look applicable: the kernel identifies as 4.1.27 and the sink still scans a name for length before allocating and copying it.
+- Exact predecessor tracing reversed that initial impression. Both the watched-parent path and `vfs_rename` take stable dentry-name snapshots; inline bytes are copied under the dentry lock and external names retain a reference until release.
+- Those are the effects of upstream commit `49d31c2f389acfe83417083e1208422b4091cd9e`. The CVE-specific mutable-name premise is therefore rejected without claiming that all fsnotify code is safe.
+- No watch, rename, race, heap manipulation, target execution, corruption, privilege gain, or persistence operation was performed. The result reinforces the standing rule that source-shaped sinks and version banners are not substitutes for complete data-lifetime semantics.

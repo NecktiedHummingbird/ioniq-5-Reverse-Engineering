@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Inotify rename-race checkpoint — 2026-11-01
+
+- CVE-2017-7533 is rejected for the exact recovered kernel despite the `4.1.27-abl` banner and `CONFIG_INOTIFY_USER=y`.
+- Exact `__fsnotify_parent` and `vfs_rename` take stable dentry-name snapshots before notification; inline names are copied under the dentry lock, external names retain an owner reference, and release occurs after use. These are the effects of upstream fix `49d31c2f389acfe83417083e1208422b4091cd9e`.
+- Exact `inotify_handle_event` still has separate length and copy operations, but the reviewed producers no longer pass the concurrently mutable name required by this CVE. The rejection does not generalize to unrelated fsnotify defects.
+- Added reviewed evidence, the authoritative patch, a seven-input Boolean-only model and a complete 128-state truth table. Focused validation passed `7 tests, 142 subtests`; independent semantic/model review returned **ACCEPT**.
+
 ## AppLauncher on-demand launch checkpoint — 2026-11-01
 
 - **V-028 overturns the just-recorded V-009 negative.** Exact Request adaptor and relocation evidence shows exported `launch(appid, appname, applocation, ...)` methods pass the caller's runtime path to dispatcher `[0x1ffd0,0x205b3)`. It overwrites AppProcess program field `+0x58`, sets direct-launch byte `+0x1c`, and reaches a `QProcess::start` call site without either identified verifier call. A literal scan of fixed `/navi` paths could not exclude this QString input.

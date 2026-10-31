@@ -3,6 +3,15 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.51.0 - reject CVE-2017-7533 by exact dentry-name snapshot effects
+
+- Rejected CVE-2017-7533 for the exact recovered kernel rather than inferring exposure from the `4.1.27-abl` version banner.
+- Bound exact snapshot dominance in both `__fsnotify_parent` and `vfs_rename`: the parent path takes a stable name before `fsnotify`, while the rename path snapshots before dentry mutation and retains it through `fsnotify_move`.
+- Confirmed the full upstream-fix semantics from commit `49d31c2f389acfe83417083e1208422b4091cd9e`: inline names are copied while the dentry lock is held; external names gain a reference under that lock; release drops the external reference after use.
+- Preserved the sink nuance: `inotify_handle_event` still has separate length and copy operations, but the exact reviewed producers no longer pass a concurrently mutable name. This rejects the CVE-specific premise, not all fsnotify defects.
+- Added the authoritative patch, reviewed machine-code excerpt, Boolean-only seven-input model, complete 128-state truth table, deterministic-output checks, and explicit null runtime/corruption/root outcomes.
+- Focused validation passed `7 tests, 142 subtests`; independent semantic/model review returned **ACCEPT**. No watch, rename, race, heap manipulation, target execution, corruption, privilege transition, or persistence action was performed.
+
 ## 1.49.0 - V-007 confirmed, and its precondition is weaker than assumed
 
 - `mediamanager.service` starts `/app/bin/mediamanager` with **no `User=`** → runs as **root**.
