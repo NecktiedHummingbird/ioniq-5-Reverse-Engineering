@@ -2,3 +2,4 @@
 # intentionally contain leading space+tab and otherwise trip `git diff --check`.
 evidence/artifacts/kernel-candidates/*.patch -diff
 evidence/artifacts/media-candidates/*.patch -diff
+evidence/artifacts/network-candidates/*.patch -diff

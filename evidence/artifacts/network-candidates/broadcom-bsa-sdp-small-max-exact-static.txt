@@ -1,0 +1,400 @@
+Broadcom BSA SDP small-maximum exact-static excerpt
+===================================================
+
+Scope and identity
+------------------
+Analysis baseline: 0a9a7f2fd1cb3b25d928fe9f32fe65cac055d121
+Pre-delivery integration HEAD: 30f6cace8d2c776b2501c88791b7e54dd4da9055
+The recovered binaries and ignored machine-code inputs were unchanged across
+that interval. Concurrent commit 30f6cac accidentally absorbed only a
+preliminary changelog entry; this artifact remained untracked.
+Address basis: ET_DYN image virtual addresses before runtime relocation.
+No recovered binary was executed.
+
+/app/bin/vbtd-51
+  SHA-256: 55e21d077082e97f56fb113a1d3b216c0f2e63aa02fc4cd754a6593bc6cec9e0
+  Build ID: 12175aa88ccff70cc56498e0208c9a51aac0c9e9
+  BSA version: BSA0107_00.51.00
+  ELF: x86-64 ET_DYN
+
+/app/bin/vbtd-63
+  SHA-256: c56b68fdd35b16b95688ab54a48ffb9f18034d925c057e86f8b9fe304f8b26b9
+  Build ID: 04141ed222ee8f150c0eb0e46fdb73624d168920
+  BSA version: BSA0107_00.63.00
+  ELF: x86-64 ET_DYN
+
+Public fix binding
+------------------
+Commit: f0edf6571d2d58e66ee0b100ebe49c585d31489f
+Parent: ec16f7d8c7e359a68ffe6b76e88add2210bf2cbd
+Patch SHA-256: a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34
+Retained patch: f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch
+
+The public patch adds max_list_len < 4 rejection to both
+process_service_attr_req (Android bug 68776054 / CVE-2017-13255) and
+process_service_search_attr_req (Android bug 68817966 / CVE-2017-13256).
+Complete review of the exact handler ranges below found no equivalent early
+less-than-four rejection in either recovered binary.
+
+Regeneration commands
+---------------------
+OBJDUMP=/opt/homebrew/opt/llvm/bin/llvm-objdump
+READELF=/opt/homebrew/opt/llvm/bin/llvm-readelf
+B51=work/decrypted-eu-260128/extracted-safe/mango-rootfs/app/bin/vbtd-51
+B63=work/decrypted-eu-260128/extracted-safe/mango-rootfs/app/bin/vbtd-63
+
+$OBJDUMP -d --start-address=0x841dc0 --stop-address=0x842e0b "$B51"
+$OBJDUMP -d --start-address=0x7ad2e0 --stop-address=0x7ad690 "$B51"
+$OBJDUMP -d --start-address=0x7ac590 --stop-address=0x7ad284 "$B51"
+$OBJDUMP -d --start-address=0x8445f0 --stop-address=0x8448bf "$B51"
+$OBJDUMP -d --start-address=0x8425b0 --stop-address=0x8435c3 "$B63"
+$OBJDUMP -d --start-address=0x7af2f0 --stop-address=0x7af633 "$B63"
+$OBJDUMP -d --start-address=0x7ae5a0 --stop-address=0x7af294 "$B63"
+$OBJDUMP -d --start-address=0x844d90 --stop-address=0x84504f "$B63"
+$READELF --unwind "$B51"
+$READELF --unwind "$B63"
+
+Regenerated disassembly SHA-256 values:
+  vbtd-51 SDP ranges: 94fe2715edcd194ec042e4cee2dd5cc63258c6d5fe42f2ce588eb261f2250056
+  vbtd-51 GKI_getbuf_r: 431ee078a98402e30079cccaf4c30ee05e8a6faa441ac9868e7ee891ea689178
+  vbtd-51 gki_buffer_init: d4d40322714a220ed54e070beef2e17873b8ee787325e1bd6420391e355baf7f
+  vbtd-51 partial-attribute helper: a6299c8bf1761a5f4f706a635b292e4410356ebb295cd51b7c8a882efc84f235
+  vbtd-63 SDP ranges: fc5af9969e1d6af44b86ced5954c14e21ee35713b1dad1fbdb57287b5d83476a
+  vbtd-63 GKI_getbuf: f1c533aec281ba76e1f85834be6714b21e610abb38ab799224c1a6bba938b0c1
+  vbtd-63 gki_buffer_init: a58b1d7333d92d3a48bf0311d3cf198870c6b8abd102f08472a5531f55fece77
+  vbtd-63 partial-attribute helper: 206c2f60f1bd6c96642dda82eeca69a19ccb0a698adc806418fddb0ad533ce96
+
+Unwind-confirmed exact ranges
+-----------------------------
+vbtd-51:
+  FDE initial_location 0x841dc0, address_range 0x868, end 0x842628
+  FDE initial_location 0x842630, address_range 0x7db, end 0x842e0b
+  FDE initial_location 0x7ad2e0, address_range 0x3b0, end 0x7ad690
+  FDE initial_location 0x7ac590, address_range 0xcf4, end 0x7ad284
+  FDE initial_location 0x8445f0, address_range 0x2cf, end 0x8448bf
+
+vbtd-63:
+  FDE initial_location 0x8425b0, address_range 0x850, end 0x842e00
+  FDE initial_location 0x842e00, address_range 0x7c3, end 0x8435c3
+  FDE initial_location 0x7af2f0, address_range 0x343, end 0x7af633
+  FDE initial_location 0x7ae5a0, address_range 0xcf4, end 0x7af294
+  FDE initial_location 0x844d90, address_range 0x2bf, end 0x84504f
+
+Exact excerpts: vbtd-51
+-----------------------
+Both handlers parse the two-byte peer-requested maximum and derive an effective
+internal maximum by capping it relative to remote MTU. There is no compare
+against four in these complete ranges. For a small peer maximum under the
+ordinary protocol-valid remote-MTU precondition, the effective value remains
+the peer value. The separate low/invalid remote-MTU subtraction and possible
+wrap edge is outside this matrix and remains unknown. The search-attribute
+path:
+
+  841e60: 44 0f b6 38                   movzbl  (%rax), %r15d
+  841e68: 0f b6 50 01                   movzbl  0x1(%rax), %edx
+  841e70: 41 8d 0c 17                   leal    (%r15,%rdx), %ecx
+  841e74: 41 0f b7 54 24 38             movzwl  0x38(%r12), %edx
+  841e81: 83 ea 09                      subl    $0x9, %edx
+  841e84: 83 e8 0a                      subl    $0xa, %eax
+  841e87: 39 ca                         cmpl    %ecx, %edx
+  841e8b: 0f 4f c1                      cmovgl  %ecx, %eax
+  841e95: 66 89 44 24 10                movw    %ax, 0x10(%rsp)
+
+The inlined service-attribute path:
+
+  8427ae: 41 0f b6 6c 24 09             movzbl  0x9(%r12), %ebp
+  8427b9: 41 0f b6 44 24 0a             movzbl  0xa(%r12), %eax
+  8427bf: 41 0f b7 57 38                movzwl  0x38(%r15), %edx
+  8427c7: 01 e8                         addl    %ebp, %eax
+  8427ce: 83 ea 09                      subl    $0x9, %edx
+  8427d5: 83 e8 0a                      subl    $0xa, %eax
+  8427d8: 39 f2                         cmpl    %esi, %edx
+  8427dd: 0f 4f c6                      cmovgl  %esi, %eax
+  8427e3: 66 89 44 24 2c                movw    %ax, 0x2c(%rsp)
+
+Initial search-attribute state advances the scratch cursor by three. Its first
+inner-sequence reservation requires more than two remaining bytes:
+
+  841f32: 0f b6 10                      movzbl  (%rax), %edx
+  841f35: 84 d2                         testb   %dl, %dl
+  841f37: 0f 85 b1 01 00 00             jne     0x8420ee
+  841f3d: 49 8b 44 24 40                movq    0x40(%r12), %rax
+  841f45: 0f 84 00 06 00 00             je      0x84254b
+  841f52: 48 83 c0 03                   addq    $0x3, %rax
+  841f85: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+  841fcf: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+  841fd4: 0f b7 54 24 10                movzwl  0x10(%rsp), %edx
+  841fd9: 49 2b 44 24 40                subq    0x40(%r12), %rax
+  841fde: 29 c2                         subl    %eax, %edx
+  841fe0: 66 83 fa 02                   cmpw    $0x2, %dx
+  841fe4: 0f 8e b6 05 00 00             jle     0x8425a0
+
+Thus, after valid syntax reaches ordinary response-list construction and
+scratch allocation/reuse succeeds, effective maxima 0..3 cannot reach an
+initial inner reservation. The state gate at 0x8421a1 enters outer
+sequence-header construction only for initial state. On that feasible path,
+both header encodings reach offset 2 (and never beyond it):
+
+  8421a1: 80 7c 24 47 00                cmpb    $0x0, 0x47(%rsp)
+  8421ab: 0f 84 06 03 00 00             je      0x8424b7
+  8424e1: c6 00 36                      movb    $0x36, (%rax)
+  8424f9: 88 42 01                      movb    %al, 0x1(%rdx)
+  84250a: 88 42 02                      movb    %al, 0x2(%rdx)
+  8425c1: c6 40 01 35                   movb    $0x35, 0x1(%rax)
+  8425de: 88 42 02                      movb    %al, 0x2(%rdx)
+
+The service-attribute path uses the same initial cursor extent and checks
+remaining space before any whole or partial attribute construction:
+
+  842a80: 49 8b 57 40                   movq    0x40(%r15), %rdx
+  842a87: 0f 84 a5 02 00 00             je      0x842d32
+  842a8d: 48 8d 42 03                   leaq    0x3(%rdx), %rax
+  842a96: c6 44 24 2f 00                movb    $0x0, 0x2f(%rsp)
+  842a04: 48 8b 44 24 08                movq    0x8(%rsp), %rax
+  842a09: 0f b7 54 24 2c                movzwl  0x2c(%rsp), %edx
+  842a0e: 49 2b 47 40                   subq    0x40(%r15), %rax
+  842a12: 29 c2                         subl    %eax, %edx
+  842a14: 66 85 d2                      testw   %dx, %dx
+  842a17: 0f 8e 02 02 00 00             jle     0x842c1f
+
+The 0x842b01 state gate restricts its outer header construction to initial
+state. Long and short encodings again stop at offset 2:
+
+  842b01: 0f 84 78 01 00 00             je      0x842c7f
+  842ca3: c6 00 36                      movb    $0x36, (%rax)
+  842cb5: 88 42 01                      movb    %al, 0x1(%rdx)
+  842cc4: 88 42 02                      movb    %al, 0x2(%rdx)
+  842d0b: c6 40 01 35                   movb    $0x35, 0x1(%rax)
+  842d24: 88 42 02                      movb    %al, 0x2(%rdx)
+
+Critically, both scratch-allocation calls use remote MTU at CCB offset 0x38,
+not the parsed small maximum:
+
+  84254b: 41 0f b7 54 24 38             movzwl  0x38(%r12), %edx
+  84255d: e8 7e ad f6 ff                callq   0x7ad2e0 <GKI_getbuf_r>
+  842d32: 41 0f b7 57 38                movzwl  0x38(%r15), %edx
+  842d43: e8 98 a5 f6 ff                callq   0x7ad2e0 <GKI_getbuf_r>
+
+GKI_getbuf_r rejects zero, selects only a pool whose user capacity is at least
+the request, and returns the user pointer after its debug header:
+
+  7ad2fc: 66 85 d2                      testw   %dx, %dx
+  7ad2ff: 0f 84 21 03 00 00             je      0x7ad626
+  7ad32b: 66 41 39 94 cd 20 cb 13 00    cmpw    %dx, 0x13cb20(%r13,%rcx,8)
+  7ad334: 0f 83 04 03 00 00             jae     0x7ad63e
+  7ad581: 49 8d 86 90 00 00 00          leaq    0x90(%r14), %rax
+
+Pool 0 has exact user capacity 0x40; 0xd4 is its debug-build stride, not its
+user capacity:
+
+  7acba8: b8 d4 00 00 00                movl    $0xd4, %eax
+  7acbad: 66 89 05 2c 95 92 00          movw    %ax, 0x92952c(%rip)
+  7acbb4: b8 40 00 00 00                movl    $0x40, %eax
+  7acbc4: 66 89 05 55 93 92 00          movw    %ax, 0x929355(%rip)
+
+Complete partial-attribute helper `[0x8445f0,0x8448bf)` receives destination in
+`%rdi`, the checked remaining-space argument in `%edx`, and a pointer to the
+state-derived attribute offset in `%rcx`. After serializing the attribute, the
+valid-state path computes `total_serialized_length - attr_offset`, selects the
+smaller of that value and the zero-extended remaining argument, uses the result
+for both destination advancement and `memcpy`, and advances `attr_offset` by
+the same value:
+
+  8445f2: 49 89 ce                      movq    %rcx, %r14
+  8445f9: 41 89 d4                      movl    %edx, %r12d
+  844602: 48 89 fd                      movq    %rdi, %rbp
+  8446ec: 41 0f b7 06                   movzwl  (%r14), %eax
+  8446f0: 0f b7 db                      movzwl  %bx, %ebx
+  8446f3: 48 89 ef                      movq    %rbp, %rdi
+  8446f6: 89 d9                         movl    %ebx, %ecx
+  8446f8: 41 0f b7 dc                   movzwl  %r12w, %ebx
+  8446fc: 29 c1                         subl    %eax, %ecx
+  8446fe: 48 89 c6                      movq    %rax, %rsi
+  844701: 39 d9                         cmpl    %ebx, %ecx
+  844703: 0f 4e d9                      cmovlel %ecx, %ebx
+  844706: 4c 01 ee                      addq    %r13, %rsi
+  844709: 4c 63 e3                      movslq  %ebx, %r12
+  84470c: 4c 89 e2                      movq    %r12, %rdx
+  84470f: 4c 01 e5                      addq    %r12, %rbp
+  844712: e8 59 f1 ad ff                callq   0x323870 <memcpy@plt>
+  844717: 4c 89 ea                      movq    %r13, %rdx
+  84471a: be f2 03 00 00                movl    $0x3f2, %esi
+  84471f: 66 41 01 1e                   addw    %bx, (%r14)
+  844723: 48 8d 3d 96 b9 2f 00          leaq    0x2fb996(%rip), %rdi
+  84472a: e8 01 92 f6 ff                callq   0x7ad930 <GKI_freebuf_r>
+
+This clamp proves the continuation destination bound only for feasible valid
+state where `attr_offset <= total_serialized_length`. Corrupted or impossible
+internal offsets and general helper memory safety remain unknown.
+
+Exact excerpts: vbtd-63
+-----------------------
+The second binary independently has the same maximum parsing/capping effects
+and no less-than-four branch in either complete handler range:
+
+  842650: 44 0f b6 38                   movzbl  (%rax), %r15d
+  842658: 0f b6 50 01                   movzbl  0x1(%rax), %edx
+  842664: 41 0f b7 54 24 38             movzwl  0x38(%r12), %edx
+  842671: 83 ea 09                      subl    $0x9, %edx
+  842674: 83 e8 0a                      subl    $0xa, %eax
+  84267b: 0f 4f c1                      cmovgl  %ecx, %eax
+  842685: 66 89 44 24 10                movw    %ax, 0x10(%rsp)
+
+  842f7e: 41 0f b6 6c 24 09             movzbl  0x9(%r12), %ebp
+  842f89: 41 0f b6 44 24 0a             movzbl  0xa(%r12), %eax
+  842f8f: 41 0f b7 57 38                movzwl  0x38(%r15), %edx
+  842f9e: 83 ea 09                      subl    $0x9, %edx
+  842fa5: 83 e8 0a                      subl    $0xa, %eax
+  842fad: 0f 4f c6                      cmovgl  %esi, %eax
+  842fb3: 66 89 44 24 2c                movw    %ax, 0x2c(%rsp)
+
+Its search-attribute initial-space test is 0x8427bf-0x8427da and its state gate
+is 0x842991. Its outer header encodings stop at offset 2:
+
+  8427bf: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+  8427c4: 0f b7 54 24 10                movzwl  0x10(%rsp), %edx
+  8427c9: 49 2b 44 24 40                subq    0x40(%r12), %rax
+  8427ce: 29 c2                         subl    %eax, %edx
+  8427d0: 66 83 fa 02                   cmpw    $0x2, %dx
+  8427d4: 0f 8e 9e 05 00 00             jle     0x842d78
+  842cc1: c6 00 36                      movb    $0x36, (%rax)
+  842cd9: 88 42 01                      movb    %al, 0x1(%rdx)
+  842cea: 88 42 02                      movb    %al, 0x2(%rdx)
+  842d99: c6 40 01 35                   movb    $0x35, 0x1(%rax)
+  842db6: 88 42 02                      movb    %al, 0x2(%rdx)
+
+Its service-attribute path checks remaining space before attribute construction
+and gates its outer header on initial state at 0x8432d1:
+
+  8431d4: 48 8b 44 24 08                movq    0x8(%rsp), %rax
+  8431d9: 0f b7 54 24 2c                movzwl  0x2c(%rsp), %edx
+  8431de: 49 2b 47 40                   subq    0x40(%r15), %rax
+  8431e2: 29 c2                         subl    %eax, %edx
+  8431e4: 66 85 d2                      testw   %dx, %dx
+  8431e7: 0f 8e f6 01 00 00             jle     0x8433e3
+  8432d1: 0f 84 6c 01 00 00             je      0x843443
+  843467: c6 00 36                      movb    $0x36, (%rax)
+  843479: 88 42 01                      movb    %al, 0x1(%rdx)
+  843488: 88 42 02                      movb    %al, 0x2(%rdx)
+  8434cf: c6 40 01 35                   movb    $0x35, 0x1(%rax)
+  8434e8: 88 42 02                      movb    %al, 0x2(%rdx)
+
+Both scratch calls again use remote MTU, this time as the first argument:
+
+  842d2b: 41 0f b7 7c 24 38             movzwl  0x38(%r12), %edi
+  842d31: e8 ba c5 f6 ff                callq   0x7af2f0 <GKI_getbuf>
+  8434f6: 41 0f b7 7f 38                movzwl  0x38(%r15), %edi
+  8434fb: e8 f0 bd f6 ff                callq   0x7af2f0 <GKI_getbuf>
+
+GKI_getbuf rejects zero, selects a capacity-sufficient pool, and returns its
+user pointer after the non-debug header:
+
+  7af308: 66 85 ff                      testw   %di, %di
+  7af30b: 0f 84 b8 02 00 00             je      0x7af5c9
+  7af332: 66 39 bc d5 a0 c5 12 00       cmpw    %di, 0x12c5a0(%rbp,%rdx,8)
+  7af33a: 0f 83 a1 02 00 00             jae     0x7af5e1
+  7af56b: 49 8d 44 24 10                leaq    0x10(%r12), %rax
+
+Pool 0 independently has exact user capacity 0x40; 0x54 is its non-debug
+stride:
+
+  7aebb8: b8 54 00 00 00                movl    $0x54, %eax
+  7aebbd: 66 89 05 fc e9 91 00          movw    %ax, 0x91e9fc(%rip)
+  7aebc4: b8 40 00 00 00                movl    $0x40, %eax
+  7aebd4: 66 89 05 25 e8 91 00          movw    %ax, 0x91e825(%rip)
+
+Complete partial-attribute helper `[0x844d90,0x84504f)` independently implements
+the same valid-state clamp, copy-length use, destination advancement, and state
+offset advancement:
+
+  844d92: 49 89 ce                      movq    %rcx, %r14
+  844d99: 41 89 d4                      movl    %edx, %r12d
+  844d9d: 48 89 fd                      movq    %rdi, %rbp
+  844e84: 41 0f b7 06                   movzwl  (%r14), %eax
+  844e88: 0f b7 df                      movzwl  %di, %ebx
+  844e8b: 89 df                         movl    %ebx, %edi
+  844e8d: 41 0f b7 dc                   movzwl  %r12w, %ebx
+  844e91: 29 c7                         subl    %eax, %edi
+  844e93: 48 89 c6                      movq    %rax, %rsi
+  844e96: 39 df                         cmpl    %ebx, %edi
+  844e98: 0f 4e df                      cmovlel %edi, %ebx
+  844e9b: 48 89 ef                      movq    %rbp, %rdi
+  844e9e: 4c 01 ee                      addq    %r13, %rsi
+  844ea1: 4c 63 e3                      movslq  %ebx, %r12
+  844ea4: 4c 89 e2                      movq    %r12, %rdx
+  844ea7: 4c 01 e5                      addq    %r12, %rbp
+  844eaa: e8 51 f6 ad ff                callq   0x324500 <memcpy@plt>
+  844eaf: 4c 89 ef                      movq    %r13, %rdi
+  844eb2: 66 41 01 1e                   addw    %bx, (%r14)
+  844eb6: e8 c5 a8 f6 ff                callq   0x7af780 <GKI_freebuf>
+
+As in `vbtd-51`, this is a valid-state bound, not a finding that corrupted or
+impossible internal offsets or the complete helper are generally safe.
+
+Write-bound matrix and caller effects
+-------------------------------------
+These conditional bounds hold independently for both exact binaries and both
+handlers after syntactically valid input reaches ordinary response-list
+construction and scratch allocation/reuse succeeds. Continuation additionally
+requires accepted valid internal continuation state, including a feasible
+attribute offset. Earlier error exits are outside the matrix. "Extent" is the
+highest possibly written scratch offset plus one; it is not a claim that every
+byte in that extent is written. "Maximum" means the effective internal maximum
+after the remote-MTU cap, not unconditionally the peer-requested value.
+
+  state          effective maximum  scratch extent upper bound  logical effective limit exceeded  64-byte capacity exceeded
+  initial        0        3                           yes                     no
+  initial        1        3                           yes                     no
+  initial        2        3                           yes                     no
+  initial        3        3                           no                      no
+  continuation   0        0                           no                      no
+  continuation   1        1                           no                      no
+  continuation   2        2                           no                      no
+  continuation   3        3                           no                      no
+
+On the feasible initial response-building path, the outer sequence header can
+reach offset 2, so an effective maximum below three is logically exceeded on
+that path. For effective maxima 0..3, the initial cursor begins at +3 and the
+first remaining-space tests prevent body construction before the header is
+finalized. For accepted valid continuation state, the cursor begins at the
+scratch base; whole builders use checked remaining space, and the complete
+partial helpers clamp both copy length and destination advancement to
+`min(remaining, total_serialized_length - attr_offset)` for a valid feasible
+offset. The search-attribute handler additionally requires three remaining
+bytes before reserving an inner sequence header. Continuation does not re-enter
+outer initial-header construction. The resulting response copy length is at
+most three for initial state and at most the effective maximum for continuation
+state (vbtd-51 copy calls 0x84223c and 0x842b97; vbtd-63 copy calls 0x842a20 and
+0x84335b). Existing successor routing then continues through the ordinary
+response-buffer path; it does not add a write to the scratch allocation.
+
+Under an ordinary protocol-valid remote MTU, a peer-requested small maximum
+0..3 maps to the same effective internal value. The low/invalid remote-MTU
+subtraction/wrap edge is not classified here.
+
+The scratch allocation is not the public fix's max_list_len-sized allocation:
+it is requested from remote MTU. On success, GKI chooses a pool with capacity
+at least the request, and the smallest public user capacity is exactly 64
+bytes. On failure, the returned null value is checked before scratch writes.
+Every proven effective-small-maximum scratch extent on the stated feasible
+path is therefore at most 3 within at least 64 user bytes.
+
+Bounded conclusion
+------------------
+The source-like max_list_len < 4 guard is absent. On the feasible initial
+response-building path, effective maxima 0..2 can reach scratch offset 2 and
+therefore exceed the logical effective limit. Nevertheless, the
+allocator/caller architecture in both exact binaries prevents that fact from
+becoming the public small-maximum physical out-of-bounds write: the scratch
+object is not sized to the small maximum and every successful object has at
+least 64 user bytes. This conditionally rejects only the public physical
+mechanism for CVE-2017-13255 and CVE-2017-13256 in the two hash-bound binaries.
+
+This excerpt does not establish installed runtime identity, handler
+reachability, adapter policy, channel security, owner-device applicability,
+controlled behavior, memory corruption, code execution, unrestricted root,
+persistence, early-error-path behavior beyond the stated exits, low/invalid
+negotiated-MTU subtraction behavior, corrupted/impossible internal attribute-
+offset safety, general partial-helper safety, allocator-corruption absence,
+absence of every vendor-equivalent unnamed path, general SDP safety, or safety
+of other SDP handlers.

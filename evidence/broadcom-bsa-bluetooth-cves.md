@@ -4,10 +4,15 @@ Status: **both PCB-selectable `vbtd` variants contain CVE-2017-0782's exact
 pre-fix BNEP remaining-length parser (V-019), but recovered engineering-profile
 configuration says `PAN : N/A` for both variants and no direct startup reference
 to `BNEP_Register` was found. Treat this as dormant/conditionally reachable code
-pending BNEP PSM/profile-registration evidence. Adapter state, security policy,
-accepted channel, physical delivery, allocation-bound impact, RCE, and owner-
-device applicability remain unproven. Other Android/Bluedroid CVEs are not
-transferred to BSA without exact code proof.**
+pending BNEP PSM/profile-registration evidence. Separately, exact static review
+conditionally rejects only CVE-2017-13255/13256's public small-maximum physical
+OOB-write mechanism in both variants: their SDP scratch allocations use remote
+MTU and successful GKI user capacity is at least 64 bytes. On a feasible
+ordinary response-building path, effective internal maxima 0..2 can still
+exceed their logical limits by reaching scratch offset 2. Adapter
+state, security policy, accepted channels, physical delivery, runtime behavior,
+RCE, and owner-device applicability remain unproven. Other Android/Bluedroid
+CVEs are not transferred to BSA without exact code proof.**
 
 Target: recovered European Gen5W Linux
 `NE_E.EUR.S5W_L.001.001.260128`. Static instruction, filesystem, policy, and
@@ -43,6 +48,48 @@ accessible. In fact, both recovered engineering profile files explicitly say
 to exported `BNEP_Register` (`0x8bf470`/`0x8c1920`). This does not exclude an
 indirect or runtime registration path, but it is contrary evidence that must be
 resolved before claiming radio reachability.
+
+## CVE-2017-13255 / CVE-2017-13256: physical mechanism conditionally rejected
+
+The public shared fix
+`f0edf6571d2d58e66ee0b100ebe49c585d31489f` adds
+`max_list_len < 4` rejection to `process_service_attr_req` (CVE-2017-13255,
+Android bug 68776054) and `process_service_search_attr_req` (CVE-2017-13256,
+Android bug 68817966) before a requested-maximum-sized allocation. The exact
+BSA handlers lack an equivalent early guard, but their allocator/caller
+architecture is materially different.
+
+The `0..3` matrix is the effective internal maximum after the recovered remote-
+MTU cap. It is equivalent to a small peer-requested maximum only under an
+ordinary protocol-valid remote MTU; low/invalid remote-MTU subtraction behavior
+remains unknown. After valid syntax reaches ordinary response-list construction
+and scratch allocation/reuse succeeds, initial state starts the scratch cursor
+at base + 3, while accepted valid continuation state starts at base and skips
+outer initial-header construction. Initial body construction is then blocked
+for effective maxima 0..3, and the outer header can reach no higher than offset
+2. Complete `sdpu_build_partial_attrib_entry` ranges in both binaries prove
+valid-state copy length and destination advancement are clamped to
+`min(remaining, total serialized length - state-derived attr_offset)`.
+Corrupted or impossible internal offsets remain unknown. Thus effective maxima
+0..2 retain a logical limit exceedance on the feasible initial path, but the
+largest proven scratch extent is three bytes. Earlier error exits are outside
+this write matrix.
+
+Both handler allocation call sites pass CCB remote MTU rather than the effective
+internal maximum. Exact `GKI_getbuf[_r]` selection requires pool capacity
+greater than or equal to the request; exact `gki_buffer_init` independently sets
+pool 0 user capacity to `0x40` in both binaries. Allocation failure is checked
+before scratch writes. Consequently every successful effective-small-maximum
+scratch write on the stated path remains within at least 64 user bytes. This
+conditionally rejects only the public physical OOB-write mechanism; it does not
+establish general SDP or partial-helper safety, runtime handler reachability,
+adapter/channel/security policy, controlled behavior, impact, or owner-device
+applicability.
+
+See
+[`broadcom-bsa-sdp-small-max-cves.md`](broadcom-bsa-sdp-small-max-cves.md), the
+[retained exact-static excerpt](artifacts/network-candidates/broadcom-bsa-sdp-small-max-exact-static.txt),
+and the [byte-identical public patch](artifacts/network-candidates/f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch).
 
 ## V-019 / CVE-2017-0782: exact pre-fix BNEP parser in both variants
 
@@ -162,7 +209,15 @@ VM must remain radio-free.
 
 ## Evidence
 
-- Reviewed exact excerpt:
+- SDP small-maximum assessment:
+  `evidence/broadcom-bsa-sdp-small-max-cves.md`
+- SDP exact-static excerpt:
+  `evidence/artifacts/network-candidates/broadcom-bsa-sdp-small-max-exact-static.txt`,
+  SHA-256 `414d7bc0687960762c15b8e270eac9aaa2a5ae660b15c00feff9a5a5d9a1d2f2`
+- Byte-identical SDP public patch:
+  `evidence/artifacts/network-candidates/f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch`,
+  SHA-256 `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`
+- Reviewed exact BNEP excerpt:
   `evidence/artifacts/network-candidates/vbtd-cve-2017-0782-bnep-evidence.txt`,
   SHA-256 `2eb54a9c6328597226478a69ca2f23f616fc622ac64ed824e2a7ad3746428f44`
 - Unit SHA-256:

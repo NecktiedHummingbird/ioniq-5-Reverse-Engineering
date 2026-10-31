@@ -33,3 +33,15 @@ access, or applicability to the owner's installed firmware.
   instructions in both PCB-selectable Broadcom BSA daemons, plus activation,
   privilege, and radio-reachability boundaries for V-019. It contains no
   Bluetooth packet, trigger, payload, or exploit material.
+- `broadcom-bsa-sdp-small-max-exact-static.txt`: exact CVE-2017-13255/13256
+  handler, initial/continuation, complete partial-attribute-helper, allocator,
+  response-copy, and 64-byte minimum GKI user-capacity excerpts for both PCB-
+  selectable BSA daemons. On explicit feasible-response-path and valid-state
+  prerequisites, it rejects only the public small-maximum physical OOB-write
+  mechanism while retaining the initial effective-limit exceedance and the low/
+  invalid-MTU, corrupted-offset, runtime, and other-SDP unknowns. It contains no
+  Bluetooth packet, PDU, malformed-input fixture, trigger, payload, or exploit
+  material.
+- `f0edf6571d2d58e66ee0b100ebe49c585d31489f.patch`: byte-for-byte retained
+  public Android fix shared by CVE-2017-13255 and CVE-2017-13256, SHA-256
+  `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`.

@@ -3,7 +3,7 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
-## 1.73.0 - the launch request is never dispatched: the launcher is stuck retrying appId 2
+## 1.81.0 - the launch request is never dispatched: the launcher is stuck retrying appId 2
 
 - Instead of a fourth launch attempt, two of the three named causes were tested by reading the run's own evidence.
 - **SMACK is weakened, not confirmed.** Across the whole boot there are **zero** SMACK denials (`count: 0`) and not one
@@ -22,7 +22,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - V-028 remains "static route, runtime unobserved". What changed is that the reason is now visible in the launcher's
   own log rather than guessed at.
 
-## 1.74.0 - reject Broadcom BSA SDP small-maximum physical OOB mechanism
+## 1.80.0 - conditionally reject Broadcom BSA SDP small-maximum physical OOB mechanism
 
 - Bound CVE-2017-13255 and CVE-2017-13256 to both PCB-selectable exact BSA
   images: `vbtd-51` SHA-256 `55e21d...c9e0`, Build ID
@@ -31,17 +31,26 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   Complete handler-range review confirms that both lack the public fix's
   source-like `max_list_len < 4` early rejection.
 - Independently traced service-attribute and service-search-attribute handlers
-  through initial and continuation states for requested maxima 0..3. Initial
-  state reaches no higher than scratch offset 2; maxima 0..2 therefore retain a
-  logical requested-limit exceedance. Continuation construction is bounded by
-  the supplied maximum and does not rewrite the outer initial header.
+  through initial and continuation states for effective internal maxima 0..3.
+  The matrix requires valid syntax, ordinary response construction, successful
+  scratch allocation/reuse, and valid internal continuation state. On that
+  feasible path, initial construction can reach no higher than scratch offset
+  2; effective maxima 0..2 retain a logical effective-limit exceedance.
+  Continuation does not rewrite the outer initial header. Earlier error exits
+  are not described as reaching these writes.
+- Regenerated both complete `sdpu_build_partial_attrib_entry` helpers and proved
+  that valid-state copy length and destination advancement are clamped to
+  `min(remaining, total serialized length - state-derived attr_offset)`.
+  Corrupted/impossible offsets remain unknown. The effective 0..3 matrix equals
+  a peer-requested small maximum only under an ordinary protocol-valid remote
+  MTU; low/invalid remote-MTU subtraction behavior remains unknown.
 - Proved the decisive allocator/caller difference rather than relying on the
   absent guard: all four scratch call sites pass remote MTU, both
   `GKI_getbuf[_r]` implementations select capacity greater than or equal to the
   request, allocation failure is checked, and both exact initializers set pool
-  0 user capacity to `0x40`. Every successful small-maximum write extent is at
-  most 3 within at least 64 user bytes. This rejects only the public physical
-  OOB-write mechanism, not general SDP safety.
+  0 user capacity to `0x40`. Every successful write extent on the stated path
+  is at most 3 within at least 64 user bytes. This conditionally rejects only
+  the public physical OOB-write mechanism, not general SDP/helper safety.
 - Retained byte-identical public fix
   `f0edf6571d2d58e66ee0b100ebe49c585d31489f`, patch SHA-256
   `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`,
@@ -49,18 +58,28 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   with explicit UTF-8/LF, fail-closed all-or-none CLI, exact evidence bindings,
   no operational message material, and exhaustive assertions for every emitted
   classification field.
-- Focused validation passed `8 tests`; the required complete suite passed `625
-  tests, 318254 subtests`; bytecode compilation, LLVM static regeneration,
-  identity/hash/address checks, patch byte comparison, and `git diff --check`
-  passed. The public harness passed with
+- Analysis started at `0a9a7f2`; final pre-delivery integration review used
+  `30f6cac`. That concurrent commit accidentally absorbed the preliminary SDP
+  changelog entry but not the untracked model, tests, assessment, retained
+  patch, or static artifact. This delivery corrects the preliminary wording and
+  records the complete package without rewriting shared history.
+- Correction-cycle validation regenerated the complete handler, GKI, and both
+  partial-helper ranges and passed static clamp/copy/advance assertions.
+  Focused validation passed `9 tests, 52 subtests`; the required suite passed
+  `626 tests, 318256 subtests`. Bytecode compilation, identity/hash/address
+  checks, patch byte comparison, and `git diff --check` passed. Final model,
+  test, assessment, artifact, patch, and report hashes are in `HANDOVER.md`.
+  The public harness passed with
   `pass=3 info=4 pending=0 blocked=0 fail=0`. No recovered target, Bluetooth
   adapter/radio/channel, endpoint, packet/PDU, malformed fixture, controlled
   execution, or exploit material was used or created. Runtime reachability,
   adapter/channel/security policy, negotiated-MTU/allocator edge cases, other
   SDP or vendor-equivalent behavior, impact, and owner-device applicability
-  remain unknown; no acceptance is claimed.
+  remain unknown. Independent final package review returned **ACCEPT** after
+  the moving-base, stale-checkpoint, and changelog-order corrections; this is
+  not acceptance of runtime SDP safety or impact.
 
-## 1.72.0 - registry hypothesis tested and did not produce execution
+## 1.79.0 - registry hypothesis tested and did not produce execution
 
 - Placed `/app/bin/AppProbe` (a script writing `/tmp/L_probe`) **before** the launcher started, so its startup sweep
   of `/app/bin` must have included it, then called the exact signature with
@@ -81,7 +100,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   this work. The static finding is not weakened; the runtime claim is simply not mine to make without a unit or a
   working launcher dispatch.
 
-## 1.71.0 - sequenced calls fire and still do not execute; the registry hypothesis
+## 1.78.0 - sequenced calls fire and still do not execute; the registry hypothesis
 
 - With registration confirmed and a settle window before issuing requests, the calls now reach the launcher:
   variant **A** (appid 999, `/tmp/probe.sh`, false/false) and variant **C** (appid 5, `/app/bin/probe.sh`, true/true)
@@ -100,7 +119,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   wrong" and "the target was never registered" is exactly the kind of thing this thread has repeatedly mistaken for
   one another.
 
-## 1.70.0 - launch matrix inconclusive; the launcher builds its registry first
+## 1.77.0 - launch matrix inconclusive; the launcher builds its registry first
 
 - Ran a three-variant matrix over the exact signature: (A) appid 999 with `/tmp/probe.sh`, false/false;
   (B) appid 999 with `/app/bin/probe.sh`, true/true; (C) appid 5 with `/app/bin/probe.sh`, true/true.
@@ -116,7 +135,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - V-028 runtime execution: still unobserved. The three candidate causes from the previous entry remain untested —
   the matrix must be re-run after the registry sweep completes.
 
-## 1.69.0 - exact `launch` signature obtained; the bypass still does not execute
+## 1.76.0 - exact `launch` signature obtained; the bypass still does not execute
 
 - Introspection of `com.lge.avn.applauncher` `/Request` now works (the name is registered), and it yields the exact
   method signature that had been guessed wrongly:
@@ -136,7 +155,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   completed in any earlier boot — the MICOM adaptor is what allowed it, so the HMI-side dependency that blocked this
   project from the beginning is now satisfied by the emulation rather than by the vendor daemon.
 
-## 1.68.0 - the launcher starts: MICOM adaptor satisfies it end to end
+## 1.75.0 - the launcher starts: MICOM adaptor satisfies it end to end
 
 - With per-method payloads (`AskNaviOutermostRegion` 8 bytes, `AskSysBootinfo` 35, `AskCustomSetting` 16,
   `AskSettingInfoValue` 8) and a polling window, **`com.lge.avn.applauncher` registered at poll 6** — the vendor
@@ -153,7 +172,7 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Practically, this also means the VM line has advanced: the launcher dependency that blocked the HMI is satisfied by
   a simulated adaptor rather than by the vendor daemon.
 
-## 1.67.0 - the MICOM adaptor owns the bus name and the launcher consumes its answers
+## 1.74.0 - the MICOM adaptor owns the bus name and the launcher consumes its answers
 
 - Wrote `micom-service`, a research adaptor that owns `com.lge.car.micom` on the system bus, registers `/Ihu`
   with interface `com.lge.car.micom.ihu`, and answers each method with an `ay` payload (35 bytes for

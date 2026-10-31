@@ -6,6 +6,76 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Broadcom BSA SDP small-maximum checkpoint — 2026-11-05
+
+- Exact analysis started at `0a9a7f2fd1cb3b25d928fe9f32fe65cac055d121`;
+  final pre-delivery integration review used
+  `30f6cace8d2c776b2501c88791b7e54dd4da9055`. Recovered binaries and ignored
+  static inputs were unchanged. Concurrent commit `30f6cac` accidentally
+  absorbed a preliminary SDP changelog entry while the actual model, tests,
+  assessment, patch, and static artifact remained untracked. This delivery
+  corrects that wording and records the complete package without rewriting
+  shared history.
+- CVE-2017-13255 (`process_service_attr_req`) and CVE-2017-13256
+  (`process_service_search_attr_req`) are now assessed against both exact
+  PCB-selectable images. The binding is `vbtd-51` SHA-256
+  `55e21d077082e97f56fb113a1d3b216c0f2e63aa02fc4cd754a6593bc6cec9e0`,
+  Build ID `12175aa88ccff70cc56498e0208c9a51aac0c9e9`, and `vbtd-63`
+  SHA-256 `c56b68fdd35b16b95688ab54a48ffb9f18034d925c057e86f8b9fe304f8b26b9`,
+  Build ID `04141ed222ee8f150c0eb0e46fdb73624d168920`.
+- Both complete handler ranges lack the public fix's source-like
+  `max_list_len < 4` branch. The `0..3` matrix is the effective internal maximum
+  after the remote-MTU cap, and equals a small peer-requested maximum only under
+  an ordinary protocol-valid remote MTU. It requires syntactically valid input,
+  ordinary response-list construction, successful scratch allocation/reuse,
+  and valid internal continuation state. On that feasible initial path, header
+  construction can reach scratch offset 2, so effective maxima 0..2 exceed the
+  logical effective limit; body construction is blocked for this domain.
+  Earlier error exits are outside the matrix.
+- Complete `sdpu_build_partial_attrib_entry` ranges `[0x8445f0,0x8448bf)` and
+  `[0x844d90,0x84504f)` prove that valid-state copy length and destination
+  advancement are clamped to `min(remaining, total serialized length - state-
+  derived attr_offset)`. Corrupted/impossible offsets, general helper safety,
+  and low/invalid remote-MTU subtraction behavior remain unknown.
+- The public physical mechanism is conditionally rejected for these exact
+  binaries by positive allocator/caller effects. Every scratch call uses remote
+  MTU rather than the effective small maximum; exact `GKI_getbuf[_r]` selects a
+  capacity-sufficient pool; allocation failure is checked; and exact pool 0
+  user capacity is `0x40` in both initializers. The largest proven extent on
+  the stated path is 3 bytes within at least 64 user bytes.
+- Retained public fix commit
+  `f0edf6571d2d58e66ee0b100ebe49c585d31489f` byte-for-byte at patch SHA-256
+  `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`.
+  Added `evidence/broadcom-bsa-sdp-small-max-cves.md`, the exact-static artifact,
+  and `tools/uk_fw/bluetooth_sdp_small_max_model.py` with exhaustive tests.
+  Final SHA-256 values: model
+  `7da82bb0d39f836cef6fef0d6f0777df2225cd75df65149e10c811fa798244d0`;
+  test `e0873055f61424157074a275e5ec9705c2f59f145c53face6df3cd10b25077ef`;
+  assessment
+  `4af04f2ecfeb10e13fcc72b1be7e4a6c19ded883a5c8f4d67fe10c0c9ca94dd2`;
+  exact-static artifact
+  `414d7bc0687960762c15b8e270eac9aaa2a5ae660b15c00feff9a5a5d9a1d2f2`;
+  retained patch
+  `a0470c20592473144f8114cf41ab4cb2479fe2c108a4aa73fa4864eabd02ca34`;
+  deterministic default report
+  `7d471272700166a4ea26ece68fc4ffdcdeec47d38ec799a379a66523c4258590`.
+- Correction-cycle validation: focused `9 passed, 52 subtests passed`; required
+  suite `626 passed, 318256 subtests passed`; `py_compile`, complete LLVM
+  regeneration including both helpers, helper clamp/copy/advance and unwind
+  checks, binary/hash/address checks, byte-identical patch comparison, and
+  `git diff --check` passed. Public harness passed
+  `pass=3 info=4 pending=0 blocked=0 fail=0`.
+  No target, Bluetooth/radio/endpoint, packet/PDU, malformed fixture, controlled
+  execution, or exploit material was used. The conclusion is limited to the
+  public small-maximum physical OOB-write mechanism under the stated
+  prerequisites. Runtime reachability, adapter/channel/security policy,
+  low/invalid negotiated-MTU and allocator edge cases, corrupted internal
+  offsets, other SDP or vendor-equivalent behavior, impacts, and owner-device
+  applicability remain unknown. Independent final package review returned
+  **ACCEPT** after the moving-base, stale-checkpoint, and changelog-order
+  corrections; acceptance is limited to the exact-static package and bounded
+  conclusion, not runtime SDP safety or impact.
+
 ## DCCPv6 path applicability correction checkpoint — 2026-11-05
 
 - CVE-2017-6074 is rejected for the exact recovered stock package only for the
