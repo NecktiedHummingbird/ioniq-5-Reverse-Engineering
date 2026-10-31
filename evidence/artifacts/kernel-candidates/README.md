@@ -115,6 +115,7 @@ commits:
 - CVE-2016-7910: `77da160530dd1dc94f6ae15a981f24e5f0021e84`;
 - CVE-2016-7911: `8ba8682107ee2ca3347354e018865d8e1967c5f4`;
 - CVE-2016-7914: `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`;
+- CVE-2018-14634: `da029c11e6b12f321f36dac8771e833b65cec962`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
@@ -196,6 +197,17 @@ callback premise. SHA-256:
 `cve-2016-7914-fix.patch` is upstream commit
 `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`; SHA-256:
 `6ad914e07cb0cab1d3e6826119287553b5e96356f2b4a4366d8e73b7cc18c481`.
+
+`kernel-exec-arg-cap-cve-2018-14634.asm` retains complete
+embedded-kallsyms-bounded `copy_strings` machine code. It preserves `ARG_MAX`,
+then accepts larger argument space only at or below the exact minimum of one quarter
+of the stack rlimit and six MiB; oversize state releases the page and returns
+through `-E2BIG`. These effects reject the CVE-specific oversized initial-stack
+prerequisite. SHA-256:
+`b240d2a93833c9e000ffa19edb5ddf52bbc523af6645ea57f7c9dd208a86e4c4`.
+`cve-2018-14634-fix.patch` is upstream preventive commit
+`da029c11e6b12f321f36dac8771e833b65cec962`; SHA-256:
+`b2bd9af42ba1ada88463ecd5f19c70e9b1b6a789c3a0912f9baf54106c49d724`.
 
 `kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
 `perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former

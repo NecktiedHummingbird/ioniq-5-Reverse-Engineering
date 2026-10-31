@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## exec argument-stack cap checkpoint — 2026-11-03
+
+- CVE-2018-14634's oversized argument-space prerequisite is rejected for exact recovered `vmlinux` by preventive cap effects matching upstream `da029c11e6b12f321f36dac8771e833b65cec962`; the stripped binary does not establish commit provenance.
+- Complete exact `copy_strings [0xffffffff811161be,0xffffffff811164b0)` retains the historical `ARG_MAX` allowance and accepts larger space only when it is no greater than `min(rlimit(RLIMIT_STACK)/4, 0x600000)`. Oversize space passes the acquired page to exact `put_page` and returns through `-E2BIG`.
+- `CONFIG_MMU=y` and `CONFIG_BINFMT_ELF=y` establish static support, not privileged-executable presence, runtime uid/SMACK/seccomp policy, large-vector construction, execution, stack corruption, or installed identity.
+- The eleven-input schema-v2 model leaves incomplete construction/cap facts unknown absent an explicit unbounded path. No recovered-kernel exec syscall, target process, oversized target argument/environment vector, privileged target executable execution, target execution, crash, or privilege action was created; ordinary host validation used Python subprocesses outside those target claims. Focused validation passed `8 tests, 2062 subtests`; the full suite passed `534 tests, 138223 subtests`, and the public harness passed with `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent exact-binary review returned **REJECTED-BY-FIX-EFFECTS** and final corrected package review returned **ACCEPT**.
+
 ## associative-array leaf-guard checkpoint — 2026-11-03
 
 - CVE-2016-7914 is rejected for exact recovered `vmlinux` by leaf-guard effects matching upstream `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`; the stripped binary cannot establish commit provenance.

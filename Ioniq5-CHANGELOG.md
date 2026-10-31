@@ -23,8 +23,8 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 - Bound complete exact `copy_strings` machine code against preventive upstream commit `da029c11e6b12f321f36dac8771e833b65cec962` rather than relying on the `4.1.27-abl` banner.
 - The recovered code preserves `ARG_MAX`, then caps larger argv/environment space at `min(rlimit(RLIMIT_STACK)/4, 0x600000)` using the exact rlimit load, divide, constant, minimum selection, size comparison, and failure routing.
-- Added complete exact machine code, the authoritative patch, a nine-input Boolean-only schema-v2 model, and exhaustive 512-state tests. Incomplete cap facts remain unknown unless an unbounded acceptance path is explicit.
-- Kept installed identity, privileged-executable presence, runtime exec/uid/SMACK policy, argument construction, execution, stack corruption, root and persistence unobserved. No target/exec syscall, process, argument vector, privileged executable execution, target execution, crash, or privilege action was created.
+- Added complete exact machine code, the authoritative patch, an eleven-input Boolean-only schema-v2 model, and exhaustive 2,048-state tests. Incomplete size-construction or cap facts remain unknown unless an unbounded acceptance path is explicit.
+- Kept installed identity, privileged-executable presence, runtime exec/uid/SMACK policy, argument construction, execution, stack corruption, root and persistence unobserved. No recovered-kernel exec syscall, target process, oversized target argument vector, privileged target executable execution, target execution, crash, or privilege action was created; ordinary host validation used Python subprocesses outside those target claims.
 
 ## 1.62.0 - reject CVE-2016-7914 by exact associative-array leaf guard
 

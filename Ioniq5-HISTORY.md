@@ -2851,8 +2851,9 @@ and are superseded by corrections rather than silently rewritten.
   blocks CVE-2018-14634's oversized initial-stack prerequisite despite the older
   kernel banner.
 - Added retained machine code and an exhaustive Boolean-only model without
-  issuing exec, creating a process/vector, inspecting or running a privileged
-  executable, or executing target code.
+  issuing a recovered-kernel exec syscall, creating a target process/oversized
+  vector, inspecting or running a privileged target executable, or executing
+  target code. Ordinary host validation used Python subprocesses.
 
 ## 2026-11-03 — associative-array nonleaf callback rejected by exact guard
 
