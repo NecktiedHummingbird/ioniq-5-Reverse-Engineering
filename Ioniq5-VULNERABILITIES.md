@@ -637,6 +637,37 @@ rather than a reachability question.
 MTP mount point sits under the same world-writable `/media`, so a local process can populate it without any physical
 device, subject to the listing above showing `/media/mtp` as scanned when mounted.
 
+## V-014 — Root media-parsing stack links outdated third-party codec libraries
+
+- **Status:** configuration and inventory confirmed by inspection; no exploit attempted or demonstrated. This is a
+  supply-chain-ageing finding, not a claimed vulnerability in any specific library.
+- **Where:** the parsers under `app/lib/lightmediascanner/plugins/`, loaded by `lightmediascannerd` /
+  `mediamanager`, both of which run as **uid 0** (measured). Parse reachability with attacker-supplied content is
+  **demonstrated** (see the V-007 section above: a file from `/media/mtp` was consumed, copied and indexed into a
+  root-owned database).
+- **What the parsers link, with versions read from the image:**
+
+| library | version in image | note |
+|---|---|---|
+| `libpng16` | **1.6.32** | 2017 release; numerous memory-safety CVEs published after it |
+| `libogg` | **0.8.2** | early-2000s vintage; current line is 1.3.x |
+| `libvorbis` | **0.4.9** | correspondingly old; multiple historical CVEs in this line |
+| `libtheoradec` | **1.1.4** | 2011-era decoder |
+| `libmatroska` / `libebml` | **6.0.0 / 4.0.0** | container parsing |
+| `libmp4v2` | **2.0.0** | upstream abandoned around 2012 |
+| `libmagic` | **1.0.0** | file-type sniffing, itself a parser of attacker bytes |
+| `libgdk_pixbuf` | present | image loading path |
+
+- **Why it matters:** every one of those libraries parses attacker-controlled bytes, in a process with full
+  privilege, over a path that a local process can populate. Ageing codec components are exactly where memory-safety
+  defects accumulate, and this stack has not been updated to match the 2026 build date of the surrounding system.
+- **What is *not* claimed:** that any specific CVE is present in these builds, or that any of them is reachable to
+  code execution here. Version dating is evidence of exposure, not proof of a defect. Confirming which published
+  issues affect these exact versions is a discrete follow-up.
+- **Remediation direction:** update the codec stack to maintained versions; parse in a sandboxed, unprivileged,
+  seccomp-confined helper and pass only metadata back; treat `libmagic` sniffing as untrusted input handling; and
+  stop running media parsing under root at all, which fixes this class regardless of library age.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).

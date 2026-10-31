@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.56.0 - V-014: the root parsing stack is built on 2011-2017 era codec libraries
+
+- Enumerated what the media parsers actually link, and read the versions from the image:
+  `libpng16` **1.6.32**, `libogg` **0.8.2**, `libvorbis` **0.4.9**, `libtheoradec` **1.1.4**,
+  `libmatroska`/`libebml` **6.0.0/4.0.0**, `libmp4v2` **2.0.0** (upstream abandoned ~2012), and `libmagic`
+  **1.0.0**.
+- Every one of those parses attacker-controlled bytes, in a process running as **uid 0** (measured), over a path a
+  local process can populate — and V-007's parse reachability is now demonstrated, so the exposure is not
+  hypothetical plumbing.
+- Recorded as **V-014**, a supply-chain-ageing finding: version dating is evidence of exposure, not proof of a
+  defect. No specific CVE is claimed present, and no exploit was attempted. Confirming which published issues affect
+  these exact versions is a discrete follow-up.
+- Remediation is the useful part: update the codec stack, parse in an unprivileged sandboxed helper, and stop
+  running media parsing as root — the last of which fixes the class regardless of library age.
+
 ## 1.56.0 - close the AF_PACKET wrapped frame-count residual
 
 - Traced the absent `frames_per_block * tp_block_nr` overflow guard through exact `packet_set_ring`, allocation, V1/V2 receive, transmit, poll, readiness, progression, lookup, mmap, and exact vmlinux `vm_insert_page`.

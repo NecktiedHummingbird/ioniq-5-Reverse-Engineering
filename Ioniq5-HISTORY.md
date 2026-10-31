@@ -2783,3 +2783,13 @@ and are superseded by corrections rather than silently rewritten.
 - Added exact evidence, a deterministic non-operational arithmetic/Boolean model,
   tests, and independent review; no packet socket, ring, mmap, crash, or target
   action was performed.
+
+## 2026-10-31 — the parsers are older than the car
+
+- Reading link tables turned a theoretical surface into a dated one: libogg from the early 2000s, libpng from 2017,
+  an abandoned MP4 library, all fed attacker bytes as root. That is the sort of finding a patch team can act on
+  without waiting for a proof of concept.
+- The discipline holds: version dating is evidence of exposure, not proof of a defect. The entry says that plainly
+  and names the follow-up rather than implying more.
+- It also explains why the reachability demonstration mattered. Without it, this would be a list of old libraries;
+  with it, the list sits on a path that has been shown to consume attacker files as root.
