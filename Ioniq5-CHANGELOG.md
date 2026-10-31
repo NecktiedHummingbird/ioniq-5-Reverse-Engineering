@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.60.0 - shim loads cleanly, but preloading it kills the client
+
+- Fixed the load failures. `LD_PRELOAD` resolves eagerly enough that **every** libwayland symbol had to be resolved
+  at runtime rather than left undefined: `wl_shm_interface` (a data symbol) failed first, then
+  `wl_display_get_registry`, and the same would have happened for the rest. The shim now resolves all seven through
+  `dlsym(RTLD_DEFAULT, …)` in a table, and `nm -D` reports **zero undefined `wl_` symbols**.
+- **With it preloaded the client exits immediately and silently** — not alive after ten seconds, empty log. So the
+  shim currently *breaks* the target rather than exercising it. That is a worse state than having no shim at all,
+  and it is recorded as such.
+- Likely causes, in order: the interposed `wl_display_connect` performing a registry roundtrip before the client has
+  finished its own setup; a signature or calling-convention mismatch on one of the interposed entry points; or a
+  fault inside the commit hook (for example the fixed-size surface table).
+- Next step is not to test the hypothesis but to make the shim **non-invasive**: hook only `wl_surface_commit`,
+  leave `wl_display_connect` untouched, obtain the display lazily from the surface instead, and log to stderr so a
+  crash leaves a trace. A shim that can crash the target is not usable evidence.
+
+## 1.63.0 - reject CVE-2018-14634 by exact six-MiB argument cap
+
+- Bound complete exact `copy_strings` machine code against preventive upstream commit `da029c11e6b12f321f36dac8771e833b65cec962` rather than relying on the `4.1.27-abl` banner.
+- The recovered code preserves `ARG_MAX`, then caps larger argv/environment space at `min(rlimit(RLIMIT_STACK)/4, 0x600000)` using the exact rlimit load, divide, constant, minimum selection, size comparison, and failure routing.
+- Added complete exact machine code, the authoritative patch, a nine-input Boolean-only schema-v2 model, and exhaustive 512-state tests. Incomplete cap facts remain unknown unless an unbounded acceptance path is explicit.
+- Kept installed identity, privileged-executable presence, runtime exec/uid/SMACK policy, argument construction, execution, stack corruption, root and persistence unobserved. No target/exec syscall, process, argument vector, privileged executable execution, target execution, crash, or privilege action was created.
+
 ## 1.62.0 - reject CVE-2016-7914 by exact associative-array leaf guard
 
 - Bound complete exact `assoc_array_insert` and `__key_link_begin` machine code against upstream fix `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2` rather than relying on the `4.1.27-abl` banner.

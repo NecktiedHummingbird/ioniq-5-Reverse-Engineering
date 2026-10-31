@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 /* vnbuf_shim — research adaptor for a client that commits surfaces without
  * ever attaching a buffer.
  *
@@ -15,19 +16,29 @@
 #include <wayland-client-core.h>
 #include <wayland-util.h>
 
-/* Declared by hand: wayland-client.h defines these as static inline wrappers,
- * which would collide with the interposed symbols this shim exports. */
-extern const struct wl_interface wl_shm_interface;
-struct wl_registry *wl_display_get_registry(struct wl_display *display);
-int wl_registry_add_listener(struct wl_registry *registry, const struct wl_registry_listener *listener, void *data);
-void *wl_registry_bind(struct wl_registry *registry, uint32_t name, const struct wl_interface *interface, uint32_t version);
-int wl_display_roundtrip(struct wl_display *display);
-struct wl_shm_pool *wl_shm_create_pool(struct wl_shm *shm, int32_t fd, int32_t size);
-struct wl_buffer *wl_shm_pool_create_buffer(struct wl_shm_pool *pool, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format);
-void wl_shm_pool_destroy(struct wl_shm_pool *pool);
+/* Every libwayland symbol is resolved at runtime. Linking against the guest's
+ * libwayland-client is not possible from this cross build, and leaving them
+ * undefined makes LD_PRELOAD fail eagerly at load time. */
+struct wl_registry *(*p_wl_display_get_registry)(struct wl_display *);
+int (*p_wl_registry_add_listener)(struct wl_registry *, const void *, void *);
+void *(*p_wl_registry_bind)(struct wl_registry *, uint32_t, const struct wl_interface *, uint32_t);
+int (*p_wl_display_roundtrip)(struct wl_display *);
+struct wl_shm_pool *(*p_wl_shm_create_pool)(struct wl_shm *, int32_t, int32_t);
+struct wl_buffer *(*p_wl_shm_pool_create_buffer)(struct wl_shm_pool *, int32_t, int32_t, int32_t, int32_t, uint32_t);
+void (*p_wl_shm_pool_destroy)(struct wl_shm_pool *);
+
+static void resolve(void)
+{
+	p_wl_display_get_registry = dlsym(RTLD_DEFAULT, "wl_display_get_registry");
+	p_wl_registry_add_listener = dlsym(RTLD_DEFAULT, "wl_registry_add_listener");
+	p_wl_registry_bind = dlsym(RTLD_DEFAULT, "wl_registry_bind");
+	p_wl_display_roundtrip = dlsym(RTLD_DEFAULT, "wl_display_roundtrip");
+	p_wl_shm_create_pool = dlsym(RTLD_DEFAULT, "wl_shm_create_pool");
+	p_wl_shm_pool_create_buffer = dlsym(RTLD_DEFAULT, "wl_shm_pool_create_buffer");
+	p_wl_shm_pool_destroy = dlsym(RTLD_DEFAULT, "wl_shm_pool_destroy");
+}
 
 struct wl_registry_listener { void (*global)(void *, struct wl_registry *, uint32_t, const char *, uint32_t); void (*global_remove)(void *, struct wl_registry *, uint32_t); };
-#include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -73,7 +84,15 @@ static void reg_global(void *d, struct wl_registry *r, uint32_t name,
 {
 	(void)d; (void)ver;
 	if (strcmp(iface, "wl_shm") == 0) {
-		g_shm = wl_registry_bind(r, name, &wl_shm_interface, 1);
+		/* Resolved at runtime: a data symbol in the preloaded object would
+		 * otherwise have to be resolved eagerly and fails at load time. */
+		const struct wl_interface *iface_ptr =
+			(const struct wl_interface *) dlsym(RTLD_DEFAULT, "wl_shm_interface");
+		if (!iface_ptr) {
+			say("wl_shm_interface not found\n");
+			return;
+		}
+		g_shm = p_wl_registry_bind(r, name, iface_ptr, 1);
 		say("bound wl_shm\n");
 	}
 }
@@ -91,9 +110,10 @@ struct wl_display *wl_display_connect(const char *name)
 	d = real(name);
 	if (d && !g_display) {
 		g_display = d;
-		reg = wl_display_get_registry(d);
-		wl_registry_add_listener(reg, &reg_listener, NULL);
-		wl_display_roundtrip(d);
+		resolve();
+		reg = p_wl_display_get_registry(d);
+		p_wl_registry_add_listener(reg, &reg_listener, NULL);
+		p_wl_display_roundtrip(d);
 		say("connected, shm=%p\n", (void *) g_shm);
 	}
 	return d;
@@ -119,10 +139,10 @@ static int make_dummy(void)
 		p[i] = 0xFFFF00FFu;
 	munmap(p, (size_t) size);
 
-	pool = wl_shm_create_pool(g_shm, fd, size);
-	g_dummy = wl_shm_pool_create_buffer(pool, 0, WIDTH, HEIGHT, stride,
+	pool = p_wl_shm_create_pool(g_shm, fd, size);
+	g_dummy = p_wl_shm_pool_create_buffer(pool, 0, WIDTH, HEIGHT, stride,
 					    WL_SHM_FORMAT_ARGB8888);
-	wl_shm_pool_destroy(pool);
+	p_wl_shm_pool_destroy(pool);
 	close(fd);
 	say("created dummy buffer %p (%dx%d)\n", (void *) g_dummy, WIDTH, HEIGHT);
 	return g_dummy ? 0 : -1;

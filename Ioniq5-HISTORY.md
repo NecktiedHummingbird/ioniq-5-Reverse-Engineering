@@ -2842,6 +2842,18 @@ and are superseded by corrections rather than silently rewritten.
   repeated free, crash, corruption, privilege transition or persistence action
   was performed.
 
+## 2026-11-03 — oversized exec argument state rejected by exact cap
+
+- Complete exact `copy_strings` permits the historical `ARG_MAX` allowance, but
+  larger argv/environment space is bounded by the smaller of one quarter of the
+  stack rlimit and six MiB.
+- Exact oversize routing releases the acquired page and returns `-E2BIG`. This
+  blocks CVE-2018-14634's oversized initial-stack prerequisite despite the older
+  kernel banner.
+- Added retained machine code and an exhaustive Boolean-only model without
+  issuing exec, creating a process/vector, inspecting or running a privileged
+  executable, or executing target code.
+
 ## 2026-11-03 — associative-array nonleaf callback rejected by exact guard
 
 - Exact `assoc_array_insert` handles null terminal-node slots, tests pointer tag
@@ -2905,3 +2917,11 @@ and are superseded by corrections rather than silently rewritten.
   the wrong log for evidence. Both are written down rather than smoothed over.
 - Leaving this at "unexercised" is more useful than another attempt tonight: the next session can verify one line
   of shim output before drawing any conclusion at all.
+
+## 2026-10-31 — a shim that kills the target proves nothing
+
+- The symbol problems were real and are fixed: everything resolves at runtime now and the object loads.
+- But the client dies silently under it, which makes the shim useless as evidence. Adding instrumentation that
+  breaks the thing being measured is the opposite of progress, and it is better to say so than to keep running it.
+- The correction is clear: touch only the commit path, take the display lazily, and make any failure visible on
+  stderr before attempting the experiment again.
