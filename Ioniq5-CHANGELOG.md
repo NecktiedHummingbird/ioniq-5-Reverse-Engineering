@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.48.0 - V-009 tested as the missing first stage: it is not one
+
+- The open question was whether the merged V-009 (launcher starts binaries without the signature routine) could
+  supply the first-stage execution that V-012 → V-013 needs. It cannot.
+- `AppLauncher`'s path references are `/navi`, `/navi/navi/Bin/AppNavi`, `/navi/navi_1`, `/navi/navi_2` and
+  `/navi/system/system`, plus `navi_public.key`. Both `/navi` and `/navi2` are mounted **`ro`** — verified in
+  `fstab_emmc:19-20` (`ro,noatime,nouser,auto,exec,suid`) and on a live boot
+  (`/dev/root /navi ext4 ro,noatime,data=ordered`).
+- So replacing a launch target needs a write to read-only media, which is precisely the root step the entry was
+  proposed to bypass. V-009 is a defence-in-depth failure that **presupposes** a privileged write rather than a
+  way in, and the chain still lacks a first stage.
+- That is a negative result that sharpens the register: it removes the most attractive candidate for the gap and
+  moves attention to the paths that genuinely start from unprivileged input — the media parsers (V-007, which run
+  as root with no separation, confirmed) and the removable-media handling (V-006, latent).
+- Recorded as a test that failed to confirm, not as a refutation of V-009's underlying observation, which stands.
+
 ## 1.49.0 - exact CVE-2020-29660 TTY session-lock classification
 
 - Added V-027 after binding exact `TIOCGSID` dispatch, unlocked session-pointer

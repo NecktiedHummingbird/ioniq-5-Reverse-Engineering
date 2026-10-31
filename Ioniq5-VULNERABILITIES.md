@@ -488,7 +488,16 @@ The environment-file format accepts arbitrary variables, including dynamic-loade
 **What is established and what is not.** Established: the tmpfs mount options, the eleven services, the absence
 of `User=`, the anchor's mutability and persistence, and that the directory chain to the anchor is `0755`
 throughout (so step 3 genuinely needs step 2's root, not merely a local user). Not established: a concrete
-first-stage execution primitive, and any service restart trigger in practice. The chain therefore raises
+first-stage execution primitive, and any service restart trigger in practice.
+
+**V-009 was tested as that first stage and does not supply it.** The merged entry describes a launcher dispatcher
+that can start a binary without the signature routine running. Checking what it actually launches settles the
+reachability: `AppLauncher` references `/navi`, `/navi/navi/Bin/AppNavi`, `/navi/navi_1`, `/navi/navi_2` and
+`/navi/system/system` — all on partitions mounted **`ro`**, confirmed both in `fstab_emmc:19-20`
+(`ro,noatime,nouser,auto,exec,suid`) and on a live boot (`/dev/root /navi ext4 ro,noatime,data=ordered`). Its
+only other path reference is `navi_public.key`. So replacing a launch target requires a write to read-only media,
+i.e. the root step it was being proposed to bypass. V-009 is a defence-in-depth failure that **presupposes** a
+privileged write, not a standalone way in, and the chain still needs a genuine first stage. The chain therefore raises
 V-013's severity from "requires root" to "requires local code execution plus one service restart", which is a
 material change, and it should be read that way rather than as a demonstrated exploit.
 

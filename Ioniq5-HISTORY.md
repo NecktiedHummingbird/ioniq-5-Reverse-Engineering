@@ -2663,3 +2663,11 @@ and are superseded by corrections rather than silently rewritten.
 - Every element of this was verified in the image today: mount options, unit list, absence of User=, anchor
   mutability and persistence. The only unverified parts are the first stage and the restart, and they are
   labelled as such.
+
+## 2026-10-31 — the missing link was tested and does not hold
+
+- The chain needed a first stage; the launcher's unverified path looked like the obvious supplier. It launches
+  from read-only partitions, so it needs the very privilege it was supposed to provide. The gap stays open.
+- Negative results like this are worth the run they cost. The register is now narrower and more honest: three
+  candidates for the first stage, one eliminated with evidence, and the remaining two are the ones that actually
+  take unprivileged input.
