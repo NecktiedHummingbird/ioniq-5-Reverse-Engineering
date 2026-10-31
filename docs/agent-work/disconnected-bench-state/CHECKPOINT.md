@@ -1,7 +1,7 @@
 # Disconnected bench state bundle checkpoint
 
-Status: implemented, corrected after two independent read-only review passes,
-and locally accepted on 2026-11-01.
+Status: implemented, extended for FUMO relaunch state, independently
+re-reviewed, and locally accepted on 2026-11-01.
 
 ## Completed
 
@@ -14,7 +14,13 @@ and locally accepted on 2026-11-01.
     planes, contact network peers, signal processes, or write target files;
   - parses serial timestamps offline with exact section/schema/status/completion
     validation, 64 MiB capture and 8 MiB line/section bounds, and capture,
-    section, and canonical-report hashes.
+    section, and canonical-report hashes;
+  - passively records the FUMO local-relaunch state (`force_launch`, completion
+    markers, update-directory metadata, staged AppUpgrade/XML hashes, and
+    `/tmp/AppUpgrade`) without creating or changing any marker;
+  - distinguishes absent from unreadable/read-error state and fails the terminal
+    completion verdict on failed reads, metadata/link queries, passive commands,
+    or malformed/empty hash output.
 - `tools/uk_fw/rootfs_patch.py`
   - rejects absolute/traversal/drive/backslash paths, normalized duplicates,
     links, FIFOs and device nodes;
@@ -34,15 +40,18 @@ hard-link, duplicate-directory, and read-only-directory defects. The second
 found raw-line/conflicting-schema acceptance, `command -v` stdout, whole-capture
 line splitting, top-level dotfile renaming, and a manifest/rebuilt cross-alias.
 All are covered by regression tests. The final root review also changed package
-and manifest outputs to exclusive new-file creation.
+and manifest outputs to exclusive new-file creation. The FUMO-state extension
+received separate correction rounds for writer coverage, scoped relaunch claims,
+provider failures, and terminal fail-closed semantics; the corrected diff was
+independently accepted.
 
 ## Validation
 
 ```text
-295 passed, 72 subtests passed
-public harness: PASS
+322 passed, 84 subtests passed
+public harness: PASS (pass=3, info=4, no pending/blocked/fail)
 probe audit: safe=true
-probe SHA-256: dca6a219dd54a52ecd0bde6ee2d15b3cfed91e0e1e635fdb25e1d609f54af200
+probe SHA-256: 67468b0168315261d244b84f0bcdf897689f8e9487cc12873531312d0ef88be4
 git diff --check: PASS
 py_compile: PASS
 ```
@@ -73,7 +82,8 @@ executable, or active exploit input was used.
    Dropbear conclusion; do not promote absence/denial/truncation to a negative.
    V-020-specific passive fields now cover BusyBox/unzip providers,
    AppLauncher/AppDMClient/AppScomoDM/AppUpgrade, `CarOption.csv`,
-   `DecryptToPIPE`, the public key, effective arguments, uid, and SMACK labels.
+   `DecryptToPIPE`, the public key, effective arguments, uid, SMACK labels,
+   relaunch/completion markers, and staged `/update/usb/bin` identities.
 3. Use the captured A/B flags and current root only after a full partition dump
    and restore rehearsal to plan any update acceptance experiment.
 4. Offline, continue exact `AppUpgrade` child analysis of descriptor semantics,

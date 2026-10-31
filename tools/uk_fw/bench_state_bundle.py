@@ -30,7 +30,7 @@ from typing import Any, Iterable, Optional
 
 SCHEMA = "ioniq-bench-state/v1"
 MARKER = "@@IONIQ_BENCH_STATE_V1"
-SAFE_ENVIRON_READ_LINE = r'''P_PATH=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null)'''
+SAFE_ENVIRON_READ_LINE = r'''P_ENV_TEXT=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null); P_ENV_STATUS=$?; P_PATH=$(printf '%s\n' "$P_ENV_TEXT" | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null); P_PATH_STATUS=$?'''
 MAX_CAPTURE_BYTES = 64 * 1024 * 1024
 MAX_SECTION_BYTES = 8 * 1024 * 1024
 EXPECTED_SECTIONS = (
@@ -70,6 +70,8 @@ FORBIDDEN_LINE_PATTERNS = (
 
 PROBE_SCRIPT = r'''#!/bin/sh
 
+COLLECT_FAILURE=0
+
 has_command() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -85,39 +87,138 @@ end_section() {
 record() {
     R_KEY=$1
     shift
-    R_VALUE=$(printf '%s' "$*" | od -A n -t x1 -v 2>/dev/null | tr -d ' \011\015\012' 2>/dev/null)
+    R_OD_VALUE=$(printf '%s' "$*" | od -A n -t x1 -v 2>/dev/null)
+    R_OD_STATUS=$?
+    R_VALUE=$(printf '%s' "$R_OD_VALUE" | tr -d ' \011\015\012' 2>/dev/null)
+    R_TR_STATUS=$?
+    if [ "$R_OD_STATUS" -ne 0 ] || [ "$R_TR_STATUS" -ne 0 ]; then
+        COLLECT_FAILURE=1
+        printf '@@R|fatal|7265636f72642d656e636f64652d6572726f72\n'
+        return
+    fi
     printf '@@R|%s|%s\n' "$R_KEY" "$R_VALUE"
+}
+
+read_scalar() {
+    RS_LABEL=$1
+    RS_PATH=$2
+    RS_VALUE=
+    RS_STATE=absent
+    if [ ! -e "$RS_PATH" ] && [ ! -L "$RS_PATH" ]; then
+        record missing-file "$RS_PATH"
+        return
+    fi
+    if [ ! -r "$RS_PATH" ]; then
+        record unreadable-file "$RS_LABEL|$RS_PATH"
+        COLLECT_FAILURE=1
+        RS_STATE=error
+        return
+    fi
+    RS_VALUE=$(cat "$RS_PATH" 2>/dev/null)
+    RS_STATUS=$?
+    if [ "$RS_STATUS" -ne 0 ]; then
+        record file-read-error "$RS_LABEL|$RS_PATH|$RS_STATUS"
+        COLLECT_FAILURE=1
+        RS_VALUE=
+        RS_STATE=error
+        return
+    fi
+    RS_STATE=present
+}
+
+read_link_value() {
+    RL_LABEL=$1
+    RL_PATH=$2
+    RL_VALUE=
+    RL_STATE=absent
+    if [ ! -L "$RL_PATH" ]; then
+        return
+    fi
+    if ! has_command readlink; then
+        record file-link-unavailable "$RL_LABEL|$RL_PATH"
+        RL_STATE=unavailable
+        return
+    fi
+    RL_VALUE=$(readlink "$RL_PATH" 2>/dev/null)
+    RL_STATUS=$?
+    if [ "$RL_STATUS" -ne 0 ]; then
+        record file-link-error "$RL_LABEL|$RL_PATH|$RL_STATUS"
+        COLLECT_FAILURE=1
+        RL_VALUE=
+        RL_STATE=error
+        return
+    fi
+    RL_STATE=present
 }
 
 capture_file() {
     CF_LABEL=$1
     CF_PATH=$2
-    if [ -r "$CF_PATH" ]; then
-        if has_command awk; then
-            awk '{ gsub(/[\t\r]/, " "); print }' "$CF_PATH" 2>/dev/null | while IFS= read -r CF_LINE
-            do
-                record "$CF_LABEL" "$CF_LINE"
-            done
-        else
-            CF_VALUE=$(cat "$CF_PATH" 2>/dev/null)
-            record "$CF_LABEL" "$CF_VALUE"
-        fi
-    else
+    if [ ! -e "$CF_PATH" ] && [ ! -L "$CF_PATH" ]; then
         record missing-file "$CF_PATH"
+        return
+    fi
+    if [ ! -r "$CF_PATH" ]; then
+        record unreadable-file "$CF_PATH"
+        COLLECT_FAILURE=1
+        return
+    fi
+    if has_command awk; then
+        CF_VALUE=$(awk '{ gsub(/[\t\r]/, " "); print }' "$CF_PATH" 2>/dev/null)
+    else
+        CF_VALUE=$(cat "$CF_PATH" 2>/dev/null)
+    fi
+    CF_STATUS=$?
+    if [ "$CF_STATUS" -ne 0 ]; then
+        record file-read-error "$CF_PATH|$CF_STATUS"
+        COLLECT_FAILURE=1
+        return
+    fi
+    if [ -n "$CF_VALUE" ]; then
+        while IFS= read -r CF_LINE
+        do
+            record "$CF_LABEL" "$CF_LINE"
+        done <<IONIQ_CAPTURE_FILE_LINES
+$CF_VALUE
+IONIQ_CAPTURE_FILE_LINES
+    else
+        record "$CF_LABEL" ""
     fi
 }
 
 file_meta() {
     FM_PATH=$1
     if [ -e "$FM_PATH" ] || [ -L "$FM_PATH" ]; then
+        FM_META=unavailable
+        FM_STATUS=0
         if has_command stat; then
             FM_META=$(stat -c '%a|%u|%g|%s|%F' "$FM_PATH" 2>/dev/null)
-        else
+            FM_STATUS=$?
+        elif has_command ls; then
             FM_META=$(ls -ldn "$FM_PATH" 2>/dev/null)
+            FM_STATUS=$?
+        else
+            record file-meta-unavailable "$FM_PATH"
+        fi
+        if [ "$FM_STATUS" -ne 0 ] || [ -z "$FM_META" ]; then
+            record file-meta-error "$FM_PATH|$FM_STATUS"
+            COLLECT_FAILURE=1
+            return
         fi
         FM_LINK=
-        if [ -L "$FM_PATH" ] && has_command readlink; then
-            FM_LINK=$(readlink "$FM_PATH" 2>/dev/null)
+        if [ -L "$FM_PATH" ]; then
+            if ! has_command readlink; then
+                FM_LINK=unavailable
+                record file-link-unavailable "$FM_PATH"
+            else
+                FM_LINK=$(readlink "$FM_PATH" 2>/dev/null)
+                FM_STATUS=$?
+                if [ "$FM_STATUS" -ne 0 ]; then
+                    record file-link-error "$FM_PATH|$FM_STATUS"
+                    COLLECT_FAILURE=1
+                    return
+                fi
+            fi
         fi
         record file "$FM_PATH|present|$FM_META|$FM_LINK"
     else
@@ -127,33 +228,135 @@ file_meta() {
 
 hash_file() {
     H_PATH=$1
-    if [ ! -f "$H_PATH" ]; then
+    if [ ! -e "$H_PATH" ] && [ ! -L "$H_PATH" ]; then
         record hash "$H_PATH|absent"
-    elif has_command sha256sum; then
+        return
+    fi
+    if [ ! -f "$H_PATH" ]; then
+        record hash-error "$H_PATH|not-regular"
+        COLLECT_FAILURE=1
+        return
+    fi
+    if [ ! -r "$H_PATH" ]; then
+        record hash-error "$H_PATH|unreadable"
+        COLLECT_FAILURE=1
+        return
+    fi
+    H_PROVIDER=
+    if has_command sha256sum; then
+        H_PROVIDER=sha256sum
         H_VALUE=$(sha256sum "$H_PATH" 2>/dev/null)
+        H_STATUS=$?
         H_DIGEST=${H_VALUE%% *}
-        record hash "$H_PATH|$H_DIGEST"
     elif has_command openssl; then
+        H_PROVIDER=openssl
         H_VALUE=$(openssl dgst -sha256 "$H_PATH" 2>/dev/null)
+        H_STATUS=$?
         H_DIGEST=${H_VALUE##* }
-        record hash "$H_PATH|$H_DIGEST"
     else
         record hash "$H_PATH|unavailable"
+        return
     fi
+    H_NONHEX=$(printf '%s' "$H_DIGEST" | tr -d '0123456789abcdefABCDEF' 2>/dev/null)
+    H_VALIDATE_STATUS=$?
+    H_FORMAT_OK=0
+    case "$H_PROVIDER" in
+        sha256sum)
+            if [ "$H_VALUE" = "$H_DIGEST  $H_PATH" ] || [ "$H_VALUE" = "$H_DIGEST *$H_PATH" ]; then H_FORMAT_OK=1; fi
+            ;;
+        openssl)
+            if [ "$H_VALUE" = "SHA256($H_PATH)= $H_DIGEST" ] || [ "$H_VALUE" = "SHA2-256($H_PATH)= $H_DIGEST" ]; then H_FORMAT_OK=1; fi
+            ;;
+    esac
+    if [ "$H_STATUS" -ne 0 ] || [ "$H_VALIDATE_STATUS" -ne 0 ] || [ "${#H_DIGEST}" -ne 64 ] || [ -n "$H_NONHEX" ] || [ "$H_FORMAT_OK" -ne 1 ]; then
+        record hash-error "$H_PATH|provider=$H_PROVIDER|status=$H_STATUS|validation=$H_VALIDATE_STATUS|digest=$H_DIGEST"
+        COLLECT_FAILURE=1
+        return
+    fi
+    record hash "$H_PATH|$H_DIGEST"
 }
 
 capture_command() {
     CC_LABEL=$1
     shift
     CC_CMD=$1
-    if has_command "$CC_CMD"; then
-        "$@" 2>/dev/null | while IFS= read -r CC_LINE
+    if ! has_command "$CC_CMD"; then
+        record missing-command "$CC_CMD"
+        return
+    fi
+    CC_VALUE=$("$@" 2>/dev/null)
+    CC_STATUS=$?
+    if [ "$CC_STATUS" -ne 0 ]; then
+        record command-error "$CC_CMD|$CC_STATUS"
+        COLLECT_FAILURE=1
+        return
+    fi
+    if [ -n "$CC_VALUE" ]; then
+        while IFS= read -r CC_LINE
         do
             record "$CC_LABEL" "$CC_LINE"
-        done
+        done <<IONIQ_CAPTURE_COMMAND_LINES
+$CC_VALUE
+IONIQ_CAPTURE_COMMAND_LINES
     else
-        record missing-command "$CC_CMD"
+        record "$CC_LABEL" ""
     fi
+}
+
+capture_process_path() {
+    P_PID=$1
+    P_DIR=$2
+    P_ENV_TEXT=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null); P_ENV_STATUS=$?; P_PATH=$(printf '%s\n' "$P_ENV_TEXT" | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null); P_PATH_STATUS=$?
+    if [ "$P_ENV_STATUS" -ne 0 ] || [ "$P_PATH_STATUS" -ne 0 ] || [ -z "$P_PATH" ]; then
+        P_PATH_EMPTY=0
+        [ -n "$P_PATH" ] || P_PATH_EMPTY=1
+        record process-read-error "$P_PID|env-path|producer=$P_ENV_STATUS|parser=$P_PATH_STATUS|empty=$P_PATH_EMPTY"
+        COLLECT_FAILURE=1
+    fi
+    record process-path "$P_PID|$P_PATH"
+}
+
+capture_unit() {
+    U_NAME=$1
+    if has_command systemctl; then
+        U_RAW=$(systemctl show "$U_NAME" -p LoadState -p ActiveState -p SubState -p UnitFileState 2>/dev/null)
+        U_STATUS=$?
+        if [ "$U_STATUS" -ne 0 ]; then
+            record unit-error "$U_NAME|systemctl-status=$U_STATUS"
+            COLLECT_FAILURE=1
+            return
+        fi
+        U_STATE=$(printf '%s\n' "$U_RAW" | tr '\012' ';' 2>/dev/null)
+        U_TR_STATUS=$?
+        if [ "$U_TR_STATUS" -ne 0 ]; then
+            record unit-error "$U_NAME|tr-status=$U_TR_STATUS"
+            COLLECT_FAILURE=1
+            return
+        fi
+        record unit "$U_NAME|$U_STATE"
+    else
+        record unit "$U_NAME|systemctl-unavailable"
+    fi
+}
+
+capture_interface() {
+    N_DIR=$1
+    N_NAME=${N_DIR#/sys/class/net/}
+    read_scalar interface-operstate "$N_DIR/operstate"; N_OPER=$RS_VALUE; N_OPER_STATE=$RS_STATE
+    read_scalar interface-carrier "$N_DIR/carrier"; N_CARRIER=$RS_VALUE; N_CARRIER_STATE=$RS_STATE
+    read_scalar interface-type "$N_DIR/type"; N_TYPE=$RS_VALUE; N_TYPE_STATE=$RS_STATE
+    read_scalar interface-ifindex "$N_DIR/ifindex"; N_IFINDEX=$RS_VALUE; N_IFINDEX_STATE=$RS_STATE
+    read_scalar interface-iflink "$N_DIR/iflink"; N_IFLINK=$RS_VALUE; N_IFLINK_STATE=$RS_STATE
+    read_link_value interface-driver "$N_DIR/device/driver"; N_DRIVER=$RL_VALUE
+    if [ "$N_OPER_STATE" != present ] || [ "$N_TYPE_STATE" != present ] || [ "$N_IFINDEX_STATE" != present ] || [ "$N_IFLINK_STATE" != present ]; then
+        record interface-read-error "$N_NAME|required-scalar-missing"
+        COLLECT_FAILURE=1
+    fi
+    if [ "$N_CARRIER_STATE" = error ] || [ "$RL_STATE" = error ]; then
+        record interface-read-error "$N_NAME|optional-query-error"
+        COLLECT_FAILURE=1
+    fi
+    record interface "$N_NAME|$N_OPER|$N_CARRIER|$N_TYPE|$N_IFINDEX|$N_IFLINK|$N_DRIVER"
 }
 
 if ! has_command od || ! has_command tr; then
@@ -165,15 +368,28 @@ fi
 
 begin_section meta
 record schema ioniq-bench-state/v1
-if has_command date; then record utc "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null)"; fi
-record self-label "$(cat /proc/self/attr/current 2>/dev/null)"
-end_section meta 0
+if has_command date; then
+    M_UTC=$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null)
+    M_STATUS=$?
+    if [ "$M_STATUS" -eq 0 ] && [ -n "$M_UTC" ]; then
+        record utc "$M_UTC"
+    else
+        record command-error "date|$M_STATUS"
+        COLLECT_FAILURE=1
+    fi
+else
+    record missing-command date
+fi
+read_scalar self-label /proc/self/attr/current
+record self-label "$RS_VALUE"
+end_section meta "$COLLECT_FAILURE"
 
 begin_section identity
 capture_command uname uname -a
 capture_file os-release /etc/os-release
-if [ -r /proc/cmdline ]; then
-    I_CMDLINE=$(cat /proc/cmdline 2>/dev/null)
+read_scalar kernel-cmdline /proc/cmdline
+if [ "$RS_STATE" = present ]; then
+    I_CMDLINE=$RS_VALUE
     for I_ARG in $I_CMDLINE
     do
         case "$I_ARG" in
@@ -182,20 +398,44 @@ if [ -r /proc/cmdline ]; then
                 ;;
         esac
     done
+    I_DIGEST=
+    I_STATUS=127
+    I_PROVIDER=
     if has_command sha256sum; then
-        record cmdline-sha256 "$(printf '%s' "$I_CMDLINE" | sha256sum 2>/dev/null | awk '{ print $1 }' 2>/dev/null)"
+        I_PROVIDER=sha256sum
+        I_VALUE=$(printf '%s' "$I_CMDLINE" | sha256sum 2>/dev/null)
+        I_STATUS=$?
+        I_DIGEST=${I_VALUE%% *}
     elif has_command openssl; then
-        record cmdline-sha256 "$(printf '%s' "$I_CMDLINE" | openssl dgst -sha256 2>/dev/null | awk '{ print $NF }' 2>/dev/null)"
-    else
-        record cmdline-sha256 unavailable
+        I_PROVIDER=openssl
+        I_VALUE=$(printf '%s' "$I_CMDLINE" | openssl dgst -sha256 2>/dev/null)
+        I_STATUS=$?
+        I_DIGEST=${I_VALUE##* }
     fi
-else
-    record missing-file /proc/cmdline
+    if [ -z "$I_PROVIDER" ]; then
+        record cmdline-sha256 unavailable
+    else
+        I_NONHEX=$(printf '%s' "$I_DIGEST" | tr -d '0123456789abcdefABCDEF' 2>/dev/null)
+        I_VALIDATE_STATUS=$?
+        I_FORMAT_OK=0
+        case "$I_PROVIDER" in
+            sha256sum) [ "$I_VALUE" = "$I_DIGEST  -" ] && I_FORMAT_OK=1 ;;
+            openssl)
+                if [ "$I_VALUE" = "SHA256(stdin)= $I_DIGEST" ] || [ "$I_VALUE" = "SHA2-256(stdin)= $I_DIGEST" ] || [ "$I_VALUE" = "SHA256((stdin))= $I_DIGEST" ] || [ "$I_VALUE" = "SHA2-256((stdin))= $I_DIGEST" ]; then I_FORMAT_OK=1; fi
+                ;;
+        esac
+        if [ "$I_STATUS" -ne 0 ] || [ "$I_VALIDATE_STATUS" -ne 0 ] || [ "${#I_DIGEST}" -ne 64 ] || [ -n "$I_NONHEX" ] || [ "$I_FORMAT_OK" -ne 1 ]; then
+            record cmdline-sha256-error "provider=$I_PROVIDER|status=$I_STATUS|validation=$I_VALIDATE_STATUS|digest=$I_DIGEST"
+            COLLECT_FAILURE=1
+        else
+            record cmdline-sha256 "$I_DIGEST"
+        fi
+    fi
 fi
 capture_file kernel-version /proc/version
 for I_PATH in /etc/version /etc/issue /app/etc/version /app/share/version /update/updateVersionInfo
 do
-    if [ -r "$I_PATH" ]; then capture_file identity-file "$I_PATH"; fi
+    capture_file identity-file "$I_PATH"
 done
 end_section identity 0
 
@@ -205,18 +445,53 @@ for P_DIR in /proc/[0-9]*
 do
     [ -d "$P_DIR" ] || continue
     P_PID=${P_DIR#/proc/}
+    if [ ! -r "$P_DIR/status" ]; then
+        record process-read-error "$P_PID|status-unreadable"
+        COLLECT_FAILURE=1
+        continue
+    fi
     P_UID=$(awk '$1 == "Uid:" { print $2; exit }' "$P_DIR/status" 2>/dev/null)
+    P_STATUS=$?
     P_GID=$(awk '$1 == "Gid:" { print $2; exit }' "$P_DIR/status" 2>/dev/null)
-    P_COMM=$(cat "$P_DIR/comm" 2>/dev/null)
-    P_EXE=$(readlink "$P_DIR/exe" 2>/dev/null)
-    P_LABEL=$(cat "$P_DIR/attr/current" 2>/dev/null)
+    P_GID_STATUS=$?
+    if [ "$P_STATUS" -ne 0 ] || [ "$P_GID_STATUS" -ne 0 ] || [ -z "$P_UID" ] || [ -z "$P_GID" ]; then
+        record process-read-error "$P_PID|status-parse|uid=$P_STATUS|gid=$P_GID_STATUS"
+        COLLECT_FAILURE=1
+        continue
+    fi
+    read_scalar process-comm "$P_DIR/comm"
+    P_COMM=$RS_VALUE
+    if [ "$RS_STATE" != present ]; then
+        record process-read-error "$P_PID|comm-$RS_STATE"
+        COLLECT_FAILURE=1
+        continue
+    fi
+    read_link_value process-exe "$P_DIR/exe"
+    P_EXE=$RL_VALUE
+    if [ "$RL_STATE" = error ]; then
+        record process-read-error "$P_PID|exe-error"
+    fi
+    read_scalar process-label "$P_DIR/attr/current"
+    P_LABEL=$RS_VALUE
+    if [ "$RS_STATE" = error ]; then
+        record process-read-error "$P_PID|label-error"
+    fi
     P_CMD=
     P_PATH=
     case "$P_COMM" in
         connmand|ofonod|wpa_supplicant|supplicantmanager|vbtd|bluetoothd|dropbear|dropbearmulti|AppLauncher|AppDMClient|AppScomoDM|AppUpgrade)
-            P_CMD=$(tr '\000' ' ' < "$P_DIR/cmdline" 2>/dev/null)
-            P_PATH=$(tr '\000' '\n' < "$P_DIR/environ" 2>/dev/null | awk -F= '$1 == "PATH" { sub(/^PATH=/, ""); print; exit }' 2>/dev/null)
-            record process-path "$P_PID|$P_PATH"
+            if [ ! -r "$P_DIR/cmdline" ]; then
+                record process-read-error "$P_PID|cmdline-unreadable"
+                COLLECT_FAILURE=1
+            else
+                P_CMD=$(tr '\000' ' ' < "$P_DIR/cmdline" 2>/dev/null)
+                P_CMD_STATUS=$?
+                if [ "$P_CMD_STATUS" -ne 0 ]; then
+                    record process-read-error "$P_PID|cmdline-$P_CMD_STATUS"
+                    COLLECT_FAILURE=1
+                fi
+            fi
+            capture_process_path "$P_PID" "$P_DIR"
             ;;
     esac
     case "$P_COMM" in vbtd|bluetoothd) BT_DAEMON_RUNNING=1 ;; esac
@@ -226,20 +501,15 @@ end_section processes 0
 
 begin_section smack
 capture_file smack-mounts /proc/mounts
-if [ -r /sys/fs/smackfs/load2 ]; then capture_file smack-rule /sys/fs/smackfs/load2; fi
-if [ -r /sys/fs/smackfs/onlycap ]; then capture_file smack-onlycap /sys/fs/smackfs/onlycap; fi
-if [ -r /sys/fs/smackfs/ambient ]; then capture_file smack-ambient /sys/fs/smackfs/ambient; fi
+capture_file smack-rule /sys/fs/smackfs/load2
+capture_file smack-onlycap /sys/fs/smackfs/onlycap
+capture_file smack-ambient /sys/fs/smackfs/ambient
 end_section smack 0
 
 begin_section units
 for U_NAME in connman.service ofono.service ofono.path supplicantmanager.service supplicantmanager.path vbtd.service dropbear.socket dropbear@.service dropbearkey.service ApplicationLauncher.service MediaBrowser.service dbus.service
  do
-    if has_command systemctl; then
-        U_STATE=$(systemctl show "$U_NAME" -p LoadState -p ActiveState -p SubState -p UnitFileState 2>/dev/null | tr '\012' ';' 2>/dev/null)
-        record unit "$U_NAME|$U_STATE"
-    else
-        record unit "$U_NAME|systemctl-unavailable"
-    fi
+    capture_unit "$U_NAME"
  done
 file_meta /tmp/no_unece
 file_meta /tmp/no_isa
@@ -252,14 +522,7 @@ begin_section interfaces
 for N_DIR in /sys/class/net/*
 do
     [ -d "$N_DIR" ] || continue
-    N_NAME=${N_DIR#/sys/class/net/}
-    N_OPER=$(cat "$N_DIR/operstate" 2>/dev/null)
-    N_CARRIER=$(cat "$N_DIR/carrier" 2>/dev/null)
-    N_TYPE=$(cat "$N_DIR/type" 2>/dev/null)
-    N_IFINDEX=$(cat "$N_DIR/ifindex" 2>/dev/null)
-    N_IFLINK=$(cat "$N_DIR/iflink" 2>/dev/null)
-    N_DRIVER=$(readlink "$N_DIR/device/driver" 2>/dev/null)
-    record interface "$N_NAME|$N_OPER|$N_CARRIER|$N_TYPE|$N_IFINDEX|$N_IFLINK|$N_DRIVER"
+    capture_interface "$N_DIR"
 done
 capture_command ip-link ip -o link show
 capture_command ip-address ip -o address show
@@ -293,10 +556,13 @@ else
 fi
 for B_PROFILE in /app/share/BluetoothHMI/qml/EngMode/profile.conf /app/share/BluetoothHMI/qml/EngMode/profile-63.conf
  do
-    if [ -r "$B_PROFILE" ]; then
-        capture_command bluetooth-profile grep -E '^[[:space:]]*(PAN|A2DP|AVRCP|HFP|HSP|PBAP|MAP|SPP)[[:space:]]*:' "$B_PROFILE"
-    else
+    if [ ! -e "$B_PROFILE" ] && [ ! -L "$B_PROFILE" ]; then
         record missing-file "$B_PROFILE"
+    elif [ ! -r "$B_PROFILE" ]; then
+        record unreadable-file "$B_PROFILE"
+        COLLECT_FAILURE=1
+    else
+        capture_command bluetooth-profile grep -E '^[[:space:]]*(PAN|A2DP|AVRCP|HFP|HSP|PBAP|MAP|SPP)[[:space:]]*:' "$B_PROFILE"
     fi
  done
 file_meta /app/bin/vbtd
@@ -315,26 +581,35 @@ begin_section storage
 capture_file fstab /etc/fstab
 capture_file partitions /proc/partitions
 capture_file mounts /proc/mounts
-for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo system_update_completed disableEncryptionUpdate
+for S_FLAG in activeNaviPath activeResourcePath updateVersionInfo fota_status showEncryptionMenu disableEncryptionUpdate force_launch system_update_complete system_update_completed firmware_update_complete scheduled_update_complete scheduled_update_complete_for_DM updateCompleteTime
  do
-    if [ -r "/update/$S_FLAG" ]; then capture_file update-flag "/update/$S_FLAG"; else record update-flag "/update/$S_FLAG|absent"; fi
+    capture_file update-flag "/update/$S_FLAG"
+ done
+for S_DIR in /update/sysroot /update/usb/upgrade /update/usb/bin
+ do
+    file_meta "$S_DIR"
  done
 end_section storage 0
 
 begin_section hashes
-for H_META in /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key
+for H_META in /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade
  do
     file_meta "$H_META"
  done
-for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
+for H_TARGET in /usr/sbin/connmand /usr/sbin/ofonod /usr/sbin/wpa_supplicant /app/bin/supplicantmanager /app/bin/vbtd /tmp/vbtd /lib/systemd/system/vbtd.service /etc/setup_bt_patchram.sh /usr/sbin/dropbear /usr/sbin/dropbearmulti /bin/busybox /usr/bin/unzip /usr/bin/unzip64 /app/bin/AppLauncher /app/bin/AppDMClient /app/bin/AppScomoDM /app/bin/AppUpgrade /app/bin/CarOption.csv /app/share/AppUpgrade/AppUpgrade /app/share/AppUpgrade/DecryptToPIPE /app/share/AppUpgrade/teruten5_pub.key /update/usb/bin/AppUpgrade /update/usb/bin/.lge.upgrade.xml /tmp/AppUpgrade /lib/modules/4.1.27-abl/kernel/sound/core/seq/snd-seq.ko
  do
     hash_file "$H_TARGET"
  done
 end_section hashes 0
 
 begin_section complete
-record result complete
-end_section complete 0
+if [ "$COLLECT_FAILURE" -eq 0 ]; then
+    record result complete
+    end_section complete 0
+else
+    record result collection-error
+    end_section complete 1
+fi
 '''
 
 
@@ -348,7 +623,8 @@ def audit_script(script: str) -> list[str]:
             continue
         # Stderr suppression to /dev/null is non-persistent and is the only
         # output redirection allowed. Reading allowlisted cmdline/PATH fields
-        # through tr is the only input redirection allowed.
+        # and the two fixed in-memory line-loop here-documents are the only
+        # input redirections allowed.
         redirection_check = (
             line.replace("2>/dev/null", "")
             .replace(">/dev/null", "")
@@ -362,6 +638,11 @@ def audit_script(script: str) -> list[str]:
             "<" in redirection_check
             and '< "$P_DIR/cmdline"' not in redirection_check
             and '< "$P_DIR/environ"' not in redirection_check
+            and redirection_check
+            not in (
+                "done <<IONIQ_CAPTURE_FILE_LINES",
+                "done <<IONIQ_CAPTURE_COMMAND_LINES",
+            )
         ):
             violations.append(f"line {lineno}: unexpected input redirection")
         for pattern in FORBIDDEN_LINE_PATTERNS:
@@ -585,6 +866,15 @@ def parse_capture(data: bytes) -> dict[str, Any]:
     zero_status = all(section["end_status"] == 0 for section in sections if section["complete"])
     if not zero_status:
         warnings.append("one or more section end statuses are nonzero")
+
+    fatal_values = [
+        record["value"]
+        for section in sections
+        for record in section["records"]
+        if record["key"] == "fatal"
+    ]
+    if fatal_values:
+        warnings.append("probe reported fatal collection error")
 
     meta_schema = False
     complete_section = False

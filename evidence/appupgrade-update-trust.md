@@ -18,9 +18,11 @@ and `.lge.upgrade.xml`, parses a direct `<version>` child, and applies two versi
 comparisons before staging. On its unequal source/destination branch,
 `/update/disableEncryptionUpdate` selects a result contract: absent requires
 retained verifier returns `0/0`; present requires `-404/-404`. An equal
-pre-staged AppUpgrade path skips both contracts and remains caller-reachability
-work. In SCOMO, the recovered MASS_PRODUCT/PENETRATION startup path explicitly ignores
-that marker. This reconciles the apparently conflicting code, but it does
+pre-staged AppUpgrade path skips both contracts. Caller reconstruction now shows
+that the equal source is intentionally reached for local `/update/usb/bin`
+relaunch, including an exact `force_launch=run` state contract; it is not an
+unresolved hypothetical branch. In SCOMO, the recovered
+MASS_PRODUCT/PENETRATION startup path explicitly ignores that marker. This reconciles the apparently conflicting code, but it does
 **not** prove that a marker-bearing plaintext package passes later model/region,
 payload binding, write, slot, boot, or health checks.
 
@@ -303,11 +305,37 @@ Later result interpretation is path- and mode-specific:
   path.
 
 The XML parser performs a separate later verifier/open sequence. No immutable
-snapshot binds it to the earlier retained result. Neither this TOCTOU boundary
-nor the equal pre-staged branch proves a bypass; their normal caller
-reachability and source stability remain unresolved. Marker presence is an
-explicit local non-encrypted-mode contract on the unequal path, not proof that
-USB media can create the marker or that later payloads are accepted. See
+snapshot binds it to the earlier retained result.
+
+Caller and state reconstruction resolves the equal path's role:
+
+- `slotUsbMounted(QString, int, QString, QString)` at `0x84700` stores its mount
+  path in the `QString` at `this+0x128` when index `1` is reported and directly
+  passes that path to staging at `0x849a7`;
+- `slotOnStandbyStatus(int)` at `0x87400` can pass the stored mount path, and its
+  status-12 workflow also contains a fixed `/update/usb/bin` call at `0x882f3`;
+- helper `0x87150` reads the first line of `/update/force_launch`, requires exact
+  case-sensitive text `run`, and calls staging with `/update/usb/bin` at
+  `0x87395`; the standby workflow calls the helper at `0x87ee9`;
+- the exact FUMO child writes `force_launch=run` in system- and firmware-mode
+  progress-zero branches at `0x11ff4c..0x11ff71` and
+  `0x1205a9..0x1205cb`, and in an additional same-handler branch at
+  `0x120371..0x1203a7`; all three are conditional on global
+  `0x6d4f94 != 1`;
+- completion cleanup at `0xfd3d0..0xfd9bb` overwrites the existing force marker
+  with `none`, and force-relaunch helper `0x87150` does not call staging for that
+  value.
+
+Thus the equal branch is an intended pre-staged local relaunch and omits
+repeating the two AppDMClient result-pair contracts. This does not prove direct
+removable-media control of `/update/usb/bin`, unauthenticated creation of the
+force marker, immutable staging across the relaunch interval, or removal of
+inner payload/target checks. Entry into the progress callback has not yet been
+bound to a named completed signature/authentication state. The separate-open
+TOCTOU boundary remains unresolved, but normal equal-path software reachability
+no longer is. Marker presence is still an explicit local non-encrypted-mode
+contract on the unequal path, not proof that USB media can create it or that
+later payloads are accepted. See
 `evidence/appdmclient-fumo-usb-eligibility.md`.
 
 ## Marker semantics differ by child
@@ -398,9 +426,9 @@ The verdicts below are deliberately separate.
 | descriptor decryption | SCOMO copies authenticated XML without decrypting it there; FUMO XML-reader zero selects `DecryptToPIPE`, while nonzero enters direct parsing; its verifier call is separate from earlier retained staging results and no immutable snapshot is proved |
 | version eligibility | FUMO exact two-comparison gate proven: strict current-reference upgrade plus equality-allowed second reference; SCOMO child semantics remain separate |
 | model/region eligibility | Filename syntax only in AppScomoDM; FUMO explicit section-zero vehicle check is disabled at reviewed USB calls, but P5-family and later AppUpgrade `car-variant`/target checks remain |
-| FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and caller reachability is unresolved |
+| FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and is proven reachable through intended local `/update/usb/bin` relaunch state |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, while its equal path skips those pair checks; signed ranges, `-404` meaning, equal-path provenance, source stability, and child payload binding remain incomplete |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, while its intended local-relaunch equal path skips those repeated pair checks; signed ranges, `-404` meaning, source stability, authentication state before `force_launch=run`, and child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |

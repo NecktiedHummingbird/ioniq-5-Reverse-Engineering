@@ -58,9 +58,15 @@ oFono device/unit state, local Bluetooth SDP/profile state, Dropbear chain
 completeness, and A/B/update flags. Update-specific records include the live
 command lines for AppLauncher/AppDMClient/AppScomoDM/AppUpgrade and hashes for
 BusyBox, both unzip providers, those applications, `CarOption.csv`,
-`DecryptToPIPE`, and `teruten5_pub.key`. Symlink metadata is recorded separately
-from hash resolution. Missing commands/files remain explicit records. An incomplete terminal marker makes the JSON incomplete rather than
-silently treating a truncated serial capture as authoritative. Do not replace
+`DecryptToPIPE`, and `teruten5_pub.key`. It also records the FUMO relaunch and
+completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
+`/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
+`/tmp/AppUpgrade`. Symlink metadata is recorded separately from hash resolution.
+Missing commands/files remain explicit records. Unreadable files, failed
+reads/metadata queries/passive commands, and malformed hash output set a
+nonzero terminal collection status; an incomplete or nonzero terminal marker
+makes the JSON incomplete rather than silently treating a failed or truncated
+serial capture as authoritative. Do not replace
 this generated probe with an arbitrary script under the same filename.
 
 ## Phase 2 — network surface (only if the unit reaches a network)
@@ -87,8 +93,10 @@ is RSA-signed and will be rejected rather than rolled back.
 
 Capture `/etc/fstab` and, if the `/update` partition is readable, its flag files
 (`activeNaviPath`, `activeResourcePath`, `updateVersionInfo`,
-`system_update_completed`) to identify which of `mmcblk0p3` / `mmcblk0p5` is
-currently active.
+`system_update_completed`, `force_launch`, and the system/firmware/scheduled
+completion markers) to identify which of `mmcblk0p3` / `mmcblk0p5` is currently
+active and whether a local updater relaunch is pending. Read only; do not create,
+overwrite, or remove any marker.
 
 ```
 # once a rootfs tree exists (extracted or mounted read-only)

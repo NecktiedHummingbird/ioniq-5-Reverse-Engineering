@@ -30,6 +30,10 @@ Function boundaries from exact unwind metadata:
 
 - USB launch/staging owner: `0x7ff60..0x830e4`;
 - `checkVersionUSBUpdate`: `0x67e30..0x69144`;
+- first-line file reader: `0x76160..0x7640b`;
+- `slotUsbMounted(QString, int, QString, QString)`: `0x84700..0x84e2d`;
+- force-relaunch helper: `0x87150..0x873fb`;
+- `slotOnStandbyStatus(int)`: `0x87400..0x886e7`;
 - version comparator: `0xcab90..0xcbd4d`;
 - XML reader: `0xe1e90..0xe3166`;
 - USB-version wrapper: `0xe3170..0xe33ae`;
@@ -124,10 +128,71 @@ The staging function constructs source `<source>/AppUpgrade` at
 
 If they are equal, `0x80bb2` jumps to `0x80ea7`, skipping both the marker helper
 and the verifier-result pair checks below. This pre-staged/equal-path branch
-continues through later existence/staging/launch logic. Exact callers and state
-transitions have not yet proved whether the recovered normal FUMO USB route can
-supply `/update/usb/bin` as its source. Therefore the result-pair contracts are
-**conditional on unequal source and destination**, not universal FUMO gates.
+continues through later existence/staging/launch logic. The result-pair
+contracts are therefore **conditional on unequal source and destination**, not
+universal FUMO gates.
+
+### Caller and source provenance is now resolved
+
+The equal path is an intended local relaunch route, not merely a hypothetical
+comparison outcome:
+
+- the constructor initializes the `QString` at `this+0x128` to Qt shared-null
+  at `0x67431` and clears byte `this+0x11c` at `0x674b0`;
+- exact string metadata names function `0x84700` as
+  `AppDMClientEngine::slotUsbMounted(QString, int, QString, QString)`;
+- when its integer index equals `1`, `0x848d8..0x848ee` copies the callback's
+  mount-path argument into `this+0x128` and sets `this+0x11c=1`;
+- the same callback directly passes that mount path to staging at `0x849a7`;
+- later callers, including `0x850de`, `0x8680c`, `0x86f8c`, and `0x87858`, load
+  the same member when mounted;
+- exact string metadata names function `0x87400` as
+  `AppDMClientEngine::slotOnStandbyStatus(int)`. Its status-12 workflow also has
+  a fixed `/update/usb/bin` staging call at `0x882f3` when local state selects
+  the pre-staged route.
+
+The separate helper at `0x87150` implements a second fixed local route. It asks
+`0x76160` to read the first line of `/update/force_launch`, compares that line
+case-sensitively with exact text `run` at `0x87233..0x87256`, and returns on any
+mismatch. Equality reaches `0x87379..0x87395`, constructs exact directory
+`/update/usb/bin`, and calls staging. Because staging appends `/AppUpgrade` to
+its source directory, this makes source and destination both
+`/update/usb/bin/AppUpgrade` and reaches the `0x80bb2 → 0x80ea7` jump.
+`slotOnStandbyStatus` calls this helper at `0x87ee9`.
+
+The exact embedded FUMO child supplies the other half of this relaunch contract.
+Its file writer at `0x140a50` opens the caller-provided path for write/truncate,
+writes the provided UTF-8 value, flushes, and calls `fsync`. In its progress
+handler:
+
+- firmware-mode progress zero writes `processing` to
+  `/update/firmware_update_complete` at `0x11ff11..0x11ff36`, then, unless
+  global mode `0x6d4f94` equals `1`, writes `run` to
+  `/update/force_launch` at `0x11ff4c..0x11ff71`;
+- system-mode progress zero performs the corresponding writes at
+  `0x120571..0x120593` and `0x1205a9..0x1205cb`;
+- an additional branch in the same progress handler writes the same force
+  path/value at `0x120371..0x1203a7`, again guarded by global
+  `0x6d4f94 != 1`;
+- another exact writer site for the same force path/value is present at
+  `0x1151c3..0x1151fa`.
+
+Completion cleanup at `0xfd3d0..0xfd9bb` first removes
+`/update/system_update_completed` through helper `0x13feb0`. For each remaining
+existing status path, including `/update/force_launch`, it writes exact text
+`none`; the force-path overwrite is at `0xfd67b..0xfd6e9`. The force-relaunch
+helper therefore calls staging only while the marker's first line is exactly
+`run`, not merely while the file exists; AppDMClient's other staging callers do
+not all consult this marker.
+
+This proves normal software reachability and provenance of the equal local
+source. It does **not** prove that removable media directly controls
+`/update/usb/bin`, that an unauthenticated package creates `force_launch`, or
+that files remain immutable between initial staging and relaunch. Entry into
+the inner progress callback has not yet been bound to a named completed
+signature/payload-authentication state. The equal branch is best described as
+an intended pre-staged relaunch that omits repeated AppDMClient pair checks, not
+as a first-entry authentication bypass.
 
 On the unequal-path branch, helper `0x696f0` tests
 `/update/disableEncryptionUpdate` and returns the inverse of `QFile::exists()`.
@@ -161,10 +226,10 @@ the `Error unencrypted update. (Unknown image type.)` failure path at
 
 The marker is a local `/update` state file, not a USB member. Its existence must
 therefore be observed or established through a separate privileged path. This
-unequal-path code proves an intentional plaintext-mode contract; it does not
-prove that a removable device can create the marker, that the equal-path branch
-is normally reachable, or that arbitrary plaintext payloads are accepted end to
-end.
+unequal-path code proves an intentional plaintext-mode contract; the separate
+equal path is now proven normally reachable only as the local relaunch described
+above. Neither fact proves that removable media can create the mode marker or
+that arbitrary plaintext payloads are accepted end to end.
 
 ## Eligibility comparison
 
@@ -206,7 +271,8 @@ interpreted conditionally later. Consequently:
   second verifier call;
 - the unequal source/destination branch requires retained outer results `0/0`
   when the marker is absent or `-404/-404` when it is present;
-- the equal source/destination branch skips both pair contracts;
+- the equal source/destination branch skips both pair contracts and is reached
+  by the intended `/update/usb/bin` local-relaunch workflows described above;
 - the outer and XML-reader verifier calls are separate opens without a proved
   immutable snapshot;
 - eligibility success is not payload acceptance;
@@ -219,9 +285,10 @@ No verifier bypass or accepted modified update is established.
 
 1. Name verifier return `-404` from exact linked verifier semantics rather than
    only its control-flow role and adjacent log text.
-2. Trace callers/source state to determine whether the equal
-   `/update/usb/bin/AppUpgrade` path is reachable on normal FUMO USB entry, and
-   analyze source-file stability across the two XML verifier/open sequences.
+2. Analyze source-file stability from the initial unequal staging operation,
+   through the separate XML verifier/open sequences, into the now-proven local
+   relaunch; name the authentication state that precedes the progress-zero
+   `force_launch=run` writes.
 3. Recover the second stored version reference and boot-state enum names.
 4. Trace the XML destination helper and prove whether encrypted XML is copied or
    transformed at each branch.
@@ -230,4 +297,5 @@ No verifier bypass or accepted modified update is established.
 6. Reconstruct payload digests/binding, inactive-slot writing, boot selection,
    boot-time trust, health, and mark-good.
 7. On a disconnected owner bench, capture hashes, route arguments, marker state,
-   uid/SMACK label, effective `PATH`, and updater state before any active test.
+   uid/SMACK label, effective `PATH`, staged `/update/usb/bin` identities, and
+   updater state before any active test.

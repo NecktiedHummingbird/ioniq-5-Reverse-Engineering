@@ -36,10 +36,16 @@ followed by stateful service/CAN/persistence reconstruction.
   equality-allowed second reference. On the unequal source/destination branch,
   marker absence requires retained AppUpgrade/XML verifier results `0/0` and
   marker presence requires `-404/-404`. An equal pre-staged path skips both
-  checks; normal caller reachability and source stability across the separate
-  XML verify/open sequence remain unresolved. Reviewed USB calls disable one
-  section-zero vehicle comparison, but P5-family and later AppUpgrade
-  `car-variant`/target checks remain. See
+  checks. Caller reconstruction now proves that path is an intended local
+  relaunch: `slotUsbMounted` stores its path in `this+0x128`, standby status 12
+  can use fixed `/update/usb/bin`, and a helper relaunches from that directory
+  only when the first line of `/update/force_launch` is exact `run`. The inner
+  FUMO progress handler writes that pair in system/firmware progress-zero
+  branches and completion cleanup changes it to `none`. Direct USB control of
+  the local staging directory, authentication state before the marker write,
+  and source stability across separate opens remain unresolved. Reviewed USB
+  calls disable one section-zero vehicle comparison, but P5-family and later
+  AppUpgrade `car-variant`/target checks remain. See
   `evidence/appdmclient-fumo-usb-eligibility.md`.
 - **V-020 added and independently corrected:** stock `/usr/bin/unzip` resolves
   to BusyBox SHA-256 `95bab633...bd9ebc`, version 1.23.2. It accepts method 8,
@@ -67,8 +73,13 @@ followed by stateful service/CAN/persistence reconstruction.
   the inert Dropbear review: installed hashes, process uid/gid and effective
   SMACK labels, unit state/markers, listeners/interfaces, passive Wi-Fi/P2P
   state, oFono devices, local Bluetooth SDP/profile state, Dropbear-chain files,
-  and A/B/update flags. Missing commands/files and truncated sections remain
-  explicit in deterministic JSON.
+  and A/B/update flags. It now also captures the FUMO relaunch lifecycle
+  (`force_launch` and completion markers), `/update/sysroot`,
+  `/update/usb/upgrade`, `/update/usb/bin`, and hashes/metadata for staged
+  AppUpgrade/XML and `/tmp/AppUpgrade`. Missing commands/files remain explicit;
+  unreadable files and failed reads, metadata queries, commands, or malformed
+  hash output set a nonzero terminal status so the parser fails closed instead
+  of returning a complete verdict.
 - The generated script is audited for target-write/active-operation commands and
   checked with `sh -n` before emission. Synthetic tests cover timestamps,
   duplicate/incomplete sections, fact derivation, adversarial transcript text,

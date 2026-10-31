@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -76,8 +77,323 @@ class BenchStateBundleTests(unittest.TestCase):
             "/app/bin/CarOption.csv",
             "/app/share/AppUpgrade/DecryptToPIPE",
             "/app/share/AppUpgrade/teruten5_pub.key",
+            "/update/sysroot",
+            "/update/usb/upgrade",
+            "/update/usb/bin",
+            "/update/usb/bin/AppUpgrade",
+            "/update/usb/bin/.lge.upgrade.xml",
+            "/tmp/AppUpgrade",
         ):
             self.assertIn(update_path, script)
+        for update_flag in (
+            "force_launch",
+            "system_update_complete",
+            "system_update_completed",
+            "firmware_update_complete",
+            "scheduled_update_complete",
+            "scheduled_update_complete_for_DM",
+        ):
+            self.assertRegex(script, rf"for S_FLAG in [^\n]*\b{update_flag}\b")
+        self.assertIn('capture_file update-flag "/update/$S_FLAG"', script)
+        self.assertNotIn('[ -r "/update/$S_FLAG" ]', script)
+        self.assertIn('P_STATUS=$?', script)
+        self.assertIn('U_STATUS=$?', script)
+        self.assertIn('read_scalar interface-operstate', script)
+        self.assertIn('record unreadable-file', script)
+
+    def test_probe_helpers_fail_closed_on_collection_errors(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+begin_section storage
+read_scalar scalar "$1"
+capture_file read-error "$2"
+file_meta "$3"
+file_meta "$4"
+hash_file "$5"
+hash_file "$6"
+hash_file "$7"
+hash_file "$8"
+capture_file update-flag "$9"
+capture_unit test.service
+capture_interface "${10}"
+capture_command command-test probe-fail
+record collect-failure "$COLLECT_FAILURE"
+end_section storage "$COLLECT_FAILURE"
+begin_section complete
+if [ "$COLLECT_FAILURE" -eq 0 ]; then
+    record result complete
+    end_section complete 0
+else
+    record result collection-error
+    end_section complete 1
+fi
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_awk = fake_bin / "awk"
+            fake_awk.write_text("#!/bin/sh\nexit 9\n")
+            fake_awk.chmod(0o700)
+            fake_cat = fake_bin / "cat"
+            fake_cat.write_text(
+                "#!/bin/sh\ncase \"$1\" in *scalar-read-error|*/operstate) exit 6;; esac\n"
+                "exec /bin/cat \"$@\"\n"
+            )
+            fake_cat.chmod(0o700)
+            fake_stat = fake_bin / "stat"
+            fake_stat.write_text(
+                "#!/bin/sh\nfor LAST do :; done\n"
+                "case \"$LAST\" in *meta-fail) exit 7;; esac\n"
+                "printf '644|0|0|1|regular file\\n'\n"
+            )
+            fake_stat.chmod(0o700)
+            fake_readlink = fake_bin / "readlink"
+            fake_readlink.write_text("#!/bin/sh\nexit 5\n")
+            fake_readlink.chmod(0o700)
+            fake_sha = fake_bin / "sha256sum"
+            fake_sha.write_text(
+                "#!/bin/sh\ncase \"$1\" in\n"
+                "  *hash-empty) exit 0;;\n"
+                "  *hash-fail) exit 8;;\n"
+                "  *hash-garbage) printf '%064d  %s garbage\\n' 0 \"$1\";;\n"
+                "  *) printf 'not-a-digest  %s\\n' \"$1\";;\n"
+                "esac\n"
+            )
+            fake_sha.chmod(0o700)
+            fake_systemctl = fake_bin / "systemctl"
+            fake_systemctl.write_text("#!/bin/sh\nexit 12\n")
+            fake_systemctl.chmod(0o700)
+            fake_command = fake_bin / "probe-fail"
+            fake_command.write_text("#!/bin/sh\nexit 11\n")
+            fake_command.chmod(0o700)
+
+            scalar_error = root / "scalar-read-error"
+            scalar_error.write_text("scalar")
+            read_error = root / "directory"
+            read_error.mkdir()
+            meta_fail = root / "meta-fail"
+            meta_fail.write_text("meta")
+            link_fail = root / "link-fail"
+            link_fail.symlink_to(meta_fail)
+            hash_bad = root / "hash-bad"
+            hash_bad.write_text("bad")
+            hash_empty = root / "hash-empty"
+            hash_empty.write_text("empty")
+            hash_fail = root / "hash-fail"
+            hash_fail.write_text("fail")
+            hash_garbage = root / "hash-garbage"
+            hash_garbage.write_text("garbage")
+            update_marker = root / "force_launch"
+            update_marker.write_text("run")
+            update_marker.chmod(0)
+            interface = root / "interface"
+            interface.mkdir()
+            for name, value in (
+                ("operstate", "up"),
+                ("carrier", "1"),
+                ("type", "1"),
+                ("ifindex", "3"),
+                ("iflink", "3"),
+            ):
+                (interface / name).write_text(value)
+
+            env = dict(os.environ)
+            env["PATH"] = f"{fake_bin}:/usr/bin:/bin"
+            proc = subprocess.run(
+                [
+                    "/bin/sh",
+                    "-s",
+                    "--",
+                    str(scalar_error),
+                    str(read_error),
+                    str(meta_fail),
+                    str(link_fail),
+                    str(hash_bad),
+                    str(hash_empty),
+                    str(hash_fail),
+                    str(hash_garbage),
+                    str(update_marker),
+                    str(interface),
+                ],
+                input=preamble + exercise,
+                text=True,
+                capture_output=True,
+                env=env,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            report = MODULE.parse_capture(proc.stdout.encode())
+            records = [
+                (item["key"], item["value"])
+                for section in report["sections"]
+                for item in section["records"]
+            ]
+            keys = {key for key, _ in records}
+            self.assertIn("file-read-error", keys)
+            self.assertIn("file-meta-error", keys)
+            self.assertIn("file-link-error", keys)
+            self.assertIn("hash-error", keys)
+            self.assertIn("command-error", keys)
+            self.assertIn("unit-error", keys)
+            self.assertIn("interface-read-error", keys)
+            self.assertTrue("unreadable-file" in keys or "file-read-error" in keys)
+            hash_errors = [value for key, value in records if key == "hash-error"]
+            self.assertEqual(len(hash_errors), 4)
+            self.assertTrue(any("hash-empty" in value for value in hash_errors))
+            self.assertTrue(any("hash-fail" in value for value in hash_errors))
+            self.assertTrue(any("hash-garbage" in value for value in hash_errors))
+            values = dict(records)
+            self.assertEqual(values["collect-failure"], "1")
+            self.assertEqual(values["result"], "collection-error")
+            complete = next(
+                section for section in report["sections"] if section["name"] == "complete"
+            )
+            self.assertEqual(complete["end_status"], 1)
+            self.assertFalse(report["complete"])
+
+    def test_process_environ_partial_output_failure_is_not_complete(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+begin_section processes
+capture_process_path 42 "$1"
+record collect-failure "$COLLECT_FAILURE"
+end_section processes "$COLLECT_FAILURE"
+begin_section complete
+if [ "$COLLECT_FAILURE" -eq 0 ]; then
+    record result complete
+    end_section complete 0
+else
+    record result collection-error
+    end_section complete 1
+fi
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            proc_dir = root / "42"
+            proc_dir.mkdir()
+            (proc_dir / "environ").write_bytes(b"PATH=/real/bin\0OTHER=value\0")
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_tr = fake_bin / "tr"
+            fake_tr.write_text(
+                "#!/bin/sh\n"
+                "if [ \"$1\" = '\\000' ] && [ \"$2\" = '\\n' ]; then\n"
+                "  printf 'PATH=/partial/bin\\n'\n"
+                "  exit 7\n"
+                "fi\n"
+                "exec /usr/bin/tr \"$@\"\n"
+            )
+            fake_tr.chmod(0o700)
+            env = dict(os.environ)
+            env["PATH"] = f"{fake_bin}:/usr/bin:/bin"
+            proc = subprocess.run(
+                ["/bin/sh", "-s", "--", str(proc_dir)],
+                input=preamble + exercise,
+                text=True,
+                capture_output=True,
+                env=env,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            report = MODULE.parse_capture(proc.stdout.encode())
+            records = [
+                (item["key"], item["value"])
+                for section in report["sections"]
+                for item in section["records"]
+            ]
+            self.assertIn(("process-path", "42|/partial/bin"), records)
+            errors = [value for key, value in records if key == "process-read-error"]
+            self.assertTrue(any("producer=7" in value for value in errors))
+            complete = next(
+                section for section in report["sections"] if section["name"] == "complete"
+            )
+            self.assertEqual(complete["end_status"], 1)
+            self.assertFalse(report["complete"])
+
+    def test_missing_hash_and_readlink_providers_are_explicit_nonfailures(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+has_command() {
+    case "$1" in sha256sum|openssl|readlink|stat|ls) return 1 ;; esac
+    command -v "$1" >/dev/null 2>&1
+}
+begin_section hashes
+hash_file "$1"
+file_meta "$2"
+read_link_value test-link "$2"
+record collect-failure "$COLLECT_FAILURE"
+end_section hashes "$COLLECT_FAILURE"
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target"
+            target.write_text("target")
+            link = root / "link"
+            link.symlink_to(target)
+            env = dict(os.environ)
+            env["PATH"] = "/usr/bin:/bin"
+            proc = subprocess.run(
+                ["/bin/sh", "-s", "--", str(target), str(link)],
+                input=preamble + exercise,
+                text=True,
+                capture_output=True,
+                env=env,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            report = MODULE.parse_capture(proc.stdout.encode())
+            records = [
+                (item["key"], item["value"])
+                for section in report["sections"]
+                for item in section["records"]
+            ]
+            self.assertIn(("hash", f"{target}|unavailable"), records)
+            self.assertTrue(any(key == "file-meta-unavailable" for key, _ in records))
+            self.assertTrue(any(key == "file-link-unavailable" for key, _ in records))
+            self.assertIn(("collect-failure", "0"), records)
+
+    def test_record_encoder_faults_are_fatal(self) -> None:
+        preamble = MODULE.PROBE_SCRIPT.split("if ! has_command od", 1)[0]
+        exercise = r'''
+begin_section complete
+record result complete
+end_section complete "$COLLECT_FAILURE"
+'''
+        for failed_tool in ("od", "tr"):
+            with self.subTest(failed_tool=failed_tool), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                fake_bin = root / "bin"
+                fake_bin.mkdir()
+                fake_tool = fake_bin / failed_tool
+                if failed_tool == "od":
+                    fake_tool.write_text("#!/bin/sh\nprintf ' 72 65 63 6f 72 64'\nexit 7\n")
+                else:
+                    fake_tool.write_text("#!/bin/sh\n/bin/cat\nexit 8\n")
+                fake_tool.chmod(0o700)
+                env = dict(os.environ)
+                env["PATH"] = f"{fake_bin}:/usr/bin:/bin"
+                proc = subprocess.run(
+                    ["/bin/sh", "-s"],
+                    input=preamble + exercise,
+                    text=True,
+                    capture_output=True,
+                    env=env,
+                    check=False,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                report = MODULE.parse_capture(proc.stdout.encode())
+                fatal = [
+                    item["value"]
+                    for section in report["sections"]
+                    for item in section["records"]
+                    if item["key"] == "fatal"
+                ]
+                self.assertEqual(fatal, ["record-encode-error"])
+                self.assertIn("probe reported fatal collection error", report["warnings"])
+                complete = report["sections"][0]
+                self.assertEqual(complete["end_status"], 1)
+                self.assertFalse(report["complete"])
 
     def test_audit_rejects_target_writes_and_active_commands(self) -> None:
         unsafe = """#!/bin/sh

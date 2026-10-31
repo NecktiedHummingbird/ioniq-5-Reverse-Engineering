@@ -44,8 +44,14 @@ Date: 2026-11-01
   - two normalized lexicographic version comparisons;
   - on unequal source/destination, marker-absent retained-result contract `0/0`
     and marker-present explicit non-encrypted contract `-404/-404`;
-  - equal pre-staged AppUpgrade path skips both contracts; caller reachability
-    remains unresolved;
+  - equal pre-staged AppUpgrade path skips both contracts; caller reconstruction
+    proves intended local `/update/usb/bin` relaunch reachability;
+  - `slotUsbMounted` stores the mount-path `QString` at `this+0x128`, while
+    standby-status and exact `force_launch=run` workflows provide fixed local
+    relaunch paths;
+  - inner FUMO progress-zero branches write `force_launch=run` and completion
+    cleanup overwrites it with `none`; the preceding named authentication state
+    and source immutability remain unresolved;
   - explicit section-zero vehicle equality disabled at the reviewed USB call
     sites, while P5-family and later target checks remain.
 - Wrote `evidence/appupgrade-update-trust.md`,
@@ -66,10 +72,10 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    complete enough for the current route verdict.
 2. Name AppDMClient verifier result `-404`, the second stored version reference,
    and numeric boot-state values from exact code; trace the XML destination
-   helper and source-directory provenance.
-3. Determine normal caller reachability of the equal
-   `/update/usb/bin/AppUpgrade` path and source stability across repeated
-   verifier/parser opens.
+   helper.
+3. Trace source stability across initial staging, repeated verifier/parser opens,
+   and the now-proven local relaunch; name the authentication state preceding
+   the FUMO progress-zero `force_launch=run` writes.
 4. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
    and write functions, and map inner AppUpgrade `car-variant`/system-version
    decisions without inferring that one skipped branch removes all trust
@@ -78,7 +84,8 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    userspace health, and mark-good independently.
 6. On a disconnected bench, passively capture installed BusyBox/AppScomoDM/
    AppUpgrade hashes, effective `PATH`, runtime uid/SMACK label, selected `-un`
-   arguments, and updater state before any active test.
+   arguments, relaunch/completion markers, staged `/update/usb/bin` identities,
+   and updater state before any active test.
 
 ## Validation
 
