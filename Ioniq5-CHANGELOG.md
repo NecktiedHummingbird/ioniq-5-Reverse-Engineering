@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.54.0 - V-007 corrected: the scanner walks MTP, not USB
+
+- Ten configurations later, the scanner's own progress output settles it:
+  `Scan Progress audio:/usr_data/media/` then `Scan Progress audio:/media/mtp/` — **`/media/usb` never appears**, with
+  a genuine MP3 present *and* the path mounted as its own filesystem, and regardless of a config file placed at
+  `/app/bin/lightmediascanner.conf` or `$HOME/.config/lightmediascanner.conf`.
+- The effective scan set is `/usr_data/media` + `/media/mtp`, which looks compiled in rather than read from the
+  shipped `directory=` line. `lightmediascannerd` references `g_get_user_config_dir`, which is where the database
+  path comes from, but changing the directories had no effect.
+- **Correction to V-007:** the removable-media channel is **MTP**, not USB mass storage. The scanner walks
+  `/media/mtp/` — the mount point an attached phone or media player presents — which sits under the same
+  world-writable `/media`. The conclusion stands (a root process parses attacker-supplied removable content); the
+  channel previously named in the entry was wrong and is corrected in place.
+- Practical consequence: a USB stick full of media is *not* what this scanner consumes; a device that presents MTP
+  is. That is a narrower but more specific attack surface, and it is the one worth testing next.
+- Thread closed here at ten attempts, with the correction recorded rather than the earlier text quietly left standing.
+
 ## 1.53.0 - V-007: database sink located and measured; indexing of /media still unproven
 
 - Located the artefact: `lightmediascannerd` writes `<HOME>/.config/lightmediascannerd/db.sqlite3` — measured at

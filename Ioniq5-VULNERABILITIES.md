@@ -581,10 +581,22 @@ result was discarded rather than interpreted.
 `lightmediascannerctl scan`. So the pipeline is real and the artefact is root-owned: a parsing defect here runs with
 full privilege and writes a root-only database.
 
-**Indexing of `/media` content remains undemonstrated.** Two probe files were placed in `/media/usb` — one plain
-text named `.mp3`, one genuine MP3 (`system/new_gui/ringtone/media_7.mp3` copied in as `attacker.mp3`) — and neither
-appeared in the database. Working hypothesis: the daemon indexes paths registered through a **mount/udev event**
-rather than re-walking `directory=` on demand, which this projection does not simulate.
+**Indexing of `/media/usb` is not merely undemonstrated — the daemon does not scan it at all.** The scanner's own
+progress output names the directories it walks:
+
+`Scan Progress audio:/usr_data/media/ …`
+`Scan Progress audio:/media/mtp/ …`
+
+`/media/usb` never appears, even with a genuine MP3 present **and** the path mounted as a separate filesystem, and
+regardless of a `[daemon_configuration]` file placed at either `/app/bin/lightmediascanner.conf` or
+`$HOME/.config/lightmediascanner.conf`. Probe files of both kinds produced zero rows in every attempt (ten
+configurations). The effective scan set is therefore `/usr_data/media` and `/media/mtp`, which appear to be
+compiled-in defaults rather than the `directory=` line in the shipped file.
+
+**This corrects the premise of this entry and is recorded as a correction.** The removable-media channel here is
+**MTP**, not USB mass storage: the scanner walks `/media/mtp/`, which is the mount point an attached phone or media
+player presents, and it lives under the same world-writable `/media`. So the conclusion — a root process parses
+attacker-supplied removable content — stands, but the channel named in the earlier text ("`media/usb`") was wrong.
 
 **Final status for V-007.** Established: privilege (measured, uid 0), scan targets (sourced), scan invocation
 (executes on command), database sink (measured, root-owned). Not established: that attacker-supplied bytes in

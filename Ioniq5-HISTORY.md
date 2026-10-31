@@ -2746,3 +2746,12 @@ and are superseded by corrections rather than silently rewritten.
   produced nothing, which points at a mount-event registration the projection never emits.
 - Stopping at eight attempts is deliberate. The configuration finding is confirmed and recorded with its exact
   boundary; continuing to vary inputs would generate activity rather than knowledge.
+
+## 2026-10-31 — ten attempts produced a correction instead of a confirmation
+
+- The scanner told us which directories it walks, and one of them was not the one the register claimed. USB mass
+  storage is not scanned; MTP is. The finding survives, the named channel was wrong.
+- That is the better outcome of the two. A wrong channel in a register is the kind of error that sends a patch team
+  to the wrong subsystem, and finding it by measurement is worth more than the confirmation I was looking for.
+- Ten configurations is a lot, but the last one produced a fact rather than another silence, which is the only
+  reason the count is defensible.
