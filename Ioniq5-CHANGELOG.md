@@ -3,6 +3,15 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.60.0 - reject CVE-2016-7910 by exact block iterator cleanup
+
+- Compared complete exact `disk_seqf_next`, `disk_seqf_start`, and `disk_seqf_stop` machine code against upstream fix `77da160530dd1dc94f6ae15a981f24e5f0021e84` rather than relying on the `4.1.27-abl` banner. The same compiled effect is present; the stripped binary cannot distinguish a cherry-pick, stable backport, or independently applied identical change.
+- Bound successful iterator publication, the allocation-failure path that skips the owner-field store, exact `class_dev_iter_exit`, exact `kfree`, and the pointer-width zero store to the same `seq_file.private +0x78` field immediately afterward.
+- Verified both operation tables use the fixed stop routine. A later failed start followed by framework stop sees null, rejecting the CVE-specific stale-pointer dereference/repeated-free premise.
+- Added complete exact machine code, the authoritative patch, an eight-input Boolean-only schema-v2 model, and exhaustive 256-state tests including inconsistent-state rejection. Incomplete fix facts remain unknown unless freed-pointer retention is explicit.
+- Independent review corrected a mistaken allocator-cache description and required the stripped-binary provenance boundary, then returned **ACCEPT**. Focused validation passed `10 tests, 267 subtests`; complete validation passed `510 tests, 135370 subtests`; the public harness passed.
+- Kept scope narrow: installed identity, runtime proc visibility, allocation failure, stale use, repeated free, crash, corruption, privilege gain, root and persistence remain unobserved. No proc file, allocation pressure, target execution, crash, or trigger sequence was created.
+
 ## 1.58.0 - VM: the buffer question needs a shim, not more probing
 
 - Two attempts to capture the client's protocol trace produced no trace at all — the application log was empty and the

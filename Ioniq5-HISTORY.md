@@ -2818,6 +2818,30 @@ and are superseded by corrections rather than silently rewritten.
   kallsyms map to be named and hashed, then returned **ACCEPT**. The complete
   suite passed `500 tests, 135103 subtests` and the public harness passed.
 
+## 2026-11-03 — block seq-file stale cleanup rejected by owner invalidation
+
+- Complete exact `disk_seqf_start` retains the historical allocation-failure
+  shape: successful allocation publishes the iterator at `seq_file.private
+  +0x78`, while a null allocation returns `ERR_PTR(-ENOMEM)` without another
+  owner-field store.
+- Complete exact `disk_seqf_stop` closes that premise. It loads the same owner
+  field, exits and frees the iterator, then stores pointer-width zero to the
+  field before return. The later failed-start stop therefore takes the null
+  edge rather than consuming a freed iterator.
+- Both block proc operation tables bind the reviewed stop routine. This is the
+  same cleanup-side compiled effect as upstream fix
+  `77da160530dd1dc94f6ae15a981f24e5f0021e84`, despite the older banner. The
+  stripped binary cannot distinguish an upstream cherry-pick, stable backport,
+  or independently applied identical change.
+- CVE-2016-7910 is rejected only for the exact recovered kernel and exact stale
+  cleanup mechanism. Independent review corrected an allocator-cache
+  misdescription and required the source-provenance boundary, then returned
+  **ACCEPT**. The complete suite passed `510 tests, 135370 subtests`; the public
+  harness passed.
+- No proc read, allocation pressure, target execution, stale dereference,
+  repeated free, crash, corruption, privilege transition or persistence action
+  was performed.
+
 ## 2026-10-31 — the parsers are older than the car
 
 - Reading link tables turned a theoretical surface into a dated one: libogg from the early 2000s, libpng from 2017,

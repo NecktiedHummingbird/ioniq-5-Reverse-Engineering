@@ -112,6 +112,7 @@ commits:
   `a8c006aafead3c45ae5d5601e3717055bccf41bc`;
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
+- CVE-2016-7910: `77da160530dd1dc94f6ae15a981f24e5f0021e84`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
@@ -159,6 +160,18 @@ reject the CVE-specific mutable-callback cleanup race. SHA-256:
 `cve-2016-9806-fix.patch` is upstream commit
 `92964c79b357efd980812c4de5c1fd2ec8bb5520`; SHA-256:
 `89638f347ae53c86e2d346da8422ac3e33251fc25230c071376a4874a2d41680`.
+
+`kernel-block-cve-2016-7910.asm` retains complete embedded-kallsyms-bounded
+`disk_seqf_next`, `disk_seqf_start`, and `disk_seqf_stop` machine code. It binds
+the successful iterator store and allocation-failure edge to `seq_file.private`
+at offset `0x78`, then shows exact iterator exit/free followed by a pointer-width
+zero store to the same owner field. That is the same cleanup-side effect as the
+upstream fix and rejects the CVE-specific stale cleanup premise; the stripped
+binary does not establish commit provenance. SHA-256:
+`466a6c195ec3bfad9367da414716633be9e5fb7ef524a25a5555ebd56094f7d4`.
+`cve-2016-7910-fix.patch` is upstream commit
+`77da160530dd1dc94f6ae15a981f24e5f0021e84`; SHA-256:
+`701c7be0854836b8c7f2f4ff21e8e3d4a932809c2d32fe572215bdd5b03bcff0`.
 
 `kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
 `perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former

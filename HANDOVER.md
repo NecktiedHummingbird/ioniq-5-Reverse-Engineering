@@ -6,6 +6,14 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## block seq-iterator lifetime checkpoint — 2026-11-03
+
+- CVE-2016-7910 is rejected for exact recovered `vmlinux` by the same cleanup-side compiled effect as upstream `77da160530dd1dc94f6ae15a981f24e5f0021e84`. The stripped binary cannot distinguish a direct cherry-pick, the stable backport, or an independently applied identical source change.
+- Complete exact ranges are `disk_seqf_next [0xffffffff811f2c92,0xffffffff811f2cb4)`, `disk_seqf_start [0xffffffff811f2cb4,0xffffffff811f2d26)`, and `disk_seqf_stop [0xffffffff811f2d26,0xffffffff811f2d56)`. Successful start stores the iterator at `seq_file.private +0x78`; allocation failure skips that store.
+- Stop loads the same field, calls exact `class_dev_iter_exit` and `kfree` on the iterator, then executes a pointer-width zero store to `+0x78` before return. A later failed start followed by framework stop therefore sees null rather than the freed iterator.
+- Both exact operation tables use this stop routine; `/proc/partitions` reaches the shared start through `show_partition_start`, while `/proc/diskstats` uses it directly. `CONFIG_BLOCK=y` and `CONFIG_PROC_FS=y` establish static availability, not installed runtime access.
+- The eight-input schema-v2 model is tri-state where needed: incomplete fix facts leave retention unknown unless a freed-pointer-retained fact is explicitly supplied. Installed identity, proc visibility, allocation failure, stale use, repeated free, crash, corruption, root and persistence remain unobserved; no proc entry, allocation pressure, or target code was exercised. Independent review **ACCEPT**; focused validation `10 passed, 267 subtests`; complete validation `510 passed, 135370 subtests`; public harness **PASS**.
+
 ## netlink dump ownership checkpoint — 2026-11-03
 
 - CVE-2016-9806 is rejected for exact recovered `vmlinux` by machine-code effects equivalent to upstream `92964c79b357efd980812c4de5c1fd2ec8bb5520`.
