@@ -60,7 +60,11 @@ oFono device/unit state, local Bluetooth SDP/profile state, Dropbear chain
 completeness, and A/B/update flags. Update-specific records include the live
 command lines for AppLauncher/AppDMClient/AppScomoDM/AppUpgrade and hashes for
 BusyBox, both unzip providers, those applications, `CarOption.csv`,
-`DecryptToPIPE`, and `teruten5_pub.key`. It also records the FUMO relaunch and
+`DecryptToPIPE`, and `teruten5_pub.key`. For V-028 it also records
+`Dbuslaunch.service`, `ApplicationLauncher.service`, AppLauncher uid/gid/SMACK
+metadata, and file metadata only for `/tmp/session_appmgr{,.env}`. It does not
+read or replay the private bus address, connect to the bus, inspect method state,
+or send a launch request. It also records the FUMO relaunch and
 completion markers, metadata for `/update/sysroot`, `/update/usb/upgrade`, and
 `/update/usb/bin`, plus metadata/hashes for staged AppUpgrade/XML and
 `/tmp/AppUpgrade`. It passively records `/dev/ptmx`, `/dev/pts`, and

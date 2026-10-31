@@ -58,6 +58,9 @@ class BenchStateBundleTests(unittest.TestCase):
         ):
             self.assertIn(f"begin_section {section}", script)
         self.assertIn("systemctl show", script)
+        self.assertIn("Dbuslaunch.service", script)
+        self.assertIn("file_meta /tmp/session_appmgr\n", script)
+        self.assertIn("file_meta /tmp/session_appmgr.env", script)
         self.assertIn("sdptool browse local", script)
         self.assertNotIn("hciconfig -a", script)
         self.assertNotIn("wpa_cli", script)

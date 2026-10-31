@@ -1,0 +1,226 @@
+AppLauncher session-bus on-demand launch evidence (reviewed excerpt)
+===================================================================
+
+Artifact identity
+-----------------
+Path in recovered EU 260128 rootfs: /app/bin/AppLauncher
+ELF type: ET_DYN / x86-64
+SHA-256: c8d6d56bc254ad0731e81f40bd83aa9b3be6b49bcbd8efb291157a06c4a84268
+GNU Build ID: 0452df1033bd1bbae15727a83d4d56576d8b9444
+
+Addresses below are PIE image-relative ELF virtual addresses, not observed
+runtime addresses. Half-open function extents come from .eh_frame. Instructions
+were confirmed with Homebrew LLVM llvm-objdump; the complete disassembly remains
+under ignored work/.
+
+Relevant half-open functions
+----------------------------
+main/startup                       [0x0000b9b0, 0x0000bcb4)
+AppProcess constructor             [0x000155c0, 0x000158b2)
+AppProcess start routine           [0x000163f0, 0x0001854d)
+new-process helper                 [0x0001fd30, 0x0001ffcf)
+on-demand launch dispatcher        [0x0001ffd0, 0x000205b3)
+Request object constructor         [0x00026250, 0x00026333)
+three-argument launch adaptor      [0x00026340, 0x00026669)
+normal signature helper            [0x00015b50, 0x000163e1)
+navigation signature helper        [0x00012100, 0x000127cd)
+
+1. Service and Request-object registration are attempted on the session bus
+-------------------------------------------------------------------------
+The startup string at image VA 0x469f4 is "com.lge.avn.applauncher".
+The Request constructor string at 0x49063 is "/Request".
+
+    0x0000bb21  sessionBus()
+    0x0000bb2f  registerService(QString const&)
+    0x0000bba9  call 0x00026250            ; construct Request object
+
+The Request constructor obtains the session bus and calls registerObject for
+/Request with register option 1 (ExportAdaptors):
+
+    0x00026281  lea 0x49063,%rdi            ; "/Request"
+    0x0002629b  call sessionBus()
+    0x000262a0  mov $1,%ecx
+    0x000262ae  call registerObject(QString const&,QObject*,QFlags<...>)
+    0x000262ce  call 0x00042b70             ; adaptor constructor
+
+The embedded adaptor XML names interface com.lge.avn.applauncher.request and
+exports three launch overloads. The shortest accepts:
+
+    appid        D-Bus type i
+    appname      D-Bus type s
+    applocation  D-Bus type s
+
+The other overloads add one or two Boolean mode arguments.
+
+2. The D-Bus applocation argument reaches the on-demand dispatcher
+------------------------------------------------------------------
+In the three-argument adaptor, SysV arguments are rdi=this, esi=appid,
+rdx=&appname, rcx=&applocation. After logging, it obtains the application
+singleton and dispatches through vtable slot +0x68:
+
+    0x00026468  call 0x000113c0             ; singleton
+    0x0002646d  mov (%rax),%rdx             ; vtable
+    0x00026470  mov 0x68(%rdx),%r10
+    0x000264a6  xor %r9d,%r9d               ; second optional mode false
+    0x000264a9  xor %r8d,%r8d               ; first optional mode false
+    0x000264ac  mov %rbx,%rcx               ; copied applocation
+    0x000264af  mov %rbp,%rdx               ; copied appname
+    0x000264b2  mov %r13d,%esi              ; appid
+    0x000264b5  mov %rax,%rdi
+    0x000264b8  call *%r10
+
+Dynamic relocation 0x261ca0 is R_X86_64_RELATIVE with addend 0x1ffd0. The
+object's vtable begins at 0x261c38, so slot +0x68 resolves exactly to dispatcher
+[0x1ffd0,0x205b3).
+
+3. Existing and new process branches both accept the caller's path
+------------------------------------------------------------------
+The dispatcher saves rdx (appname), rcx (applocation), esi (appid) and mode
+arguments, then looks up an existing process:
+
+    0x0001ffd5  mov %rdx,%r15
+    0x0001ffe2  mov %esi,%ebp
+    0x0001fff9  mov %rcx,(%rsp)
+    0x00020002  call 0x0001bf70             ; lookup by appid
+    0x00020007  test %rax,%rax
+    0x0002000a  je 0x00020460               ; create branch
+
+For an existing process, the dispatcher sets byte +0x1c to one and overwrites
+QString +0x58 from the caller's applocation:
+
+    0x00020010  movb $1,0x1c(%rax)
+    0x00020020  movb $1,0x1c(%rbx)
+    0x0002003d  lea 0x58(%rbx),%rdi
+    0x00020044  call QString::operator=(QString const&)
+
+It also replaces appid at +0x20 and appname at +0x48 before calling the start
+routine:
+
+    0x00020076  mov %ebp,0x20(%rbx)
+    0x0002008f  lea 0x48(%rbx),%rdi
+    0x00020096  call QString::operator=(QString const&)
+    0x00020204  mov %rbx,%rdi
+    0x00020207  call 0x000163f0             ; AppProcess start
+
+If no process exists, the helper at [0x1fd30,0x1ffcf) accepts appids 1..1024 and
+requires QFile(applocation).exists():
+
+    0x0001fd51  lea -1(%rsi),%eax
+    0x0001fd5d  cmp $0x3ff,%eax
+    0x0001fd62  ja 0x0001ff68               ; return null
+    0x0001fd75  mov %rcx,%rsi
+    0x0001fd7e  call QFile::QFile(QString const&)
+    0x0001fd86  call QFile::exists() const
+    0x0001fd8b  test %al,%al
+    0x0001fd8d  jne 0x0001fe28              ; allocate only if it exists
+
+The allocated object's +0x58 applocation and +0x48 appname fields are populated
+from the request. The dispatcher then joins the same overwrite/bypass/start path:
+
+    0x0001fe3a  call 0x000155c0             ; AppProcess constructor
+    0x0001fe61  lea 0x58(%rbx),%rdi
+    0x0001fe68  call QString::operator=(QString const&)
+    0x0001fe92  lea 0x48(%rbx),%rdi
+    0x0001fe99  call QString::operator=(QString const&)
+    0x000204b5  call 0x0001fd30             ; new-process helper
+    0x000204cd  test %rbx,%rbx
+    0x000204d6  jmp 0x0002001c              ; same path and bypass writes
+
+The new-object exists check is therefore not a path allowlist. The existing-object
+branch does not perform that create-time exists check before overwriting +0x58.
+
+4. Byte +0x1c is the signature-selection bypass
+-----------------------------------------------
+The AppProcess constructor initializes byte +0x1c to zero:
+
+    0x000155e7  call QProcess::QProcess(QObject*)
+    0x00015612  movb $0,0x1c(%rbx)
+
+The start routine first uses the same byte to override an early retry/state return:
+
+    0x0001641b  cmp $0xa,%r14d               ; state/retry field +0x24
+    0x0001641f  jle 0x00016588
+    0x00016425  cmpb $0,0x1c(%rdi)
+    0x00016429  jne 0x00016588               ; bypass continues
+
+Later, +0x58 is copied into the QString used for QFile permissions, QFileInfo,
+and QProcess::start. QFileInfo::isExecutable() is logged but its result does not
+gate the direct start branch:
+
+    0x000171be  mov 0x58(%rbx),%rax
+    0x000172cb  mov 0x58(%rbx),%rax
+    0x000172f6  call QFileInfo::QFileInfo(QString const&)
+    0x00017326  call QFileInfo::isExecutable() const
+    0x00017426  cmpb $0,0x1c(%rbx)
+    0x0001742a  je 0x00017e20               ; zero selects verification
+    0x00017457  mov %rbp,%rsi               ; program QString from +0x58
+    0x0001745d  call QProcess::start(program,args,mode)
+
+Thus dispatcher writes at 0x20010/0x20020 select the direct QProcess start at
+0x1745d without either identified verifier call executing.
+
+5. Signature failure is terminal on the paths that do verify
+------------------------------------------------------------
+For ordinary applications with +0x1c zero, the start routine calls the normal
+signature helper and branches away from QProcess::start on false:
+
+    0x00017e78  call 0x00015b50
+    0x00017e7d  test %al,%al
+    0x00017e7f  je 0x00018088               ; failure state, no start
+    0x00017eb2  call QProcess::start(program,args,mode)
+
+For appid 30, the navigation helper is handled the same way:
+
+    0x0001812f  call 0x00012100
+    0x00018134  test %al,%al
+    0x00018136  je 0x00018088               ; failure state, no start
+    0x00018169  call QProcess::start(program,args,mode)
+
+This corrects the older source's broader statement that verification failure does
+not stop launch. The exact defect is the caller-selected on-demand path that sets
++0x1c, not fail-open handling after either exact verifier returns false.
+
+6. Shipped service and bus configuration
+----------------------------------------
+ApplicationLauncher.service SHA-256:
+4fafaa5207c816a835eae357f0b776bb7ed217cb59704dfc5d64ab190abaa4ef
+
+It has no User= or Group= and executes /app/bin/AppLauncher.sh, so systemd's
+configured default is uid/gid zero. The script executes /app/bin/AppLauncher 3.
+No setuid/setgid/setresuid/setresgid/capset/prctl/syscall import was found in the
+exact AppLauncher dynamic symbol table. QProcess therefore has no application-
+level credential-drop call visible in this binary; runtime credentials still
+require observation.
+
+Dbuslaunch.sh SHA-256:
+7c399e66c3934e18cb73f0c787b519b62bb0cc97fbe536dbf317792ec4c9fd1d
+
+It launches dbus-daemon --session --print-address --fork and writes the address
+to /tmp/session_appmgr and /tmp/session_appmgr.env.
+
+session.conf SHA-256:
+c5999ae1f226935ce2b10b19d060874194b7cc87cdc318dd63ce265acbba0119
+
+It listens on unix:tmpdir=/tmp, permits only EXTERNAL authentication, and its
+default policy allows send_destination="*", receive/eavesdrop and own="*". It
+contains no allow/deny user rule. D-Bus's documented no-user-rule default allows
+connections only from the uid that owns dbus-daemon, so this is not a generic
+cross-uid route. It is relevant to same-uid applications and services; recovered
+units commonly configure those as uid zero but separate them with SMACK labels.
+No per-method sender authorization exists in the Request adaptor.
+
+7. Runtime and impact boundary
+------------------------------
+Static code proves caller-controlled applocation propagation, the bypass write,
+and direct QProcess start attempt. It does not prove on an owner unit:
+
+- the installed AppLauncher identity, successful service-name ownership, or successful Request-object registration;
+- the caller's uid or ability to authenticate to the root-owned session bus;
+- effective SMACK labels/rules for the caller, bus socket, launcher and target;
+- successful AppProcess-object construction on the new-object branch;
+- caller control at exec time of an executable path that AppLauncher can execute;
+- QProcess acceptance, effective privilege retention, a successful exec, resulting uid/label, unrestricted root, trust-anchor write,
+  update acceptance, partition write, boot acceptance or persistence.
+
+No D-Bus request, target executable, launch attempt or privilege/label transition
+was created during this review.

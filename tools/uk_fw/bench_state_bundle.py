@@ -508,13 +508,14 @@ capture_file smack-ambient /sys/fs/smackfs/ambient
 end_section smack 0
 
 begin_section units
-for U_NAME in connman.service ofono.service ofono.path supplicantmanager.service supplicantmanager.path vbtd.service dropbear.socket dropbear@.service dropbearkey.service ApplicationLauncher.service MediaBrowser.service dbus.service
+for U_NAME in connman.service ofono.service ofono.path supplicantmanager.service supplicantmanager.path vbtd.service dropbear.socket dropbear@.service dropbearkey.service Dbuslaunch.service ApplicationLauncher.service MediaBrowser.service dbus.service
  do
     capture_unit "$U_NAME"
  done
 file_meta /tmp/no_unece
 file_meta /tmp/no_isa
 file_meta /tmp/telematics_code_TELEMATICS
+file_meta /tmp/session_appmgr
 file_meta /tmp/session_appmgr.env
 file_meta /tmp/secure_console_disable
 end_section units 0

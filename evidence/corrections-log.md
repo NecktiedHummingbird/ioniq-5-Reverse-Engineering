@@ -650,6 +650,16 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C41 — literal launcher paths do not constrain a runtime D-Bus QString
+
+- **Was:** commit `3090f69` concluded the unverified AppLauncher route could only replace fixed binaries under read-only `/navi`, so it presupposed the privileged write it was proposed to obtain.
+- **Now:** exact Request adaptor and vtable routing show exported `launch(appid, appname, applocation, ...)` methods pass the caller's runtime `applocation` to dispatcher `[0x1ffd0,0x205b3)`. That dispatcher overwrites program field `+0x58`, sets direct-launch byte `+0x1c`, and reaches a `QProcess::start` call site without either identified verifier call. A literal-string inventory cannot exclude data supplied as a QString argument.
+- **Second correction:** the older public source also said failed verification does not stop launch. Exact ordinary and navigation branches both treat false as terminal; the defect is the separate dispatcher that bypasses both identified verifier calls.
+- **Boundary:** the session bus defaults to the daemon's uid, not arbitrary cross-uid clients. Service ownership, Request-object registration, successful same-uid authentication, effective SMACK access, relevant AppProcess-object availability, control of executable bytes at exec time, QProcess acceptance, effective privilege retention, successful exec and resulting context remain unobserved. V-028 is an exact verifier-bypass-to-start-attempt candidate, not demonstrated unrestricted root or persistence.
+- **Evidence:** `evidence/applauncher-dbus-launch-bypass.md` and `evidence/artifacts/application-candidates/applauncher-dbus-launch-evidence.txt`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

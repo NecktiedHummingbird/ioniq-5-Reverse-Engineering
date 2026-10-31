@@ -186,6 +186,12 @@ finding has yet been established.
 Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
 `vmlinux`, so the parsing is userland.
 
+### 8.5. AppLauncher on-demand D-Bus launch — strongest post-local-execution domain-amplification candidate
+
+V-028 corrects a literal-path-only negative. Exact `com.lge.avn.applauncher` Request adaptor code accepts runtime `applocation`, forwards it to dispatcher `[0x1ffd0,0x205b3)`, overwrites AppProcess program field `+0x58`, sets direct-launch byte `+0x1c`, and reaches a `QProcess::start` call site without either identified verifier call. The new-object helper checks only appid range and path existence before construction; a relevant existing appid object skips those create gates. Runtime Request registration, object construction, QProcess acceptance, successful exec and resulting privilege/label remain separate gates.
+
+This does not yet outrank V-014 as a physical entry because it starts after local code execution. It is stronger than the V-012 service-restart amplifier if its runtime gates hold: the private session bus defaults to the daemon's uid, many HMI applications/services are configured uid zero but SMACK-separated, and effective bus/socket/target labels remain unobserved. Prioritize passive installed hash, service/unit state, AppLauncher/caller uid and labels, `/tmp/session_appmgr{,.env}` metadata, and target-path execute access; leave service-name ownership and Request registration unknown because the probe does not connect to the bus. Do not send a launch request on the owner unit. See `evidence/applauncher-dbus-launch-bypass.md`.
+
 ### 9. Kernel — analysed; conditional post-execution candidates remain
 
 - 64,923 symbols recovered and cross-validated (4,369/4,375 exports exact).

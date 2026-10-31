@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## AppLauncher on-demand launch checkpoint — 2026-11-01
+
+- **V-028 overturns the just-recorded V-009 negative.** Exact Request adaptor and relocation evidence shows exported `launch(appid, appname, applocation, ...)` methods pass the caller's runtime path to dispatcher `[0x1ffd0,0x205b3)`. It overwrites AppProcess program field `+0x58`, sets direct-launch byte `+0x1c`, and reaches a `QProcess::start` call site without either identified verifier call. A literal scan of fixed `/navi` paths could not exclude this QString input.
+- The correction is two-sided: both exact verifier branches treat false as terminal. The defect is the separate on-demand dispatcher, not fail-open behavior after either verifier returns false.
+- The recovered session bus uses EXTERNAL and defaults to the daemon's uid because it has no user connection rule. This is not arbitrary cross-uid access. It is a plausible same-uid/SMACK-domain amplification route for the many configured uid-zero HMI processes only if service ownership, Request-object registration, bus authentication, effective labels, a relevant AppProcess object, QProcess acceptance, exec-time target control/access and effective launcher privilege hold at runtime.
+- Added `evidence/applauncher-dbus-launch-bypass.md`, a reviewed instruction/configuration excerpt, Boolean-only model, complete 131,072-state tests, and passive metadata for `Dbuslaunch.service` plus `/tmp/session_appmgr`. No D-Bus request, executable, target launch, credential/label transition, anchor write, update or persistence action was created.
+
 ## AppUpgrade routing and trust checkpoint — 2026-11-01
 
 - Recovered `AppUpgrade` is an outer Qt wrapper with exact embedded SCOMO and
