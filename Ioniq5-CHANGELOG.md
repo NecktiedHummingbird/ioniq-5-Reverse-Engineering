@@ -3,6 +3,16 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.54.0 - reject the FLIC write-bounds CVE family by exact comprehensive rewrite
+
+- Rejected the CVE-2016-9634/9635/9636/9808 FLIC write-bounds family for exact recovered `libgstflxdec.so`, despite its embedded GStreamer `1.8.3-r0` recipe path.
+- Distinguished the initial local bounds patch from upstream's comprehensive `153a8ae` GstByteReader/GstByteWriter rewrite. Exact source-line values and machine code establish that the latter is present.
+- Bound checked chunk sub-readers, writer initialization over exact frame storage and size, previous-frame copy, FLI/FLC line guards, cumulative destination-position checks, bounded reads/writes, and helper-to-chain failure propagation before output publication.
+- Kept CVE-2016-9807 outside the conclusion because its public read/conversion mechanism is distinct. This rejects only the named write-bounds family, not every FLIC or media-stack defect.
+- Added the authoritative patch, both complete affected FDEs, bounded nine-Boolean classifier, exhaustive 512-state tests, and explicit null runtime/impact outcomes.
+- Independent review caught a frame-vs-chunk sub-reader mislabel, a truncated helper FDE, and an incomplete final error-route excerpt. All three were corrected; final review returned **ACCEPT**. Focused validation passed `6 tests, 526 subtests`; full validation passed `459 tests, 132344 subtests`; the public harness passed.
+- No FLIC/media input, recovered parser execution, trigger, heap manipulation, overwrite, crash, code execution, privilege transition, or persistence action was performed.
+
 ## 1.51.0 - the parse is not demonstrable in this harness; recorded as such
 
 - Four attempts to make the root scanner actually parse a locally-dropped file, all with a probe present and all
