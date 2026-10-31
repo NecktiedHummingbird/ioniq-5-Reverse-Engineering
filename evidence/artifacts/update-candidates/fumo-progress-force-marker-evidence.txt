@@ -1,0 +1,88 @@
+Exact embedded FUMO progress/completion/force-marker evidence
+
+Binary
+Path (ignored): work/public-vuln-research-20261101/appupgrade-exact-extract/AppUpgrade.embedded-5721c8.elf
+SHA-256 464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7
+GNU Build ID 863a8730e66a1c5245a1bf458fe2554adee0351a
+Architecture x86-64 PIE
+Address namespace: embedded ELF virtual addresses
+Instruction authority: Homebrew LLVM llvm-objdump 23.1.3
+
+Strings
+0x20a678 /update/system_update_complete
+0x20a698 /update/firmware_update_complete
+0x21f61f complete
+0x21f762 processing
+0x21f82d /update/force_launch
+0x21ec96 run
+0x21f2c3 none
+0x222ac0 /update/scheduled_update_complete
+0x222c38 /update/scheduled_update_complete_for_DM
+
+Generic file writer
+Function FDE [0x140a50,0x140cae) attempts to open the supplied path with mode
+10, write the supplied UTF-8 text, flush, obtain the file descriptor, and call
+fsync. Its path and content are supplied by callers. It rejects open failure and
+a negative write result, but does not reject zero/short writes or test flush or
+fsync results; callers below do not test its return. The sites therefore prove
+ordered calls, not successful, full, durable, or atomic state transitions.
+
+Progress callback
+Function FDE [0x11f1b0,0x120a9e) accepts progress in its second argument. For
+accepted third-argument states, global 0x6d20ac selects the status path:
+- firmware mode progress 0 attempts processing on
+  /update/firmware_update_complete at 0x11ff11..0x11ff36;
+- firmware mode progress 100 attempts complete on that path at
+  0x120722..0x120747;
+- system mode progress 0 attempts processing on /update/system_update_complete
+  at 0x120571..0x120593;
+- system mode progress 100 attempts complete on that path at
+  0x1206b2..0x1206d7.
+
+The progress-zero branches then test global 0x6d4f94. When it is not 1, they
+attempt run on /update/force_launch at 0x11ff4c..0x11ff71 (firmware) or
+0x1205a9..0x1205cb (system). These direct run calls follow the processing call,
+not a complete call. The progress-100 branches instead attempt none on the
+force path at 0x120754..0x120779 (firmware) and 0x1206e4..0x120709 (system).
+These are branch-local orderings: later callback flow can still enter the
+scheduled route and attempt run again.
+
+Delta progress source
+Function 0x120aa0 logs exact component string DeltaUpdateProgressHandler. For
+controller IDs 1 and 4 it first forwards progress to a controller-specific
+helper. ID 1 reaches the tail call with third argument 5 in
+0x120b20..0x120b51. ID 4 executes 0x120b60..0x120b7a, then joins the shared
+0x120b3c..0x120b51 tail-call block. Timer function 0x120bf0 obtains a
+progress value and tail-calls the same callback with third argument 5 at
+0x120c2a..0x120c53. Qt dispatch code also calls 0x11f1b0 at 0x16e49f..0x16e4ab.
+These are progress/event paths; no named cryptographic-verification result is
+read at the direct force-marker call sites.
+
+Scheduled branch
+The same callback separately reads and trims both status files. It requires the
+system string to compare equal to complete at 0x11fb27..0x11fb62, the firmware
+string to compare equal to complete at 0x120228..0x12029c, and predicate FDE
+[0xe8ad0,0xe8b90) to return true at 0x1202a2..0x1202ac. It then attempts
+complete on both scheduled-completion paths at 0x1202cf..0x12036c and, when
+global 0x6d4f94 is not 1, attempts run on /update/force_launch at
+0x120371..0x1203a7. These calls are ordered but not conditioned on verified
+success of the preceding status writes.
+
+Boundary
+The direct progress-zero call sites prove that force_launch=run does not, by
+itself, establish that either completion string already equals complete. The
+marker has multiple origins: the later scheduled call site has stronger local
+completion and schedule-state preconditions. Those strings and predicate are
+operational state, and the traced call sites consume no named signature, digest,
+certificate, or payload-authentication result. This write-site evidence does
+not itself establish authentication, but neither does it prove that an
+unauthenticated package can cause a valid upstream progress event. It also does
+not establish successful status writes, update acceptance or payload writes,
+slot/boot/health acceptance, root, policy escape, or persistence.
+
+Ignored exact analysis records
+work/public-vuln-research-20261101/appfumo-progress-callback-full.asm
+work/public-vuln-research-20261101/appfumo-system-progress.asm
+work/public-vuln-research-20261101/appfumo-progress-100.asm
+work/public-vuln-research-20261101/appfumo-completion-wrapper.asm
+work/public-vuln-research-20261101/appfumo-completion-direct-caller.asm

@@ -28,14 +28,17 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 
 ## 1.39.0 - qualify FUMO force-marker progress provenance
 
-- Traced callback FDE `0x11f1b0..0x120a9e` and the exact file-writer calls for
-  the FUMO completion and force markers. Progress zero writes `processing` and
-  then `force_launch=run`; progress 100 writes `complete` and then changes the
-  force value to `none`.
+- Traced callback FDE `[0x11f1b0,0x120a9e)` and exact file-writer calls for
+  the FUMO completion and force markers. Progress zero attempts `processing`
+  then `force_launch=run`; the branch-local progress-100 sequence attempts
+  `complete` then force value `none`, while later scheduled flow can attempt
+  `run` again. The weak writer does not prove full, successful, or atomic state
+  transitions.
 - Named exact `DeltaUpdateProgressHandler` and timer routes into the callback.
   Their direct force-write branches read no named signature, digest,
   certificate, or payload-authentication result. Thus `force_launch=run` alone
-  is operational progress state, not completion or authentication evidence.
+  does not itself establish completion or authentication in this write-site
+  evidence.
 - Retained the upstream boundary: this does not show that unauthenticated input
   can cause a valid progress event, update acceptance, writes, slot/boot trust,
   root, or persistence. The scheduled writer still separately requires both
@@ -172,8 +175,9 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   exact case-sensitive `run`, then stages from `/update/usb/bin`. This reaches
   the branch that omits repeated AppDMClient `0/0` or `-404/-404` pair checks.
 - Reconstructed the matching inner-FUMO lifecycle. System- and firmware-mode
-  progress-zero branches write `force_launch=run` unless a mode global equals
-  1; completion cleanup overwrites an existing force marker with `none`.
+  progress-zero branches attempt `force_launch=run` unless a state global equals
+  1; completion cleanup attempts `none`. The weak writer/callers do not prove
+  either transition succeeded atomically.
   The branch is therefore an intended pre-staged relaunch, not an unresolved
   hypothetical outcome.
 - Kept the security boundary narrow: direct removable-media control of the

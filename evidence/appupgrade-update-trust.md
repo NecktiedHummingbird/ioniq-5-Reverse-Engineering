@@ -331,31 +331,39 @@ Caller and state reconstruction resolves the equal path's role:
 - helper `0x87150` reads the first line of `/update/force_launch`, requires exact
   case-sensitive text `run`, and calls staging with `/update/usb/bin` at
   `0x87395`; the standby workflow calls the helper at `0x87ee9`;
-- the exact FUMO child writes `force_launch=run` in system- and firmware-mode
-  progress-zero branches at `0x11ff4c..0x11ff71` and
-  `0x1205a9..0x1205cb`, and in an additional scheduled-update branch at
-  `0x120371..0x1203a7`; all three are conditional on global
-  `0x6d4f94 != 1`;
+- the exact FUMO child calls its generic writer with `processing` and then
+  `force_launch=run` on progress-zero branches at `0x11ff4c..0x11ff71` or
+  `0x1205a9..0x1205cb`. At progress 100 the branch-local call sequence is
+  `complete` then force value `none` at `0x120754..0x120779` or
+  `0x1206e4..0x120709`; later callback flow can still attempt scheduled `run` at
+  `0x120371..0x1203a7`. All three run attempts are conditional on global
+  `0x6d4f94 != 1`, and the weak writer/callers do not prove full or atomic
+  status transitions;
 - that additional branch first requires separately read, trimmed system- and
   firmware-completion strings to compare case-sensitively equal to `complete`
   at `0x11fb27..0x11fb62` and `0x120228..0x12029c`, then requires
   `isScheduledUpdating` predicate `0xe8ad0` at `0x1202a2..0x1202ac`. The
   predicate returns true for `this+0x201 != 0` or `this+0x1a0 == 0x19`; the
-  accepted branch writes both scheduled-completion markers before
-  `force_launch=run`;
-- completion cleanup at `0xfd3d0..0xfd9bb` overwrites the existing force marker
-  with `none`, and force-relaunch helper `0x87150` does not call staging for that
-  value.
+  accepted branch attempts both scheduled-completion markers before
+  `force_launch=run`, without conditioning the force attempt on verified success
+  of the preceding writes;
+- completion-cleanup FDE `[0xfd3d0,0xfd9bb)` attempts to overwrite an existing
+  force marker with `none`; the weak writer result is ignored. Force-relaunch
+  helper `0x87150` does not call staging if the first line actually reads
+  `none`.
 
 Thus the equal branch is an intended pre-staged local relaunch and omits
 repeating the two AppDMClient result-pair contracts. This does not prove direct
 removable-media control of `/update/usb/bin`, unauthenticated creation of the
 force marker, immutable staging across the relaunch interval, or removal of
-inner payload/target checks. The additional writer is bound to local completion
-text plus scheduled-update state, but those conditions are not a named
-signature/authentication result. Entry into the progress callback and the
-provenance of those completion states remain unbound to a completed
-authentication state. The separate-open
+inner payload/target checks. The marker has multiple origins, and the direct
+call sites show that `force_launch=run` alone does not establish completion:
+they follow a `processing` attempt, while the scheduled site has stronger local
+completion and schedule-state preconditions. Those conditions are not named
+cryptographic results. `DeltaUpdateProgressHandler` routes some events into
+callback FDE `[0x11f1b0,0x120a9e)`, but the traced write-site evidence does not
+itself establish authentication and valid upstream event authentication remains
+unresolved. The separate-open
 TOCTOU boundary remains unresolved, but normal equal-path software reachability
 no longer is. Marker presence is still an explicit local non-encrypted-mode
 contract on the unequal path, not proof that USB media can create it or that

@@ -161,48 +161,73 @@ its source directory, this makes source and destination both
 `slotOnStandbyStatus` calls this helper at `0x87ee9`.
 
 The exact embedded FUMO child supplies the other half of this relaunch contract.
-Its file writer at `0x140a50` opens the caller-provided path for write/truncate,
-writes the provided UTF-8 value, flushes, and calls `fsync`. In its progress
-handler:
+Its file-writer FDE `[0x140a50,0x140cae)` attempts write/truncate, UTF-8
+write, flush, and `fsync` on caller-provided path/value pairs. It rejects open
+failure and negative writes, but not zero/short writes, and does not check flush
+or `fsync`; these callers ignore its return. In progress callback FDE
+`[0x11f1b0,0x120a9e)`:
 
-- firmware-mode progress zero writes `processing` to
+- firmware-mode progress zero attempts `processing` on
   `/update/firmware_update_complete` at `0x11ff11..0x11ff36`, then, unless
-  global mode `0x6d4f94` equals `1`, writes `run` to
+  global state `0x6d4f94` equals `1`, attempts `run` on
   `/update/force_launch` at `0x11ff4c..0x11ff71`;
-- system-mode progress zero performs the corresponding writes at
-  `0x120571..0x120593` and `0x1205a9..0x1205cb`;
-- an additional scheduled-update branch in the same progress handler writes
-  the same force path/value at `0x120371..0x1203a7`, again guarded by global
-  `0x6d4f94 != 1`. Reaching it first requires the separately read and
-  `QString::trimmed()` system- and firmware-completion strings to each compare
-  case-sensitively equal to `complete` (`0x11fb27..0x11fb62` and
-  `0x120228..0x12029c`) and requires predicate `0xe8ad0` to return true at
-  `0x1202a2..0x1202ac`. That predicate logs `isScheduledUpdating` and returns
-  true when `this+0x201` is nonzero or `this+0x1a0 == 0x19`. The branch then
-  writes `complete` to `/update/scheduled_update_complete` and
+- system-mode progress zero attempts `processing` on
+  `/update/system_update_complete` at `0x120571..0x120593`, followed by the
+  corresponding guarded force attempt at `0x1205a9..0x1205cb`;
+- firmware- and system-mode progress 100 attempt `complete` on their status
+  paths at `0x120722..0x120747` and `0x1206b2..0x1206d7`, respectively, then
+  attempt `none` rather than `run` on the force path at
+  `0x120754..0x120779` and `0x1206e4..0x120709`. This is branch-local: later
+  callback flow can still enter the scheduled route and attempt `run` again;
+- an additional scheduled-update branch in the same callback attempts `run` at
+  `0x120371..0x1203a7`, again guarded by `0x6d4f94 != 1`. Reaching it first
+  requires the separately read and `QString::trimmed()` system- and
+  firmware-completion strings to each compare case-sensitively equal to
+  `complete` (`0x11fb27..0x11fb62` and `0x120228..0x12029c`) and requires
+  predicate FDE `[0xe8ad0,0xe8b90)` to return true at `0x1202a2..0x1202ac`.
+  That predicate logs `isScheduledUpdating` and returns true when `this+0x201`
+  is nonzero or `this+0x1a0 == 0x19`. The branch then attempts `complete` on
+  `/update/scheduled_update_complete` and
   `/update/scheduled_update_complete_for_DM` at `0x1202cf..0x12036c` before the
-  guarded force-marker write;
-- another exact writer site for the same force path/value is present at
+  guarded force-marker call; its force attempt is not conditioned on verified
+  success of the preceding scheduled-status attempts;
+- another exact writer call site for the same force path/value is present at
   `0x1151c3..0x1151fa`.
 
-Completion cleanup at `0xfd3d0..0xfd9bb` first removes
-`/update/system_update_completed` through helper `0x13feb0`. For each remaining
-existing status path, including `/update/force_launch`, it writes exact text
+The source of some callback events is now named more closely. Function
+`0x120aa0` logs `DeltaUpdateProgressHandler`; controller ID 1 reaches the
+callback with third argument 5 at `0x120b20..0x120b51`. ID 4 executes
+`0x120b60..0x120b7a`, then joins shared tail-call block
+`0x120b3c..0x120b51`. Timer function `0x120bf0` does the same at
+`0x120c2a..0x120c53`, and Qt dispatch code calls the callback at
+`0x16e49f..0x16e4ab`. These are progress/event routes. The direct progress-zero
+force call sites do not locally read a named signature, digest, certificate, or
+payload-authentication result.
+
+Completion-cleanup FDE `[0xfd3d0,0xfd9bb)` first asks helper `0x13feb0` to remove
+`/update/system_update_completed`; that helper ignores `QFile::remove()`'s
+result. For each remaining
+existing status path, including `/update/force_launch`, it attempts exact text
 `none`; the force-path overwrite is at `0xfd67b..0xfd6e9`. The force-relaunch
 helper therefore calls staging only while the marker's first line is exactly
 `run`, not merely while the file exists; AppDMClient's other staging callers do
-not all consult this marker.
+not all consult this marker. Because cleanup does not verify the generic
+writer's result, this static trace does not prove an old `run` value was
+successfully replaced.
 
 This proves normal software reachability and provenance of the equal local
 source. It does **not** prove that removable media directly controls
-`/update/usb/bin`, that an unauthenticated package creates `force_launch`, or
-that files remain immutable between initial staging and relaunch. The additional writer is therefore bound to local completion text and a
-scheduled-update state predicate, but neither condition is itself a named
-signature or payload-authentication result. Entry into the inner progress
-callback and the provenance of those completion states have not yet been bound
-to a completed authentication state. The equal branch is best described as
-an intended pre-staged relaunch that omits repeated AppDMClient pair checks, not
-as a first-entry authentication bypass.
+`/update/usb/bin`, that an unauthenticated package can produce a valid upstream
+progress event, successful marker writes, or file immutability between initial
+staging and relaunch. In particular, `force_launch=run` has multiple origins and
+alone does not establish completion: direct call sites follow a `processing`
+attempt, while the scheduled site has stronger local completion and
+schedule-state preconditions. The traced call sites consume no named signature
+or payload-authentication result, so their evidence does not itself establish
+authentication; upstream event authentication remains unresolved. The equal
+branch is best described as an intended
+pre-staged relaunch that omits repeated AppDMClient pair checks, not as a
+first-entry authentication bypass.
 
 On the unequal-path branch, helper `0x696f0` tests
 `/update/disableEncryptionUpdate` and returns the inverse of `QFile::exists()`.
@@ -352,8 +377,8 @@ of these states; its deterministic no-input report has SHA-256
 
 1. Analyze source-file stability from the initial unequal staging operation,
    through the separate XML verifier/open sequences, into the now-proven local
-   relaunch; name the authentication state that precedes the progress-zero
-   `force_launch=run` writes.
+   relaunch; determine whether a named authentication state necessarily
+   precedes each valid progress event that can attempt `force_launch=run`.
 2. Recover the second stored version reference and boot-state enum names.
 3. Trace the XML destination helper and prove whether encrypted XML is copied or
    transformed at each branch.

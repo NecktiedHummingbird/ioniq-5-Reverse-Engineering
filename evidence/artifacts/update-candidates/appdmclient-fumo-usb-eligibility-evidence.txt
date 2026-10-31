@@ -95,17 +95,23 @@ EXACT FUMO CHILD MARKER LIFECYCLE
 artifact=exact embedded FUMO ELF
 sha256=464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7
 build-id=863a8730e66a1c5245a1bf458fe2554adee0351a
-0x140a50 opens a supplied path write/truncate, writes supplied UTF-8 value,
-flushes, and fsyncs.
-0x11ff11..0x11ff36 firmware-mode progress zero:
+FDE [0x140a50,0x140cae) attempts supplied-path write/truncate, UTF-8 write,
+flush, and fsync. It rejects open failure and a negative write result, but not
+zero/short writes, and does not test flush/fsync; the callers ignore its return.
+0x11ff11..0x11ff36 firmware-mode progress zero attempts:
   /update/firmware_update_complete = processing
-0x11ff4c..0x11ff71 when global 0x6d4f94 != 1:
+0x11ff4c..0x11ff71 when global 0x6d4f94 != 1 attempts:
   /update/force_launch = run
-0x120571..0x120593 system-mode progress zero:
+0x120571..0x120593 system-mode progress zero attempts:
   /update/system_update_complete = processing
-0x1205a9..0x1205cb when global 0x6d4f94 != 1:
+0x1205a9..0x1205cb when global 0x6d4f94 != 1 attempts:
   /update/force_launch = run
-0x120371..0x1203a7 is an additional scheduled-update writer of
+0x120722..0x120747 firmware progress 100 attempts complete, followed by a
+branch-local force_launch = none attempt at 0x120754..0x120779.
+0x1206b2..0x1206d7 system progress 100 attempts complete, followed by a
+branch-local force_launch = none attempt at 0x1206e4..0x120709. Later callback
+flow may still reach the scheduled run attempt below.
+0x120371..0x1203a7 is an additional scheduled-update attempt of
 /update/force_launch = run, also guarded by global 0x6d4f94 != 1.
 Preconditions for that branch:
   0x11fb27..0x11fb62 trimmed system-completion text compares case-sensitively
@@ -115,21 +121,27 @@ Preconditions for that branch:
   0x1202a2..0x1202ac calls/tests predicate 0xe8ad0
   0xe8ad0 returns this+0x201 != 0 || this+0x1a0 == 0x19 and logs
     "isScheduledUpdating"
-  0x1202cf..0x12036c writes both scheduled-completion markers = complete before
-    the force marker
-These are local completion/scheduled-state conditions, not a named signature
-or payload-authentication result.
-0x1151c3..0x1151fa is another exact /update/force_launch = run writer site.
-0xfd3d0..0xfd9bb completion cleanup writes "none" to remaining existing
-completion-state files; force_launch overwrite occurs at 0xfd67b..0xfd6e9.
-The same cleanup removes /update/system_update_completed through 0x13feb0.
+  0x1202cf..0x12036c attempts both scheduled-completion markers = complete
+    before the force-marker attempt, without checking preceding write success
+These are local completion/scheduled-state conditions; no named cryptographic
+result is consumed at the call sites.
+0x120aa0 logs DeltaUpdateProgressHandler. Controller ID 1 reaches callback
+0x11f1b0 through 0x120b20..0x120b51. ID 4 executes 0x120b60..0x120b7a and
+then joins shared tail-call block 0x120b3c..0x120b51. Timer function 0x120bf0
+reaches the same callback through 0x120c2a..0x120c53.
+0x1151c3..0x1151fa is another exact /update/force_launch = run writer call site.
+FDE [0xfd3d0,0xfd9bb) completion cleanup attempts "none" on remaining existing
+completion-state files; the force_launch attempt occurs at 0xfd67b..0xfd6e9.
+The same cleanup asks helper 0x13feb0 to remove
+/update/system_update_completed; the helper ignores QFile::remove()'s result.
 
 Verdict: normal software reachability of the equal local source is proven. It
 is an intended pre-staged relaunch that omits repeated AppDMClient result-pair
 checks. Direct removable-media control of /update/usb/bin, unauthenticated
-creation of force_launch, source immutability, the provenance of local
-completion state, and a named authentication state preceding progress callback
-entry remain unproved.
+creation of force_launch, source immutability, successful/atomic marker
+transitions, and authentication of upstream progress callback entry remain
+unproved. The callback call sites now prove the origin of the marker write
+attempts; they do not prove successful file state or upstream authentication.
 
 On the unequal path:
 0x696f0 tests /update/disableEncryptionUpdate and returns !exists

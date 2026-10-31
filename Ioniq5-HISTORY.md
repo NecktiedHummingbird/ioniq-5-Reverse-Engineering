@@ -2481,16 +2481,22 @@ and are superseded by corrections rather than silently rewritten.
 ## 2026-11-01 — updater relaunch state is progress, not proof
 
 - Exact callback tracing changed the meaning of one tempting local marker.
-  FUMO writes `force_launch=run` after recording progress as `processing`; when
-  progress reaches 100 it records `complete` and changes the force value to
-  `none`. The run value is therefore not completion evidence.
+  FUMO attempts `force_launch=run` after attempting progress state `processing`;
+  the branch-local progress-100 sequence attempts `complete` and force value
+  `none`, while later scheduled flow can attempt `run` again. The run value has
+  multiple origins and does not by itself establish completion.
 - Some callback traffic now has a name—`DeltaUpdateProgressHandler`—but the
-  direct writer reads no named signature, digest, certificate, or payload-auth
-  result. The unresolved question moved upstream: can a valid progress event
+  direct write sites read no named signature, digest, certificate, or
+  payload-auth result. Their evidence does not itself establish authentication;
+  the unresolved question moved upstream: can a valid progress event
   happen before package authentication, rather than what the marker means.
 - The scheduled route remains different: it reads both completion strings and
-  checks scheduled-update state before writing `run`. Those are still
+  checks scheduled-update state before attempting `run`. Those are still
   operational conditions, not cryptographic proof.
+- This also corrects the earlier shorthand that cleanup “writes `none`.” The
+  generic writer does not reject short writes or check flush/`fsync`, its
+  callers ignore the result, and the remove helper ignores `QFile::remove()`'s
+  result. These are attempts, not proved atomic transitions.
 - A concurrent correction also keeps the residual AF_PACKET frame-count gap
   impact-unknown for V1/V2. Public TPACKET_V3 redundancy does not settle the
   exact common multiplication and later `frame_max` use.

@@ -473,6 +473,27 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C30 — `force_launch=run` does not itself establish completion
+
+- **Was:** inner FUMO writer sites were known, but the completion-string
+  provenance and authentication state preceding force-marker creation remained
+  unnamed.
+- **Now:** callback FDE `[0x11f1b0,0x120a9e)` attempts `processing` at
+  progress zero and then `force_launch=run`; the branch-local progress-100
+  sequence attempts `complete` and then force value `none`, while later
+  scheduled flow can attempt `run` again. The weak writer does not prove full,
+  successful, or atomic transitions. Exact `DeltaUpdateProgressHandler` and
+  timer routes feed some callback events.
+- **Boundary:** no named cryptographic result is read at the direct force-write
+  sites, so the marker alone does not establish completion or authentication in
+  this write-site evidence. This does not prove an unauthenticated package can
+  generate a valid upstream progress event. The scheduled call site retains its
+  separate two-completion-string and schedule-state conditions.
+- **Evidence:** `evidence/appdmclient-fumo-usb-eligibility.md` and
+  `evidence/artifacts/update-candidates/fumo-progress-force-marker-evidence.txt`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

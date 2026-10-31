@@ -51,11 +51,15 @@ Date: 2026-11-01
   - `slotUsbMounted` stores the mount-path `QString` at `this+0x128`, while
     standby-status and exact `force_launch=run` workflows provide fixed local
     relaunch paths;
-  - inner FUMO progress-zero branches write `force_launch=run` and completion
-    cleanup overwrites it with `none`; the additional scheduled branch requires
-    both local completion strings plus `isScheduledUpdating`, but the provenance
-    of that state, the preceding named authentication state, and source
-    immutability remain unresolved;
+  - inner FUMO progress-zero branches attempt `processing` and then
+    `force_launch=run`; the branch-local progress-100 sequence attempts
+    `complete` and then `none`, while later scheduled flow can attempt `run`
+    again. The weak writer proves neither success nor atomicity. Exact
+    `DeltaUpdateProgressHandler` routes now name some callback events, but the
+    force value alone does not establish completion/authentication in the
+    traced write-site evidence. The additional scheduled branch requires both
+    local completion strings plus `isScheduledUpdating`; upstream event
+    authentication and source immutability remain unresolved;
   - explicit section-zero vehicle equality disabled at the reviewed USB call
     sites, while P5-family and later target checks remain;
   - added a numeric/boolean-only model for exact trailer classification and
@@ -90,9 +94,9 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
 2. Name the second stored AppDMClient version reference and numeric boot-state
    values from exact code; trace the XML destination helper.
 3. Trace source stability across initial staging, repeated verifier/parser opens,
-   and the now-proven local relaunch; trace the provenance of the two local
-   completion strings and name any authentication state preceding the FUMO
-   progress-callback `force_launch=run` writes.
+   and the now-proven local relaunch; continue upstream from
+   `DeltaUpdateProgressHandler` to determine whether a named authentication
+   state necessarily precedes each valid progress event.
 4. Continue from the now-named navigation-map signature use into other FUMO
    mode-byte decryption, digest, archive, and write functions; map inner
    AppUpgrade `car-variant`/system-version decisions without inferring that one

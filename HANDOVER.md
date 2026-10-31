@@ -42,10 +42,15 @@ followed by stateful service/CAN/persistence reconstruction.
   relaunch: `slotUsbMounted` stores its path in `this+0x128`, standby status 12
   can use fixed `/update/usb/bin`, and a helper relaunches from that directory
   only when the first line of `/update/force_launch` is exact `run`. The inner
-  FUMO progress handler writes that pair in system/firmware progress-zero
-  branches and completion cleanup changes it to `none`. Direct USB control of
-  the local staging directory, authentication state before the marker write,
-  and source stability across separate opens remain unresolved. Reviewed USB
+  FUMO progress handler attempts that pair in system/firmware progress-zero
+  branches after attempting `processing`; the branch-local progress-100 sequence
+  attempts `complete` and force value `none`, but later scheduled flow can
+  attempt `run` again. The weak writer does not prove successful or atomic
+  transitions. Some events are traced through exact `DeltaUpdateProgressHandler`
+  routes, so `force_launch=run` alone does not establish completion or
+  authentication in the traced write-site evidence. Direct USB control
+  of the local staging directory, authentication of the upstream progress
+  event, and source stability across separate opens remain unresolved. Reviewed USB
   calls disable one section-zero vehicle comparison, but P5-family and later
   AppUpgrade `car-variant`/target checks remain. See
   `evidence/appdmclient-fumo-usb-eligibility.md`. Numeric-only tool
