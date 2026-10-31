@@ -82,10 +82,26 @@ Date: 2026-11-01
     No retained open description or identity revalidation binds those consumers
     to the verified object. Added exact retained assembly, an eleven-input schema-v2
     model, and exhaustive valid-state tests. Runtime mutability, object mismatch,
-    later reauthentication, update acceptance, root, and persistence remain
-    unproved. Focused validation passed `9 tests, 2056 subtests`; the full suite
-    passed `543 tests, 140279 subtests`; the public harness passed, and
-    independent corrected package review returned **ACCEPT**.
+    effective indirect/external reauthentication, update acceptance, root, and
+    persistence remain unproved. Focused validation passed `9 tests, 2056 subtests`;
+    the full suite passed `543 tests, 140279 subtests`; the public harness passed,
+    and independent corrected package review returned **ACCEPT**;
+  - completed exact embedded FUMO authentication-coverage review. Startup
+    `[0x125800,0x126fe4)` derives a resource base directory from `argv[0]`;
+    verifier `[0x45820,0x45d75)` has exactly six direct call sites and file-MD5
+    helper `[0x140f50,0x1413e4)` has exactly two. Fixed/enumerated operands cover
+    the descriptor, archive, firmware entries, resources, and navigation files.
+    Parameterized verifier operands remain incomplete: `0x100bb0` receives its
+    target through `%rdx`, while direct caller `0x16e030` forwards a QString from
+    a meta-call argument structure. Worker relaunch `[0x6c9a0,0x6cab5)` calls
+    `execv` without a direct pre-exec verifier/hash step inside that FDE. Added
+    V-032, retained assembly and parameter callers, a thirteen-input schema-v2
+    model, and exhaustive Boolean tests. Outer-executable reauthentication stays
+    unknown; source mutability, mismatch, bypass, accepted update, root, and
+    persistence are also unproved. Focused validation passed `10 tests, 8203
+    subtests`; the full suite passed `553 tests, 148482 subtests`; the public
+    harness passed; corrected independent exact-binary/package review returned
+    **ACCEPT**.
 - Wrote `evidence/appupgrade-update-trust.md`,
   `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
@@ -104,10 +120,12 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    complete enough for the current route verdict.
 2. Name the second stored AppDMClient version reference and numeric boot-state
    values from exact code; trace the XML destination helper.
-3. Determine runtime source mutability/immutability and whether inner FUMO
-   reauthentication closes the now-proven pathname-reopen boundary; continue
-   upstream from `DeltaUpdateProgressHandler` to determine whether a named
-   authentication state necessarily precedes each valid progress event.
+3. Determine runtime source mutability/immutability. Resolve complete producers
+   for the parameterized direct signature-verifier targets plus remaining
+   indirect/external/loader checks and final payload binding. Continue upstream
+   from `DeltaUpdateProgressHandler` to
+   determine whether a named authentication state necessarily precedes each
+   valid progress event.
 4. Continue from the now-named navigation-map signature use into other FUMO
    mode-byte decryption, digest, archive, and write functions; map inner
    AppUpgrade `car-variant`/system-version decisions without inferring that one

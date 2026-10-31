@@ -382,10 +382,13 @@ of these states; its deterministic no-input report has SHA-256
 
 ## Remaining work
 
-1. Determine runtime source immutability/mutability and whether a later inner
-   authentication step closes the now-proven static pathname-reopen boundary;
-   also determine whether a named authentication state necessarily precedes
-   each valid progress event that can attempt `force_launch=run`.
+1. Determine runtime source immutability/mutability. V-032 inventories the
+   exact inner FUMO direct signature/hash calls and resolves startup/relaunch,
+   but parameterized verifier-target producers remain incomplete; resolve them
+   plus indirect/external/loader checks and exact final payload binding. Also
+   determine whether a named authentication
+   state necessarily precedes each valid progress event that can attempt
+   `force_launch=run`.
 2. Recover the second stored version reference and boot-state enum names.
 3. Trace the XML destination helper and prove whether encrypted XML is copied or
    transformed at each branch.

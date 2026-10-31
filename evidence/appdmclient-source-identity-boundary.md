@@ -134,8 +134,10 @@ At least these independent facts remain unknown:
 - whether the object examined by the verifier and object consumed later ever
   differ in a real run;
 - whether copy/decryption and the asynchronous launch request succeed;
-- whether the launched outer/inner updater performs later authentication or
-  payload-binding checks that reject changed content;
+- whether unresolved parameterized direct-verifier targets or indirect/
+  external/loader checks authenticate the outer executable; V-032 completed the
+  direct call-instruction inventory but could not classify every target producer,
+  while final payload binding remains under reconstruction;
 - whether any accepted content reaches an inactive partition, slot selection,
   boot trust, health, or mark-good;
 - whether the owner's installed binary matches this recovered artifact.

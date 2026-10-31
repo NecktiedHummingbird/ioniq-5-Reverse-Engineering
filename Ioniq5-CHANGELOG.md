@@ -17,13 +17,14 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   libraries — neither attempted.
 - Neither V-007 nor V-014 moves on this. No parser vulnerability is claimed.
 
-## 1.65.0 - bound inner FUMO authentication coverage to its actual trust subjects
+## 1.65.0 - map inner FUMO authentication coverage and its unresolved parameters
 
 - Bound exact embedded FUMO identity, startup path derivation, verifier `[0x45820,0x45d75)`, file-MD5 helper `[0x140f50,0x1413e4)`, and worker relaunch `[0x6c9a0,0x6cab5)`.
-- A whole-`.text` direct-call inventory found six file-verifier calls and two MD5-helper calls. Their operands are the descriptor, archive, enumerated firmware/components, resources, or navigation files—not the staged/running outer updater executable.
-- Startup reduces `argv[0]` to a base directory used for resources. The worker `execv` wrapper contains no direct executable verifier/hash step. This narrows V-031 but does not exclude indirect, external, loader, or boot-stage checks.
-- Added V-032, retained exact assembly, a dedicated evidence report, and a thirteen-input schema-v2 Boolean model. Complete reviewed negative coverage is required before reporting direct reauthentication absent; incomplete coverage remains `null`, and absolute absence remains `null` unless indirect/external checks are separately excluded.
-- Focused validation passed `10 tests, 8203 subtests`. No updater, verifier, helper, target path, recovered executable, launch request, package, archive, partition, slot, boot state, target syscall, root action, or persistence mechanism was exercised.
+- A whole-`.text` direct-call inventory found six file-verifier calls and two MD5-helper calls. Fixed and enumerated operands cover the descriptor, archive, firmware entries, resources, or navigation files.
+- Several signature-verifier routes remain parameterized. At `0x100bb0` the target derives from function argument `%rdx`, and direct caller `0x16e030` forwards a QString from a meta-call argument structure. Absence of a staged/running outer-updater operand is therefore not proved.
+- Startup reduces `argv[0]` to a base directory used for resources. The worker `execv` wrapper contains no direct executable verifier/hash step inside that FDE, but parameterized, indirect, external, loader, and boot-stage checks remain unresolved.
+- Added V-032, retained exact assembly and parameter-forwarding callers, a dedicated evidence report, and a thirteen-input schema-v2 Boolean model. Incomplete target coverage keeps direct reauthentication and identity-gap closure `null`; absolute absence additionally requires indirect/external exclusion.
+- Focused validation passed `10 tests, 8203 subtests`; the full suite passed `553 tests, 148482 subtests`; the public harness passed; corrected independent exact-binary/package review returned **ACCEPT**. No updater, verifier, helper, target path, recovered executable, launch request, package, archive, partition, slot, boot state, target syscall, root action, or persistence mechanism was exercised.
 
 ## 1.62.0 - interposition is structurally blocked; the shim approach is retired
 

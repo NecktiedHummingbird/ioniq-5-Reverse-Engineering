@@ -1,16 +1,23 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-11-02**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-11-03**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## Inner FUMO authentication-coverage checkpoint — 2026-11-03
+
+- V-032 binds exact embedded FUMO SHA-256 `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7`, Build ID `863a8730e66a1c5245a1bf458fe2554adee0351a`, startup argument flow, verifier `[0x45820,0x45d75)`, file-MD5 helper `[0x140f50,0x1413e4)`, and worker relaunch `[0x6c9a0,0x6cab5)`.
+- Whole-`.text` scans find exactly six direct verifier calls (`0x7be3a,0x80095,0x802f0,0x9d1d2,0x100bb0,0x140092`) and two direct file-MD5 calls (`0x1432f6,0x15170c`). Fixed/enumerated operands cover the descriptor, archive, firmware entries, resources, or navigation files. Parameterized verifier operands are not fully classified: `0x100bb0` receives its target through `%rdx`, and direct caller `0x16e030` forwards a QString from a meta-call argument structure.
+- Startup reduces `argv[0]` to a resource base directory, and the worker `execv` wrapper has no direct pre-exec verifier/hash step inside that FDE. The direct call-instruction inventory is complete, but outer-executable reauthentication remains unknown because parameterized target producers, indirect/virtual calls, external helpers/services, and loader/boot checks are unresolved. Final payload binding, runtime mutability, changed-object observation, successful launch, update acceptance, partition writes, slot/boot acceptance, root and persistence also remain unresolved.
+- Added exact retained assembly, `evidence/appfumo-authentication-coverage.md`, and a thirteen-input schema-v2 model. Focused validation passed `10 tests, 8203 subtests`; the full suite passed `553 tests, 148482 subtests`; the public harness passed; corrected independent review returned **ACCEPT**. No updater, verifier, helper, target path, launch request, package, partition, slot, boot state, or target syscall was exercised.
+
 ## AppDMClient source-identity checkpoint — 2026-11-03
 
 - V-031 records an exact caller-side pathname-reopen boundary in recovered AppDMClient. Verifier wrapper `[0x34870,0x34d43)` returns integer status only; staging verifies AppUpgrade/XML at `0x802db`/`0x80320` and later executes a pathname copy at `0x8296b`; the XML reader verifies at `0xe1ff7` and separately opens at `0xe22d5` or `0xe281f`.
 - No retained open description, inode/device comparison, or identity revalidation binds those later consumers to the object examined by the earlier verifier. This proves static TOCTOU structure, not runtime substitution.
-- Runtime source mutability/immutability, an actual object mismatch, successful staging/launch, later inner authentication, update acceptance, partition writes, slot switching, boot acceptance, root and persistence remain unobserved.
+- Runtime source mutability/immutability, an actual object mismatch, successful staging/launch, effective indirect/external authentication, update acceptance, partition writes, slot switching, boot acceptance, root and persistence remain unobserved.
 - Added retained exact assembly, `evidence/appdmclient-source-identity-boundary.md`, and an eleven-input schema-v2 Boolean model. The pre-recorded state reports the static boundary and conditional launch structure while runtime feasibility remains `null`. Focused validation passed `9 tests, 2056 subtests`; the full suite passed `543 tests, 140279 subtests`; the public harness passed. Independent corrected package review returned **ACCEPT**. No updater, source path, race, launch request, target execution, package, partition, or slot was exercised.
 
 ## exec argument-stack cap checkpoint — 2026-11-03
