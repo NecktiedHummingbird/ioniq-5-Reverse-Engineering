@@ -2842,6 +2842,18 @@ and are superseded by corrections rather than silently rewritten.
   repeated free, crash, corruption, privilege transition or persistence action
   was performed.
 
+## 2026-11-03 — associative-array nonleaf callback rejected by exact guard
+
+- Exact `assoc_array_insert` handles null terminal-node slots, tests pointer tag
+  bit zero, and branches metadata-tagged nodes/shortcuts past the object-comparison
+  callback. Only non-null leaf-tag fallthrough reaches it across all 16 slots.
+- Exact `__key_link_begin` binds `keyring_assoc_array_ops` and calls the reviewed
+  insertion routine. This establishes static keyring use, not runtime permissions,
+  attacker-created tree shape, callback execution, disclosure, crash, or root.
+- Added retained exact machine code and an exhaustive Boolean-only model without
+  issuing a target/key syscall, creating key state, mutating an associative array,
+  or executing target code.
+
 ## 2026-11-03 — ioprio UAF read rejected by exact same-lock effects
 
 - Exact `get_task_ioprio` acquires the target task lock before loading the I/O

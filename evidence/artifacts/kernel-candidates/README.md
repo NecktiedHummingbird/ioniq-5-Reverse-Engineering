@@ -114,6 +114,7 @@ commits:
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2016-7910: `77da160530dd1dc94f6ae15a981f24e5f0021e84`;
 - CVE-2016-7911: `8ba8682107ee2ca3347354e018865d8e1967c5f4`;
+- CVE-2016-7914: `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
@@ -184,6 +185,17 @@ reject the CVE-specific unlocked UAF-read premise. SHA-256:
 `cve-2016-7911-fix.patch` is upstream commit
 `8ba8682107ee2ca3347354e018865d8e1967c5f4`; SHA-256:
 `35c7a6a530095ed0424987d820e46db341a250820ed88ce1b1a89ec30acabd67`.
+
+`kernel-assoc-array-cve-2016-7914.asm` retains complete embedded-kallsyms-bounded
+`assoc_array_insert` and `__key_link_begin` machine code. In the inlined
+terminal-node loop, metadata-tagged node/shortcut slots branch around the
+`ops->compare_object` callback; only non-null leaf-tag fallthrough reaches it,
+and the loop covers all 16 slots. These effects reject the CVE-specific nonleaf
+callback premise. SHA-256:
+`382b2a7b6083ebfabfd65cc3fd0c3da11999d190708df69156e7bb6f4ec0386c`.
+`cve-2016-7914-fix.patch` is upstream commit
+`8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`; SHA-256:
+`6ad914e07cb0cab1d3e6826119287553b5e96356f2b4a4366d8e73b7cc18c481`.
 
 `kernel-perf-cve-2017-6001.asm` retains complete absolute-vmlinux FDEs for
 `perf_event_ctx_lock_nested.isra.60` and `SYSC_perf_event_open`. The former

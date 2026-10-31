@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## associative-array leaf-guard checkpoint — 2026-11-03
+
+- CVE-2016-7914 is rejected for exact recovered `vmlinux` by leaf-guard effects matching upstream `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2`; the stripped binary cannot establish commit provenance.
+- Exact `assoc_array_insert [0xffffffff8121379b,0xffffffff812140ee)` loads each terminal-node slot, handles null, tests tag bit zero, and branches metadata-tagged node/shortcut pointers past the `ops->compare_object` callback at `0xffffffff812138b7`. Only a non-null leaf-tag fallthrough reaches the callback, and the loop covers all 16 slots.
+- `CONFIG_KEYS=y`; exact `__key_link_begin [0xffffffff811b428f,0xffffffff811b437a)` passes `keyring_assoc_array_ops` and directly calls `assoc_array_insert`. This proves compiled reachability, not runtime key policy, attacker-controlled tree shape, callback execution, disclosure, crash, or installed identity.
+- The nine-input schema-v2 model leaves incomplete guard facts unknown absent an explicit nonleaf callback path. No target/key syscall, key/keyring state, associative-array mutation, target execution, crash, or privilege action was created. Focused validation passed `8 tests, 524 subtests`; the full suite passed `526 tests, 136161 subtests`, and the public harness passed with `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent exact-binary review returned **REJECTED-BY-FIX-EFFECTS** and final package review returned **ACCEPT**.
+
 ## ioprio task-lock checkpoint — 2026-11-03
 
 - CVE-2016-7911 is rejected for exact recovered `vmlinux` by same-lock effects matching upstream `8ba8682107ee2ca3347354e018865d8e1967c5f4`; the stripped binary does not establish commit provenance.

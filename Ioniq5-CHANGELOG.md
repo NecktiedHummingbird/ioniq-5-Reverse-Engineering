@@ -3,6 +3,13 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.62.0 - reject CVE-2016-7914 by exact associative-array leaf guard
+
+- Bound complete exact `assoc_array_insert` and `__key_link_begin` machine code against upstream fix `8d4a2ec1e0b41b0cf9a0c5cd4511da7f8e4f3de2` rather than relying on the `4.1.27-abl` banner.
+- In the inlined terminal-node loop, null slots are handled separately, metadata-tagged node/shortcut pointers branch past `ops->compare_object`, and only non-null leaf-tag fallthrough reaches the callback. The loop covers all 16 slots.
+- Added complete exact machine code, the authoritative patch, a nine-input Boolean-only schema-v2 model, and exhaustive 512-state tests. Incomplete guard facts remain unknown unless a nonleaf callback path is explicit.
+- Kept installed identity, runtime key/SMACK policy, tree shape, callback execution, out-of-bounds read, disclosure, crash, corruption, root and persistence unobserved. No target/key syscall, key/keyring state, target execution, crash, or privilege action was created.
+
 ## 1.59.0 - buffer shim built and deployed; the trial run did not execute
 
 - Built `vnbuf_shim.so` (16,904 bytes, cross-built with the bundled zig). It interposes `wl_display_connect` to
