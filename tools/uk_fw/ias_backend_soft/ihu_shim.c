@@ -1,8 +1,9 @@
-/* ihu_shim — research stand-in for the component that publishes the vehicle
- * interface shared memory. Qt names each segment qipc_sharedmemory_<key><sha1(key)>
- * (derived empirically from two vendor-created segments), and looks it up with
- * ftok()/shmget(). This creates those segments, zero-filled, so the UI's
- * QSharedMemory::attach() succeeds instead of failing with "key file doesn't exist". */
+/* ihu_shim — research stand-in for the component that publishes the UI's shared
+ * memory. The segment names below are not derived: they are the exact paths
+ * AppHomeScreen opens, taken from a strace of its openat calls. Qt validates the
+ * segment it finds under that name, so guessing the naming scheme is unnecessary
+ * once the paths are observed. Each has a matching qipc_systemsem_ file, which is
+ * created too because Qt's lock primitive keys off it. */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
@@ -13,62 +14,69 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define SEG_SIZE (64 * 1024)
+#define SEG_SIZE (256 * 1024)
 #define LOG "/dev/ttyS0"
 
-static const char *names[] = {
-	"qipc_sharedmemory_Ihuafa1c800e2cb4324051d4a6c30bf03eefaa4c234",
-	"qipc_sharedmemory__Ihu020b5f4fae836a0e9a31f05c6d749665ac17c380",
-	"qipc_sharedmemory_Inform9249a9ea618eadddc5f50ec3bcef3020f3363eaf",
-	"qipc_sharedmemory__Informa0189e498cc73ecec9ea792ca1a0c0cc8736a632",
-	"qipc_sharedmemory_Information0eb5ed506e4923c28d7f4a8aa69efe99b3ad75d1",
-	"qipc_sharedmemory__Informationb1579cb6c837abf773557ea8d39ba66de574dd34",
-	"qipc_sharedmemory__Canda432d766b5e1c87c5292122b5df6771e198c0c7",
-	"qipc_sharedmemory_Can88e288f3e3ca8d1137556d908dcb9f355209464b",
-	"qipc_sharedmemory_PhevInterfacec18480c98979dd199078c72d2c4bf6aeb6caccd4",
-	"qipc_sharedmemory__PhevInterface05f27930f3fd33faa4a5680c7a26723610fd5657",
-	"qipc_sharedmemory__CryptoService8c82990da17a066a0c6296cda841f64c25b82604",
-	"qipc_sharedmemory_CryptoService8c5d64483b27fd0cb238e691513c1c008718633e",
+static const char *shm_names[] = {
+	"qipc_sharedmemory_KEYSUPPORTCHINESEe3470ef71edd715f5f694841d355b50f7c71483d",
+	"qipc_sharedmemory_MICOMSTATUSMESSAGEea9b2c48d97ddb319dd9ac9fa4f70206a8ccd52c",
+	"qipc_sharedmemory_NMODELAPTIMEKEYc453fc8fe1f96116d96145fd37645e3658489c99",
+	"qipc_sharedmemory_STATUSBARINTERNALDATA53fb489e58485f4bd4d94f2dce92ad7002f7f4ca",
+	"qipc_sharedmemory_STSTATUSBARNAME610af764cdf93ec51776f5a81c46c30b9e6c1436",
+	"qipc_sharedmemory_TMSSERVICETABLEc56e0ae23d521cc964a353161d21b85f4b71b883",
 };
+
+static const char *sem_names[] = {
+	"qipc_systemsem_KEYSUPPORTCHINESEe3470ef71edd715f5f694841d355b50f7c71483d",
+	"qipc_systemsem_MICOMSTATUSMESSAGEea9b2c48d97ddb319dd9ac9fa4f70206a8ccd52c",
+	"qipc_systemsem_NMODELAPTIMEKEYc453fc8fe1f96116d96145fd37645e3658489c99",
+	"qipc_systemsem_STATUSBARINTERNALDATA53fb489e58485f4bd4d94f2dce92ad7002f7f4ca",
+	"qipc_systemsem_STSTATUSBARNAME610af764cdf93ec51776f5a81c46c30b9e6c1436",
+	"qipc_systemsem_TMSSERVICETABLEc56e0ae23d521cc964a353161d21b85f4b71b883",
+};
+
+static void touch(const char *path)
+{
+	int fd = open(path, O_CREAT | O_RDWR, 0666);
+	if (fd >= 0)
+		close(fd);
+}
 
 int main(void)
 {
 	int log = open(LOG, O_WRONLY);
-	int i, made = 0;
+	unsigned int i, made = 0;
+	char path[256];
 
-	for (i = 0; i < (int)(sizeof names / sizeof names[0]); i++) {
-		char path[256];
-		int fd;
+	for (i = 0; i < sizeof sem_names / sizeof sem_names[0]; i++) {
+		snprintf(path, sizeof path, "/tmp/%s", sem_names[i]);
+		touch(path);
+	}
+	for (i = 0; i < sizeof shm_names / sizeof shm_names[0]; i++) {
 		key_t k;
 		int id;
+		void *p;
 
-		snprintf(path, sizeof path, "/tmp/%s", names[i]);
-		fd = open(path, O_CREAT | O_RDWR, 0666);
-		if (fd < 0) {
-			dprintf(log, "ihu-shim: cannot create %s: %s\n", path, strerror(errno));
-			continue;
-		}
-		close(fd);
+		snprintf(path, sizeof path, "/tmp/%s", shm_names[i]);
+		touch(path);
 		k = ftok(path, 'Q');
 		if (k == -1) {
-			dprintf(log, "ihu-shim: ftok failed for %s\n", path);
+			dprintf(log, "ihu-shim: ftok failed %s\n", shm_names[i]);
 			continue;
 		}
 		id = shmget(k, SEG_SIZE, IPC_CREAT | 0666);
 		if (id < 0) {
-			dprintf(log, "ihu-shim: shmget failed for %s: %s\n", path, strerror(errno));
+			dprintf(log, "ihu-shim: shmget failed %s: %s\n", shm_names[i], strerror(errno));
 			continue;
 		}
-		{
-			void *p = shmat(id, NULL, 0);
-			if (p != (void *)-1) {
-				memset(p, 0, SEG_SIZE);
-				shmdt(p);
-			}
+		p = shmat(id, NULL, 0);
+		if (p != (void *)-1) {
+			memset(p, 0, SEG_SIZE);
+			shmdt(p);
 		}
 		made++;
-		dprintf(log, "ihu-shim: created %s (id=%d)\n", names[i], id);
+		dprintf(log, "ihu-shim: created %s (id=%d size=%d)\n", shm_names[i], id, SEG_SIZE);
 	}
-	dprintf(log, "ihu-shim: %d segment(s) created\n", made);
+	dprintf(log, "ihu-shim: %u segment(s)\n", made);
 	return made ? 0 : 1;
 }

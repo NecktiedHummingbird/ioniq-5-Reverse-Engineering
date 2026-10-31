@@ -3,6 +3,26 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.43.0 - strace gave the real segment names; the shim now targets them
+
+- **Stopped guessing Qt's naming.** `strace -e trace=openat` on `AppHomeScreen` with the compositor up produced
+  the exact paths it opens, and they are not the keys previously assumed. The six it actually touches are:
+
+  `KEYSUPPORTCHINESE`, `MICOMSTATUSMESSAGE`, `NMODELAPTIMEKEY`, `STATUSBARINTERNALDATA`,
+  `STSTATUSBARNAME`, `TMSSERVICETABLE` — each with a matching `qipc_systemsem_` file.
+
+  `/Ihu` and `/Inform` were keys referenced by *other* binaries, not by this application.
+- The earlier "rule" was wrong and is retracted: `sha1(key)` matched two samples but matches **none** of the six
+  observed here, so it was coincidence plus an over-general conclusion from a small number. The lesson is that
+  observing the path directly is cheaper than deriving a naming scheme, and I should have straced first.
+- `ihu-shim` now creates exactly those six names (and their `qipc_systemsem_` counterparts, 256 KB each) and
+  reported six successful `shmget` calls with ids returned.
+- **This run's result is inconclusive, not negative:** `commit` is **0**, which means the application never
+  reached the compositor at all, so the shared-memory and buffer counters in it are meaningless. Fourth
+  occurrence of the same trap, and this time it was caught before the numbers were read as a finding.
+- Next: print the first lines of `/tmp/app.log` in the same run, so the failure that precedes the compositor is
+  visible, and only then re-read the attach counters.
+
 ## 1.42.0 - with the compositor up the shim does not fix the attach; buffer still never supplied
 
 - Ran the decisive measurement properly this time, compositor up and shim applied:

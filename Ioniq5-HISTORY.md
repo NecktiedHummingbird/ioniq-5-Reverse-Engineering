@@ -2580,3 +2580,13 @@ and are superseded by corrections rather than silently rewritten.
 - Follow-up separated two superficially similar stack initializations: the params and general callback records are fully cleared, while `snd_timer_user_tinterrupt` clears only a separate timestamp object.
 - Exact queue and read copies preserve all 32 record bytes, leaving two four-byte ABI padding regions as a conditional CVE-2016-4578 disclosure path (V-021). No bytes were collected and no root impact is claimed.
 - Exact sequencer locking rejected CVE-2016-2544, prior cleanup semantics also reject CVE-2016-2548, and CVE-2016-2549 is unavailable because the ALSA hrtimer provider is absent.
+
+## 2026-10-31 — strace beat derivation
+
+- The naming scheme I had "derived" from two samples was wrong for every key that actually mattered. One strace
+  produced the six exact paths, which is both faster and certain.
+- The general lesson is now unambiguous: when a component's behaviour is observable, observe it. Deriving an
+  algorithm from a couple of data points produces confident, coherent and false results, which is exactly the
+  kind of error that costs a great deal of time to unwind.
+- The run itself proved nothing, and I am recording it as proving nothing rather than as a failed experiment:
+  zero commits means the application never got as far as the thing being measured.
