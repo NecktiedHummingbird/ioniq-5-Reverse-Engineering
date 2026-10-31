@@ -3074,3 +3074,13 @@ and are superseded by corrections rather than silently rewritten.
   the emulation and not in my experimental design.
 - Recording the full list of four attempts, with what each eliminated, is the deliverable. The next person should not
   have to rediscover that SMACK is innocent, the registry is innocent, and the dependency is innocent.
+
+## 2026-10-31 — the thing that was actually broken
+
+- What looked like a dozen separate failures in the launcher resolved into one behaviour: it retries an application it
+  cannot start, forever, and dispatches nothing while it does. Twenty retries in a single boot, with the dependency
+  running.
+- Recording it changes the meaning of earlier negatives. V-028's runtime tests were measuring this loop, not the launch
+  path, and now the register says so in both places rather than leaving me to remember it.
+- The honest part is the boundary: observed in emulation, not characterised on hardware, no security impact claimed —
+  and yet still the most useful thing learned about the launcher all session.

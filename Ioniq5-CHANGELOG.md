@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.75.0 - recorded V-036: the launcher's dispatch stalls behind an unstartable appId 2
+
+- The open item flagged at the end of the last entry is now characterised and registered. In a boot where
+  `com.lge.avn.applauncher` is registered, the launcher emits
+  `getAppProcessByAppId appId[2][ApplicationManager]` about every 1.7 s and **does not leave that loop** — twenty
+  occurrences in one boot, **including after `ApplicationManager` was started and running**. During the same window a
+  well-formed `launch` call was accepted and produced **zero `appId[999]` dispatch entries**.
+- Recorded as **V-036**, an availability defect observed in emulation, explicitly not a memory-safety or privilege
+  issue, with the misleading part stated: the loop persists even when its dependency *is* satisfied.
+- It is also the honest explanation for V-028's runtime negatives: they measured this loop, not the launch path. That
+  distinction is now written where both entries can see it.
+- Defensive remediation recorded: bound the retry with backoff and a terminal state, keep dispatching while a
+  dependency is retried, and surface an error instead of looping silently.
+
 ## 1.83.0 - reject exact CVE-2018-9568 socket clone creator mismatch
 
 - Bound the exact EU `260128` kernel by SHA-256
@@ -19,25 +33,44 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   creator-overwriting copy starts at `+0x78` and spans `obj_size-0x78`. Exact
   TCP/TCPv6 sizes `0x780`/`0x840` include creator. The function then reloads
   source current protocol at `0xffffffff81478862` and stores it to child
-  creator at `0xffffffff81478867`, with no later overwrite.
-- Distinguished cleanup precisely: the creator correction dominates the only
-  observed in-function post-copy `sk_free` at `0xffffffff81478a12` and every
-  return. Later TCP caller cleanup is possible only after the corrected non-null
-  clone returns. Complete address-form code can rewrite current protocol to
-  `tcp_prot` without creator rewrite, and the compiled child route is
+  creator at `0xffffffff81478867`, with no later overwrite. Exact
+  `security_fixup_ops` fills the intervening configured/default LSM clone hook
+  with complete no-op `cap_sk_clone_security`, excluding callback mutation of
+  the allocator protocol before that reset.
+- Distinguished cleanup precisely: the creator-overwriting copy ends at
+  `0xffffffff8147884e`, with linear normal control through the reviewed callback
+  to the correction. Both failure decisions feeding the complete function's
+  only post-copy direct `sk_free` at `0xffffffff81478a12` follow that store; the
+  cleanup path returns null, while every non-null return passes the correction
+  and no later creator overwrite exists. Later TCP caller cleanup is separate:
+  each wrapper tests the returned child first, so it is possible only after the
+  corrected non-null clone has successfully returned. Complete address-form
+  code can rewrite current protocol to `tcp_prot` without creator rewrite, and
+  the compiled child route is
   `tcp_v4_syn_recv_sock -> tcp_create_openreq_child -> inet_csk_clone_lock ->
   sk_clone_lock`.
-- Retained byte-identical mainline `9d538fa60bad...` and stable 4.1.y
-  `0a11ea32304f...` patches (SHA-256 `c1f738...d085d` and
-  `756c97...d8ba`) plus complete exact-static artifact SHA-256
-  `ce0ff16...60bc9`. The exact result is direct patch shape and rejects the
-  named mismatch semantics, but does not prove direct cherry-pick provenance.
+- Verified byte-identical patches in canonical ignored
+  `work/online-kernel-candidates-20261107/cve-2018-9568/`: mainline commit
+  `9d538fa60bad4f7b23193c89e843797a1cf71ef3`, parent
+  `b32ca44a88def4bf92626d8777494c6f14638c42`, patch SHA-256
+  `c1f7389124f499cc764ce39a25f841bc701f0d3e8e4ab6a86f3c578941ed085d`;
+  and stable commit `0a11ea32304f6ad6daf5589b6626775b7f00015c`, parent
+  `cafd2b53da565ca30c48a146635c95d385d83b81`, patch SHA-256
+  `756c9749346bda510e242b02b849448418196bc1f95684dbcbbf362eff60d8ba`.
+  Both corresponding 20261102 analysis copies pass byte-for-byte `cmp` and
+  produce the same authoritative hashes; that directory is not canonical
+  provenance. Patch bodies are not copied into tracked evidence because they
+  contain the complete
+  operational trigger program. Retained complete exact-static artifact SHA-256
+  is `e876c4...53273`. The result is direct patch shape and rejects the named
+  mismatch semantics, but does not prove direct cherry-pick provenance.
 - Added a strict 15-input Boolean-only classifier separating direct patch shape,
-  equivalent fix, vulnerable semantics, absent route, and indeterminate. It
-  fails closed on incomplete/conflicting state, exhausts all 32,768 Boolean
-  states while asserting every classification field, rejects missing/unknown
-  keys and non-Boolean types, and emits deterministic UTF-8 with one LF through
-  `sys.stdout.buffer` independently of `PYTHONIOENCODING`.
+  equivalent fix, vulnerable semantics, positively established absent route,
+  and indeterminate. It fails closed on incomplete/conflicting state, exhausts
+  all 32,768 Boolean states while asserting every classification and output
+  field, rejects every missing key, unknown keys, and non-Boolean types, and
+  emits deterministic UTF-8 with one LF through `sys.stdout.buffer`
+  independently of `PYTHONIOENCODING`.
 - No target execution, sockets, address-form operation, clones, listeners,
   traffic, malformed input, trigger, exploit, privilege action, or persistence
   action occurred. Installed identity, runtime route/policy, wrong-cache free,

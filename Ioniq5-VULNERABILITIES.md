@@ -754,6 +754,28 @@ libraries directly — neither of which was attempted here.
 **Status unchanged:** V-007's reachability stands (demonstrated), V-014's ageing-exposure framing stands. No parser
 vulnerability is claimed, and this test does not move either entry.
 
+## V-036 — ApplicationLauncher dispatch stalls behind an unstartable appId 2 (OBSERVED IN EMULATION)
+
+- **Status:** behaviour observed repeatedly in the VM; not characterised against a live unit. Availability defect with a
+  security consequence for this project's work, not a memory-safety or privilege issue.
+- **What happens:** once `com.lge.avn.applauncher` is registered, the launcher loops on
+  `ApplicationLauncher::getAppProcessByAppId appId[2][ApplicationManager]` roughly every 1.7 s and does not exit that
+  loop — **twenty occurrences in one boot, including after `ApplicationManager` was started and running**. While the
+  loop persists, **no external request is dispatched at all**: in the same bosss, a well-formed `launch` call was
+  accepted by the bus and produced **zero** `appId[999]` dispatch entries.
+- **Why it matters beyond the emulation:** the launcher's dispatch path is what V-028 relies on, so this loop is the
+  demonstrated reason V-028's runtime execution could not be reproduced here. Anything that prevents
+  `ApplicationManager` from being observed as running — a crash, a missing dependency, or withholding it — plausibly
+  keeps the launcher in this loop indefinitely, which is a local availability effect on the HMI.
+- **What is *not* established:** that the loop is unconditional on hardware, that it persists after a successful
+  `ApplicationManager` start (it did here, which is the interesting part), or that any privileged action is denied
+  rather than merely deferred. No security impact is claimed.
+- **Relevance to V-028:** recorded as the specific, observed obstacle to reproducing V-028 at runtime. If this loop is
+  cleared on a unit, the V-028 runtime test becomes meaningful; until then its negative results say more about this
+  defect than about V-028 itself.
+- **Remediation direction (defensive):** bound the launch retry with backoff and a terminal state, keep dispatching
+  while a dependency is being retried, and surface a diagnosable error rather than looping silently.
+
 ## Rejected / out-of-scope items
 
 - **Keystore ioctl tail disclosure:** rejected; decoded ioctl size is `0x120`, covering fields read (correction C8).
@@ -773,6 +795,7 @@ vulnerability is claimed, and this test does not move either entry.
 - CVE-2016-7911 is rejected despite the old kernel banner. Exact `get_task_ioprio` locks `task +0x630` before reading `task->io_context +0x678` and `io_context->ioprio +0x12`; exact `exit_io_context` uses the same task lock while loading and clearing the pointer, then unlocks before releasing the object. See `evidence/vendor-kernel-ioprio-cve-2016-7911.md`.
 - CVE-2016-7914 is rejected despite the old kernel banner. In exact `assoc_array_insert`, metadata-tagged terminal-node slots branch past `ops->compare_object`; only non-null leaf-tag fallthrough reaches the callback, across all 16 slots. Exact `__key_link_begin` binds the reviewed routine to keyring operations. See `evidence/vendor-kernel-assoc-array-cve-2016-7914.md`.
 - CVE-2018-14634's oversized argument-space prerequisite is rejected despite the old banner. Complete exact `copy_strings` preserves `ARG_MAX`, then limits larger space to `min(rlimit(RLIMIT_STACK)/4, 0x600000)` and routes oversize state through page release to `-E2BIG`. See `evidence/vendor-kernel-exec-cve-2018-14634.md`.
+- CVE-2018-9568's wrong-cache socket-clone free is rejected for the exact recovered kernel by a direct fix-shaped effect, not by the old version banner. `sk_clone_lock` allocates through source current `sk_prot`, completes the only creator-overwriting copy, then overwrites clone `sk_prot_creator` with that same allocator protocol before every observed in-function post-copy `sk_free`; all non-null returns are corrected, so later caller cleanup is separate and post-return. Exact final release uses creator protocol `+0xf8` as its cache argument. `IPV6_ADDRFORM` divergence and the TCP disconnect/listen/child-clone route remain compiled, so this is positive correction evidence rather than an absent-route result. Runtime reachability, corruption, privilege escalation, unrestricted root, persistence, and owner-installed identity remain unobserved. See `evidence/vendor-kernel-socket-clone-cve-2018-9568.md`.
 - The absent AF_PACKET companion frame-count guard remains a correctness gap but is rejected as a V1/V2 frame-lookup OOB primitive: full-block-count allocation dominates publication, wrapped `frame_max` positions remain within the vector and block even at wrapped zero, and exact `vm_insert_page` rejects the separate understated-VMA path. Three syntactic signed vector-index edges begin at block count `0x80000001`, but the minimum vector produces order 23 and exact `__rmqueue`/`__alloc_pages_nodemask` reject every order above 10; `__kmalloc` therefore returns null before any edge is reachable. See `evidence/vendor-kernel-af-packet-frame-count.md`.
 - VM rendering slowness, watchdog timeouts and missing simulated CAN data are currently compatibility/integration issues, not established exploitable security defects.
 
