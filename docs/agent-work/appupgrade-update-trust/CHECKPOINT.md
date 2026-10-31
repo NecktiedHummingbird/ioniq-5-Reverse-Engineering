@@ -36,7 +36,20 @@ Date: 2026-11-01
   helper provenance error: exact method 8 reaches CVE-2015-9261's unfixed
   `huft_build` `v+n` bound before member authentication; method 12 is rejected.
   Added a data-free bound model and focused tests.
-- Wrote `evidence/appupgrade-update-trust.md` and corrected the broad
+- Reconstructed AppDMClient's separate FUMO USB descriptor path:
+  - `<source>/.lge.upgrade.xml`, accepted `lhavn`/`wideavn` roots, and
+    consecutive-element traversal for a first-child-text `version` value;
+  - encrypted XML versus direct-plaintext parser branches and separate verifier
+    opens without a proved immutable snapshot;
+  - two normalized lexicographic version comparisons;
+  - on unequal source/destination, marker-absent retained-result contract `0/0`
+    and marker-present explicit non-encrypted contract `-404/-404`;
+  - equal pre-staged AppUpgrade path skips both contracts; caller reachability
+    remains unresolved;
+  - explicit section-zero vehicle equality disabled at the reviewed USB call
+    sites, while P5-family and later target checks remain.
+- Wrote `evidence/appupgrade-update-trust.md`,
+  `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
 
 ## Safety record
@@ -51,15 +64,19 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
 1. Finish the broader caller-state and cleanup reconstruction around AppScomoDM
    `0xc1860`; the `0xbf260` staging function and direct trust helpers are now
    complete enough for the current route verdict.
-2. Parse `.lge.upgrade.xml` fields and locate the exact installed-version,
-   model/region, and eligibility comparisons after AppScomoDM's authenticated
-   copy. Keep the unresolved FUMO/AppDMClient route separate.
-3. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
-   and write functions without inferring that one skipped branch removes all
-   trust controls.
-4. Reconstruct payload target selection, inactive-slot writing, boot selection,
+2. Name AppDMClient verifier result `-404`, the second stored version reference,
+   and numeric boot-state values from exact code; trace the XML destination
+   helper and source-directory provenance.
+3. Determine normal caller reachability of the equal
+   `/update/usb/bin/AppUpgrade` path and source stability across repeated
+   verifier/parser opens.
+4. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
+   and write functions, and map inner AppUpgrade `car-variant`/system-version
+   decisions without inferring that one skipped branch removes all trust
+   controls.
+5. Reconstruct payload target selection, inactive-slot writing, boot selection,
    userspace health, and mark-good independently.
-5. On a disconnected bench, passively capture installed BusyBox/AppScomoDM/
+6. On a disconnected bench, passively capture installed BusyBox/AppScomoDM/
    AppUpgrade hashes, effective `PATH`, runtime uid/SMACK label, selected `-un`
    arguments, and updater state before any active test.
 

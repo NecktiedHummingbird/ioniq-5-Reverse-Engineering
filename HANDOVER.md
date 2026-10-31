@@ -25,12 +25,22 @@ followed by stateful service/CAN/persistence reconstruction.
   route selection, not package acceptance: version/model, signature/digest,
   payload write, slot selection, boot trust, health, and mark-good remain
   separate unresolved boundaries.
-- Exact AppSetup is only an app-ID-300 initiator. The SCOMO USB owner is now
+- Exact AppSetup is only an app-ID-300 initiator. The SCOMO USB owner is
   resolved: AppScomoDM selects a `S5W_SYSTEM_*_*_*.zip`, extracts `AppUpgrade`
   and `.lge.upgrade.xml`, verifies both through a fixed public-key-backed helper,
   decrypts only AppUpgrade on this route, performs a basic ELF/executable check,
-  and requests app ID 300. The FUMO/AppDMClient path and later descriptor
-  version/model/region semantics remain unresolved.
+  and requests app ID 300.
+- The separate FUMO/AppDMClient descriptor path is now partially resolved. It
+  reads `<source>/.lge.upgrade.xml`, accepts direct `version` text under
+  `lhavn`/`wideavn`, and requires a strict current-version upgrade plus an
+  equality-allowed second reference. On the unequal source/destination branch,
+  marker absence requires retained AppUpgrade/XML verifier results `0/0` and
+  marker presence requires `-404/-404`. An equal pre-staged path skips both
+  checks; normal caller reachability and source stability across the separate
+  XML verify/open sequence remain unresolved. Reviewed USB calls disable one
+  section-zero vehicle comparison, but P5-family and later AppUpgrade
+  `car-variant`/target checks remain. See
+  `evidence/appdmclient-fumo-usb-eligibility.md`.
 - **V-020 added and independently corrected:** stock `/usr/bin/unzip` resolves
   to BusyBox SHA-256 `95bab633...bd9ebc`, version 1.23.2. It accepts method 8,
   rejects method 12, and retains CVE-2015-9261's pre-fix `huft_build` `v+n`
@@ -43,6 +53,7 @@ followed by stateful service/CAN/persistence reconstruction.
 - No recovered updater/helper was run; no archive or compressed stream was
   created; no package, marker, partition, slot, or VM filesystem was modified.
   See `evidence/appupgrade-update-trust.md`,
+  `evidence/appdmclient-fumo-usb-eligibility.md`,
   `docs/agent-work/appupgrade-update-trust/CHECKPOINT.md`, and
   `docs/agent-work/busybox-unzip-bounds/CHECKPOINT.md`.
 

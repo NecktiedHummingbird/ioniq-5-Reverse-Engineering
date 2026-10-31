@@ -13,12 +13,16 @@ FUMO updater. AppLauncher does not give a dynamically requested `AppUpgrade` an
 empty argument list: it builds the normal vehicle/model option list and stores
 it in the new process object. The recovered embedded fallback row for the
 IONIQ 5 `NE`/EUR combination contains `-un:0`, so that row routes app ID 300 to
-FUMO. In FUMO, `/update/disableEncryptionUpdate` changes a startup mode byte
-from its initial value `1` to `0`. In SCOMO, the recovered MASS_PRODUCT/
-PENETRATION startup path explicitly ignores that marker. This reconciles the
-apparently conflicting code, but it does **not** prove that a marker-bearing
-plaintext package passes version, model/region, signature, digest, extraction,
-write, slot, boot, or health checks.
+FUMO. AppDMClient's FUMO USB path computes verifier results for `AppUpgrade`
+and `.lge.upgrade.xml`, parses a direct `<version>` child, and applies two version
+comparisons before staging. On its unequal source/destination branch,
+`/update/disableEncryptionUpdate` selects a result contract: absent requires
+retained verifier returns `0/0`; present requires `-404/-404`. An equal
+pre-staged AppUpgrade path skips both contracts and remains caller-reachability
+work. In SCOMO, the recovered MASS_PRODUCT/PENETRATION startup path explicitly ignores
+that marker. This reconciles the apparently conflicting code, but it does
+**not** prove that a marker-bearing plaintext package passes later model/region,
+payload binding, write, slot, boot, or health checks.
 
 ## Artifact identities
 
@@ -29,6 +33,7 @@ write, slot, boot, or health checks.
 | exact embedded FUMO ELF | `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7` | `863a8730e66a1c5245a1bf458fe2554adee0351a` |
 | `/app/bin/AppLauncher` | `c8d6d56bc254ad0731e81f40bd83aa9b3be6b49bcbd8efb291157a06c4a84268` | not used for this conclusion |
 | `/app/bin/AppScomoDM` | `c44da21eb39987e88d71c648f625338722b8458f0ff8ecfe29e3321cf6d62046` | `496a47fae4cca227723b1f4037be918cae18473c` |
+| `/app/bin/AppDMClient` | `9a1fb796d7ac24fcce71c16e3dbee9306c888f43e705ee081f41b7d473978bd0` | `b2dbcc5231f444d8f1dd68eb7a2376323ce805df` |
 | stock `/bin/busybox` | `95bab633630fb158344497af52dc112e9e777458b810860068d4daa257bd9ebc` | two notes: `42e0a4c7631667cf9106ca36a4f2e7886f6f72b0`, `dc25533aa5ad984ec9a7ed388925f24d328c1836` |
 | `/app/bin/AppSetup` | `5221ed11a7945eee448c39f8c0a6b52ee2e3130ff8df5fb8b0a9d1c2343200b3` | `c30aaa3c2e3fd536beeb2fafc774e4339550fdf4` |
 
@@ -258,6 +263,53 @@ The exact launch is an asynchronous session-bus request to service
 `AppUpgrade`, and `/update/usb/bin/AppUpgrade`. A separate polling helper uses
 `pgrep -x AppUpgrade`; the D-Bus reply itself is not awaited.
 
+## AppDMClient FUMO USB descriptor and mode gate
+
+The FUMO staging function at AppDMClient `0x7ff60..0x830e4` constructs
+`<source>/AppUpgrade` and `<source>/.lge.upgrade.xml`. It calls the same style of
+fixed-public-key verifier wrapper at `0x802db` and `0x80320`. It first ORs the
+results for preliminary routing; a nonzero pair can enter optional `VarUpgrade`
+processing. It retains the pair for later conditional checks.
+
+The USB-version wrapper at `0xe3170` reads `%1/.lge.upgrade.xml`. Its reader
+accepts lowercased roots `lhavn` or `wideavn`, then walks consecutive siblings
+that convert to elements starting at the root's first child; a non-element ends
+the loop. It returns trimmed data from the first `version` element whose first
+child converts to a non-null text node, although the trimmed string may be
+empty. A verifier return of zero selects the `DecryptToPIPE` XML-container
+branch; nonzero selects direct XML parsing. The encrypted branch uses generated
+`/tmp` paths and fixed executable/options, but substitutes the source path into
+shell text without visible quoting and ignores `system()` status. Runtime
+source-directory character constraints and source stability across repeated
+opens remain unproved, so no command-injection or verifier-bypass finding is
+assigned.
+
+`checkVersionUSBUpdate` calls the comparator twice. Reviewed call sites disable
+its explicit section-zero vehicle comparison. The first comparison requires the
+candidate to be strictly newer than the current reference; the second allows
+equality against another stored reference. The comparator is lexicographic over
+normalized dot-separated string sections and still enforces `P5` versus non-`P5`
+family compatibility.
+
+Later result interpretation is path- and mode-specific:
+
+- source `<source>/AppUpgrade` is compared with destination
+  `/update/usb/bin/AppUpgrade` at `0x80ba2..0x80bb2`; equality jumps to
+  `0x80ea7` and skips the marker and pair checks;
+- on the unequal path with marker absent, `0x815e0..0x815e8` requires retained
+  outer results `0/0` before encrypted staging;
+- on the unequal path with marker present, `0x80bc8`/`0x80bd6` require retained
+  outer results `-404/-404`; any mismatch reaches the unencrypted-image failure
+  path.
+
+The XML parser performs a separate later verifier/open sequence. No immutable
+snapshot binds it to the earlier retained result. Neither this TOCTOU boundary
+nor the equal pre-staged branch proves a bypass; their normal caller
+reachability and source stability remain unresolved. Marker presence is an
+explicit local non-encrypted-mode contract on the unequal path, not proof that
+USB media can create the marker or that later payloads are accepted. See
+`evidence/appdmclient-fumo-usb-eligibility.md`.
+
 ## Marker semantics differ by child
 
 ### FUMO child
@@ -311,12 +363,13 @@ payloads, choose SCOMO/FUMO, inspect the marker, or pass `-un`. Statements that
 assign those jobs to AppSetup are public operating-model summaries, not exact
 recovered-code findings.
 
-The SCOMO USB staging owner is now exact: AppScomoDM discovers the archive,
+The SCOMO USB staging owner is exact: AppScomoDM discovers the archive,
 extracts and authenticates `.lge.upgrade.xml`, then copies that file to
-`/update/usb/bin` without decrypting it in this route. This does not resolve the
-FUMO/AppDMClient path, the descriptor's internal semantics, installed-version
-comparison, model/region eligibility, or every authentication decision inside
-the selected embedded updater.
+`/update/usb/bin` without decrypting it in this route. AppDMClient's separate
+FUMO path now resolves direct `<version>` parsing, two version comparisons, and
+conditional marker/path verifier contracts. Later model/region eligibility,
+payload binding, and every authentication decision inside the selected embedded
+updater remain incomplete.
 
 ## Route synthesis
 
@@ -341,13 +394,13 @@ The verdicts below are deliberately separate.
 | outer parsing/extraction | Proven wrapper resource boundaries and selection; no package-parser verdict |
 | route selection | Proven: exact `-un:1` selects SCOMO, otherwise FUMO |
 | NE model argument | Proven in embedded fallback row and launch data flow; runtime/owner applicability conditional |
-| descriptor discovery | SCOMO USB route proven: selected ZIP member; FUMO/AppDMClient route unresolved |
-| descriptor decryption | SCOMO USB route copies authenticated XML without decrypting it here; other routes/end-to-end semantics unresolved |
-| version eligibility | No compare in the AppScomoDM selector; publicly reported child check, but exact recovered compare/owner remains unresolved |
-| model/region eligibility | Filename syntax only in AppScomoDM; later semantic checks unresolved |
-| FUMO encryption mode | Proven marker-controlled startup byte and broad downstream use |
+| descriptor discovery | SCOMO selected ZIP member and FUMO `<source>/.lge.upgrade.xml` paths proven |
+| descriptor decryption | SCOMO copies authenticated XML without decrypting it there; FUMO XML-reader zero selects `DecryptToPIPE`, while nonzero enters direct parsing; its verifier call is separate from earlier retained staging results and no immutable snapshot is proved |
+| version eligibility | FUMO exact two-comparison gate proven: strict current-reference upgrade plus equality-allowed second reference; SCOMO child semantics remain separate |
+| model/region eligibility | Filename syntax only in AppScomoDM; FUMO explicit section-zero vehicle check is disabled at reviewed USB calls, but P5-family and later AppUpgrade `car-variant`/target checks remain |
+| FUMO encryption mode | Proven marker-controlled startup byte; on AppDMClient's unequal source/destination branch, marker absent requires retained `0/0` and marker present requires `-404/-404`; equal pre-staged path skips both checks and caller reachability is unresolved |
 | SCOMO encryption mode | Proven marker ignored in recovered MASS_PRODUCT/PENETRATION startup path |
-| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade and XML through a fixed public key; signed range/mode and child payload authentication remain unresolved |
+| package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, while its equal path skips those pair checks; signed ranges, `-404` meaning, equal-path provenance, source stability, and child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
 | inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |

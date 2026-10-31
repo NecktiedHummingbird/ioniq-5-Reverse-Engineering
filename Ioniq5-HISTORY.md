@@ -2336,6 +2336,23 @@ and are superseded by corrections rather than silently rewritten.
 - The same review corrected archive selection from "last match" to one first iterator result and extended the
   passive collector to record symlink metadata plus allowlisted effective process `PATH` evidence.
 
+## 2026-11-01 — FUMO XML and mode contracts moved from inference to exact code
+
+- Exact AppDMClient review separated the FUMO USB path from AppScomoDM's SCOMO ZIP path. AppDMClient computes
+  verifier results for `AppUpgrade` and `.lge.upgrade.xml`, then parses the descriptor version and applies two
+  normalized lexicographic comparisons.
+- The XML reader accepts `lhavn`/`wideavn` and searches consecutive element-convertible siblings from the first
+  root child for `version`; a non-element ends traversal and trimmed text may be empty. Its verifier/open is
+  separate from the staging function's earlier retained result, with no proved immutable snapshot.
+- `/update/disableEncryptionUpdate` has an exact conditional FUMO contract at this layer: on the unequal
+  source/destination branch, absent requires retained `0/0` and present requires `-404/-404`. An equal pre-staged
+  AppUpgrade path skips both contracts. This is stronger than a generic mode-byte observation and weaker than a
+  plaintext-package bypass: caller reachability, source stability, later payload/target checks, and the local
+  privileged marker remain separate boundaries.
+- The reviewed USB comparator calls disable one section-zero vehicle equality check while retaining P5-family
+  compatibility and later inner-updater checks. No model/region bypass or accepted modified update is claimed.
+- No updater ran and no package, XML fixture, marker, partition, or slot was created or changed.
+
 ## 2026-10-31 — the daemon told us exactly what is wrong
 
 - The systemd boot gave two facts that matter more than any inference: the daemon wrote 103 frames, and it

@@ -20,6 +20,32 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   open until `/dev/ttyS1` exists, and re-run. If the port is being taken first, that will now say so instead
   of failing silently.
 
+## 1.33.0 - FUMO descriptor eligibility and marker contracts reconstructed
+
+- Reconstructed exact AppDMClient FUMO USB staging around
+  `0x7ff60..0x830e4`. The function computes public-key verifier results for
+  `<source>/AppUpgrade` and `<source>/.lge.upgrade.xml` before evaluating USB
+  eligibility.
+- Recovered XML semantics: accepted lowercased roots are `lhavn` and `wideavn`.
+  Starting at the first root child, only consecutive siblings that convert to
+  elements are visited; the first `version` element whose first child is text is
+  returned, and its trimmed value may be empty. Zero verifier result selects the
+  fixed `DecryptToPIPE` pipeline; nonzero enters direct XML parsing.
+- Recovered conditional mode gates. On the unequal source/destination branch,
+  marker absence requires retained AppUpgrade/XML results `0/0`; marker presence
+  requires `-404/-404`. An equal pre-staged path jumps around both contracts.
+  Its normal caller reachability and source stability across separate verifier
+  opens remain unresolved. The marker is local state, not a USB member, so none
+  of these branches is a proven physical bypass.
+- Recovered two lexicographic normalized version comparisons. The first requires
+  a strictly newer candidate; the second allows equality against another stored
+  reference. Reviewed USB calls disable the comparator's explicit section-zero
+  vehicle equality check but retain P5-family matching. Later AppUpgrade
+  `car-variant`, payload, partition, boot, and health decisions remain open.
+- Added `evidence/appdmclient-fumo-usb-eligibility.md` and a compact reviewed
+  instruction/address excerpt. No updater ran and no package or XML fixture was
+  created.
+
 ## 1.32.0 - stock USB updater reaches CVE-2015-9261 before authentication
 
 - Reconstructed AppScomoDM's `launchAppUpgrade` path and direct helpers. The new

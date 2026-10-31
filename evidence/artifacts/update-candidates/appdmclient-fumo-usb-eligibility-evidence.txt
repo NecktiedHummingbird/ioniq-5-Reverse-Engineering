@@ -1,0 +1,99 @@
+AppDMClient FUMO USB descriptor eligibility — reviewed static evidence excerpt
+Date: 2026-11-01
+Mode: static/read-only; recovered executable not run
+
+ARTIFACT
+path=/app/bin/AppDMClient
+reviewed=work/decrypted-eu-260128/extracted-partial-bsdtar/mango-rootfs/app/bin/AppDMClient
+sha256=9a1fb796d7ac24fcce71c16e3dbee9306c888f43e705ee081f41b7d473978bd0
+build-id=b2dbcc5231f444d8f1dd68eb7a2376323ce805df
+format=x86-64 PIE ELF
+
+ADDRESS SPACE
+All addresses below are ELF-relative virtual addresses. Ghidra imported this PIE
+with image base 0x100000; advisory decompiler addresses therefore have +0x100000.
+Instruction claims were checked against llvm-objdump at ELF-relative addresses.
+
+FUNCTIONS
+0x7ff60..0x830e4  FUMO USB AppUpgrade staging
+0x67e30..0x69144  AppDMClientEngine::checkVersionUSBUpdate(QString)
+0xcab90..0xcbd4d  version comparator
+0xe1e90..0xe3166  XML version reader
+0xe3170..0xe33ae  <source>/.lge.upgrade.xml wrapper
+0x34870..0x34d43  teruten5_pub.key verifier wrapper
+0x696f0..0x697be  inverse marker-existence helper
+
+INITIAL VERIFIER CALLS AND PRELIMINARY ROUTING
+0x802db call 0x34870 for <source>/AppUpgrade
+0x80320 call 0x34870 for <source>/.lge.upgrade.xml
+Verifier wrapper constructs /app/share/AppUpgrade/teruten5_pub.key, requires and
+reads it, and returns the linked verifier result.
+0x805a0..0x805a8 first ORs the pair. A nonzero pair can route through optional
+VarUpgrade processing if that file exists. The pair is used again later, but not
+on every path.
+
+XML
+0xe31a4..0xe31ce formats %1/.lge.upgrade.xml
+0xe320c calls XML reader
+Accepted lowercased roots: lhavn, wideavn
+Traversal starts at root.firstChild() 0xe2482 and walks consecutive siblings
+only while each converts to an element; a non-element sibling ends the loop.
+Only each element's first child is converted to text; tag lowercasing and text
+trim occur at 0xe24e8..0xe2564. The first version element with a non-null first
+text node is returned at 0xe2cb1..0xe2d8d; trimmed text may be empty.
+Malformed/missing/unknown-root/no-version input leaves an empty QString.
+
+XML CONTAINER BRANCH
+0xe1ff7 calls verifier wrapper
+return 0 -> encrypted path
+nonzero -> direct plaintext QDomDocument parse at 0xe22b8..0xe2407
+Encrypted path uses fixed /app/share/AppUpgrade/DecryptToPIPE, generated /tmp
+key/output names, source path plus fixed basename, templates:
+  %1 -d %2 %3 0
+   | dd of=%1 bs=512
+system() call: 0xe27b7..0xe27c3; return status not tested.
+Source path substitution is visibly unquoted. Runtime source-string character
+constraints and source immutability across repeated opens are not proved, so no
+command-injection or verifier-bypass finding is assigned.
+
+CONDITIONAL PATH/MARKER CONTRACTS
+Source <source>/AppUpgrade: 0x80165..0x80196
+Destination /update/usb/bin/AppUpgrade: 0x801ab..0x801ef
+0x80ba2..0x80bb2 compares source and destination.
+Equal paths jump at 0x80bb2 to 0x80ea7 and skip the marker helper and both pair
+contracts. Normal-route reachability of this pre-staged path is unresolved.
+
+On the unequal path:
+0x696f0 tests /update/disableEncryptionUpdate and returns !exists
+0x80bbb calls 0x696f0
+
+Marker absent -> helper returns 1 -> 0x815e0:
+  0x815e0 mov AppUpgradeResult,%eax
+  0x815e4 or  XmlResult,%eax
+  0x815e8 jne failure
+Both retained outer results must be zero before encrypted AppUpgrade staging.
+
+Marker present -> helper returns 0 -> 0x80bc8/0x80bd6:
+  compare AppUpgradeResult with 0xfffffe6c (-404)
+  compare XmlResult with 0xfffffe6c (-404)
+Both retained outer results must equal -404; any mismatch reaches 0x824b0 and
+adjacent "Error unencrypted update. (Unknown image type.)" logging.
+These are unequal-path mode contracts, not universal FUMO gates or a
+demonstrated USB-created bypass. The XML reader performs a separate later
+verifier call and no immutable source snapshot is proved.
+
+ELIGIBILITY
+0x68207 / 0x6867e obtains XML version
+0x68271 / 0x686e8 comparator(vehicleCheck=false, allowEqual=false)
+0x682d8 / 0x68745 comparator(vehicleCheck=false, allowEqual=true)
+First result requires base<candidate; second requires base<=candidate.
+0xcb78b exact setle implements equality-allowed result.
+Explicit section-zero vehicle check is disabled at these USB call sites.
+Comparator still enforces P5/non-P5 family matching and string-section
+normalization. It is lexicographic, not component-wise integer arithmetic.
+
+BOUNDARY
+This is AppDMClient FUMO, not AppScomoDM SCOMO.
+No target ran and no update fixture was made.
+No modified-package acceptance, payload trust bypass, model/region bypass,
+partition write, slot change, boot acceptance, root, or persistence is proved.
