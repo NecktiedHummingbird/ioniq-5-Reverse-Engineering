@@ -99,6 +99,10 @@ llvm-objdump -dr --x86-asm-syntax=intel \
 The `cve-*.patch` files are GitHub patch representations of these upstream
 commits:
 
+- CVE-2015-1805 legacy introduction/context:
+  `f6762b7ad8edd6abc802542ce845d3bc8adcb92f`; read-side iterator conversion:
+  `637b58c2887e5e57850865839cc75f59184b23d1`; write-side iterator conversion:
+  `f0d1bec9d58d4c038d0ac958c9af82be6eb18045`;
 - CVE-2015-7550: `b4a1b4f5047e4f54e194681125c74c0aa64d637d`;
 - CVE-2015-7613: `b9a532277938798b53178d5a66af6e2915cb27cf`;
 - CVE-2016-0728: `23567fd052a9abb6d67fe8e7a9ccdd9800a540f2`;
@@ -237,8 +241,27 @@ stable initial/follow-up patches
 and `de91f9ab7bc874defccec57c723740eadfc7f55923dc279a26c0ef0118da92e1`;
 Linux 4.1.49 release patch
 `344a344b15c2a05330399ce4694a82876765db1031eb1f7a7d700cd9de366963`;
-and exact official-changelog excerpts
-`be0837b5b21e32aadc17d636e5736b8f560bf570a8728f895815f96cff28f2c1`.
+and reviewed official-changelog excerpts with public maintainer email addresses
+redacted
+`f3623a119582dfe97f9132560f640763abd0c8324545762a74ef0449a421fdcb`.
+
+`kernel-pipe-cve-2015-1805.asm` retains complete authoritative-map-successor-
+bounded `pipe_write`, `pipe_read`, `copy_page_from_iter`, and
+`copy_page_to_iter` machine code. It binds both write copy sites and the read
+copy site directly to exact iterator helpers; each helper clamps against
+iterator count, traverses fixed 16-byte descriptors, accounts only
+requested-minus-residual progress across atomic and fallback stages, and commits
+iterator offset/count/descriptor/segment state without storing to descriptor
+base/length fields. These effects reject the legacy mutable-iovec fallback
+required by CVE-2015-1805 for the exact recovered kernel. Exact-name absence of
+the two old pipe-local helpers is bounded corroboration only. Ordinary local
+pipe functionality remains compiled; this is not a general pipe/iterator safety
+or installed-device claim. Artifact SHA-256:
+`e79391d6592ce772f18cf02d97cdbba00e58b68ec8340e67409840470bfff552`.
+The introducing, read-conversion, and write-conversion patch SHA-256 values are
+`ad43bba30d7d3be2e15c17b605f6d17d92f17fa3ebb239bd2bdc457b10746aec`,
+`d44d40a61f9746ec3a8fd2ab6c88f74f0ce09617786ac27f59174effbabaeb5c`,
+and `c5966a0a700deb343e5599a716fb116988a85238134099925ced6fda3524340a`.
 
 `kernel-key-read-revoke-cve-2015-7550.asm` retains complete
 embedded-kallsyms-bounded `key_revoke`, `keyctl_revoke_key`,

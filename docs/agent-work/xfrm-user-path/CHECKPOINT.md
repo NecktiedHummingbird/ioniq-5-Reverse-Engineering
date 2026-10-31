@@ -53,16 +53,17 @@ as the named implementation.
   `de91f9ab7bc874defccec57c723740eadfc7f55923dc279a26c0ef0118da92e1`
 - retained Linux 4.1.49 release patch SHA-256:
   `344a344b15c2a05330399ce4694a82876765db1031eb1f7a7d700cd9de366963`
-- retained official changelog excerpt SHA-256:
-  `be0837b5b21e32aadc17d636e5736b8f560bf570a8728f895815f96cff28f2c1`
-  (complete downloaded changelog SHA-256
+- retained reviewed official changelog excerpt SHA-256:
+  `f3623a119582dfe97f9132560f640763abd0c8324545762a74ef0449a421fdcb`
+  (public maintainer email addresses redacted; complete downloaded changelog
+  SHA-256
   `c0b794ff48313e9c1a2e74de71efdf6eade44c229b00839d077392e821026323`)
 - ignored regenerated disassembly SHA-256:
   `1633989b84ff0156505385f136fd609dcc70f9148dd4c634b1430021203f3bd5`
 - retained exact artifact SHA-256:
   `9ea9205be67b246aff6d88be2d5b00f3d022cec60a686dcf6a010974136fd34e`
 - assessment SHA-256:
-  `68851a5dd616ca413be7b2e9c830972d6300c6221c0d686672fe2e1fa32a0d65`
+  `b378bc71cddddab8ce19f8f387a20f06e0cf8671e3b1a74d52576b020a71ab8b`
 - model source SHA-256:
   `d74f5b722a2ad62a263474525e3a13af329d005a6aae453ad55fee800b081abc`
 - focused test source SHA-256:
@@ -106,7 +107,14 @@ only and no operational or target material prohibited by the task contract.
 - `git diff --check`: **PASS**.
 - Complete suite with the required Python: **PASS**, `594 tests, 154302
   subtests`, zero failures/errors/skips.
-- Public harness: **PASS**, `pass=3 info=4 pending=0 blocked=0 fail=0`.
+- The pre-commit public harness originally passed while the changelog excerpt
+  was outside Git's tracked-index privacy scope. A post-commit rerun correctly
+  reported the excerpt's public maintainer email addresses as blocking. The
+  retained excerpt now redacts those addresses while preserving its complete
+  source hash, source ranges, and all non-email content. The privacy-only rerun
+  passed with three informational public/no-reply identifiers and zero blocking
+  findings. The final complete harness passed with
+  `pass=3 info=4 pending=0 blocked=0 fail=0`.
 - Initial independent read-only review: **REJECT**, limited to stale validation
   wording, a concurrently moving integration base, and missing retained local
   public-history captures. The technical path-only verdict, hashes, archive

@@ -1,10 +1,50 @@
 # HANDOVER — IONIQ 5 Gen5W research
 
-Updated **2026-11-04**. The recovered authentic Hyundai/LG launcher chain now
+Updated **2026-11-05**. The recovered authentic Hyundai/LG launcher chain now
 passes the standby/profile-confirm gate and visibly foregrounds authentic
 `AppHomeScreen` in the local VM. Authentic AppNavi map pixels still render
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
+
+## Pipe iterator CVE-2015-1805 applicability checkpoint — 2026-11-05
+
+- CVE-2015-1805 is rejected for exact recovered `vmlinux` by complete machine
+  code, not by the `4.1.27-abl` banner. Both `pipe_write` copy sites directly
+  call exact `copy_page_from_iter`; `pipe_read` directly calls exact
+  `copy_page_to_iter`.
+- Both complete successor-bounded helpers clamp requested bytes against iterator
+  count, traverse fixed 16-byte descriptors, account only
+  requested-minus-residual progress, carry advanced page/user positions and
+  remaining budget into fallback, and commit iterator offset/count/descriptor/
+  segment state. Neither helper stores to descriptor `iov_base`/`iov_len`.
+- Public history binds the legacy introduction
+  `f6762b7ad8edd6abc802542ce845d3bc8adcb92f`, read conversion
+  `637b58c2887e5e57850865839cc75f59184b23d1`, and write conversion
+  `f0d1bec9d58d4c038d0ac958c9af82be6eb18045`. Ordinary upstream 4.1 already
+  contains both conversions; legacy stable adaptations and CVE-2016-0774 are
+  contextual alternatives, not required 4.1 fixes. Version history alone is
+  not a vendor verdict.
+- Exact-name absence of the old pipe-local helpers is corroboration only.
+  Ordinary local pipe functionality remains compiled. This is not general
+  pipe/iov-iterator safety, every vendor-equivalent defect absence, installed
+  identity, or runtime policy evidence. Public source-level impact was
+  unprivileged local memory corruption/privilege escalation; triggering,
+  corruption, root and persistence remain unobserved.
+- Added three retained public patches, complete exact static evidence, a
+  dedicated assessment, and a 17-input schema-v2 Boolean-only model with
+  fail-closed all-or-none CLI, tri-state incomplete-effect handling, explicit
+  broken-legacy-path precedence, optional progress-preserving legacy
+  alternative, ordinary-local-functionality scope, null runtime/impact
+  outcomes, and exhaustive field assertions. Focused validation passed `10
+  tests, 131109 subtests`; the complete suite passed `604 tests, 285411
+  subtests`; bytecode compilation, exact patch/disassembly/hash checks, and
+  scoped `git diff --check` passed. After public maintainer email addresses were
+  redacted from a previously committed XFRM changelog excerpt, the public
+  harness passed with `pass=3 info=4 pending=0 blocked=0 fail=0`. Independent
+  read-only review accepted the technical verdict with no blocking findings;
+  its moving-base bookkeeping note was integrated. Exact hashes are in the
+  checkpoint. No recovered target or prohibited pipe, vector-copy, fault, race,
+  grooming, or exploit operation was used.
 
 ## XFRM-user path applicability checkpoint — 2026-11-04
 
