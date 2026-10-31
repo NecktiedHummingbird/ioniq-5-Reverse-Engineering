@@ -3,6 +3,15 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.52.0 - identify exact CVE-2017-9242 IPv6 append-data ordering
+
+- Added V-029 after binding exact ordinary UDPv6 call flow and the complete recovered `__ip6_append_data` control flow.
+- Confirmed that skb allocation and the `skb_copy_and_csum_bits` fraggap copy occur before the signed `datalen - transhdrlen - fraggap` calculation and rejection. The later `-EINVAL`/`kfree_skb` path cannot prevent any overwrite caused by the earlier copy.
+- Compared the branch-complete function against upstream fix `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`; no equivalent early rejection dominates allocation or copy.
+- Classified this as an exact pre-fix local kernel out-of-bounds-write candidate, not demonstrated root. NVD supports local denial of service; crafted internal state, actual overwrite, controlled corruption, code execution, privilege gain and persistence remain unobserved.
+- Added the authoritative patch, selected and branch-complete machine-code evidence, a Boolean-only six-input model, complete 64-state tests, and explicit null runtime/impact outcomes.
+- Focused validation passed `7 tests, 77 subtests`; independent semantic/model review returned **ACCEPT** after branch-complete evidence and conditional overwrite wording were added. No socket, syscall, packet, target execution, overwrite, crash, privilege transition, or persistence action was performed.
+
 ## 1.51.0 - reject CVE-2017-7533 by exact dentry-name snapshot effects
 
 - Rejected CVE-2017-7533 for the exact recovered kernel rather than inferring exposure from the `4.1.27-abl` version banner.

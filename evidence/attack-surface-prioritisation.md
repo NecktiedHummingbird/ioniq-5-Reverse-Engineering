@@ -241,6 +241,12 @@ This does not yet outrank V-014 as a physical entry because it starts after loca
   corruption, or root is established. This is the highest-priority remaining
   local-kernel escalation candidate for a disposable instrumented environment,
   not the owner unit.
+- V-029/CVE-2017-9242 is exact pre-fix IPv6 append-data ordering on an ordinary
+  UDPv6 call path: skb allocation and the fraggap copy precede the signed
+  remaining-copy rejection. It is a strong static local memory-corruption/DoS
+  candidate, but required internal state, actual overwrite, controlled bytes,
+  code execution and root are unobserved. Keep below V-022 as a root candidate
+  until a disposable instrumented kernel establishes more than public crash/DoS.
 - V-027/CVE-2020-29660 is an exact TTY session-pointer locking defect, but the
   authoritative four-byte disclosure description names `PREEMPT=y` and this
   build has only voluntary preemption. Keep as conditional information

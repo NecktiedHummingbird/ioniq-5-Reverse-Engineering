@@ -423,6 +423,16 @@ bring-up defect. That question is open.
 - **Remediation:** eliminate caller-supplied executable paths; resolve appids through an immutable root-owned registry; authorize senders explicitly; run applications under distinct non-root uids; and bind mandatory verification to the exact opened executable immediately before every exec.
 - **Evidence:** `evidence/applauncher-dbus-launch-bypass.md`; reviewed excerpt `evidence/artifacts/application-candidates/applauncher-dbus-launch-evidence.txt`; Boolean-only model `tools/uk_fw/applauncher_dbus_launch_model.py`.
 
+## V-029 — IPv6 append-data check occurs after skb copy (EXACT CVE-2017-9242 ORDERING; RUNTIME OVERWRITE UNPROVEN)
+
+- **Status:** exact `__ip6_append_data` allocates a current skb and can call `skb_copy_and_csum_bits` with `fraggap` before calculating and rejecting negative `datalen - transhdrlen - fraggap`. The `-EINVAL`/`kfree_skb` cleanup is after the copy. No syscall, packet, overwrite, crash, or target execution was created.
+- **Component:** exact `vmlinux` SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `CONFIG_IPV6=y`.
+- **Exact mechanism:** exact `udpv6_sendmsg` calls `ip6_append_data`; the complete wrapper calls `__ip6_append_data.isra.28`. The affected function reaches `sock_alloc_send_skb` or `sock_wmalloc`, then exact `skb_copy_and_csum_bits` and possible trim, before computing the signed `copy` value. The branch-complete function contains no equivalent early rejection dominating allocation/copy; upstream `232cd35d0804cc241eb887bb8d4d9b3b9881c64a` moves that check before allocation.
+- **Reachability boundary:** ordinary UDPv6 static call flow is established. Installed owner-unit kernel identity, uid/capabilities, SMACK, seccomp/socket policy, and achievement of the required internal skb/fraggap state remain unobserved.
+- **Impact boundary:** NVD supports local denial of service and the upstream commit records skb head/shared-info overwrite. Static affected ordering does not establish an actual overwrite, controlled bytes/extent, reliable crash, code execution, privilege escalation, root, SMACK escape, update acceptance, or persistence.
+- **Remediation:** backport `232cd35d0804cc241eb887bb8d4d9b3b9881c64a` or equivalent early rejection before allocation/copy; validate only in a disposable instrumented kernel environment.
+- **Evidence:** `evidence/vendor-kernel-ipv6-cve-2017-9242.md`; reviewed/complete assembly under `evidence/artifacts/kernel-candidates/kernel-ipv6-cve-2017-9242*.asm`; Boolean-only model `tools/uk_fw/ipv6_append_bounds_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

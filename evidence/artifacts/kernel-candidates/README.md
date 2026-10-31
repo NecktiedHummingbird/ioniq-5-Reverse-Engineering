@@ -104,6 +104,7 @@ commits:
 - CVE-2016-2384: `07d86ca93db7e5cdf4743564d98292042ec21af7`;
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
+- CVE-2017-9242: `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
 - CVE-2017-7533: `49d31c2f389acfe83417083e1208422b4091cd9e`;
 - CVE-2017-10661: `1e38da300e1e395a15048b0af1e5305bd91402f6`;
@@ -134,6 +135,12 @@ and rename notification paths, short-name copying under the dentry lock,
 external-name reference retention/release, and the stable pointer passed to the
 separate inotify length/copy operations. These exact effects reject the
 CVE-2017-7533 mutable-name premise despite the old kernel version banner.
+
+`kernel-ipv6-cve-2017-9242.asm` binds ordinary UDPv6 call flow, skb allocation,
+the fraggap copy/trim, later signed copy calculation, and post-copy error
+cleanup underlying V-029. The companion `-full.asm` and `-wrapper.asm` files
+retain branch-complete evidence for absence of an equivalent early rejection
+and exact wrapper-to-internal-function routing.
 
 `kernel-timerfd-cve-2017-10661.asm` binds same-file context identity,
 membership/list fields, narrow global locking, later waitqueue locking, and the

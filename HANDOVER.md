@@ -6,6 +6,13 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## IPv6 append-data bounds checkpoint — 2026-11-01
+
+- V-029 records exact CVE-2017-9242 pre-fix ordering with `CONFIG_IPV6=y`: `udpv6_sendmsg` reaches the append wrapper and complete `__ip6_append_data` allocates/copies before calculating and rejecting negative remaining copy.
+- The later `-EINVAL`/`kfree_skb` cleanup cannot prevent any overwrite caused by the earlier `skb_copy_and_csum_bits` call. Branch-complete review found no equivalent of upstream early-reject commit `232cd35d0804cc241eb887bb8d4d9b3b9881c64a`.
+- This is an exact local kernel OOB-write candidate, not root. Required internal skb/fraggap state, actual overwrite, crash, controlled corruption, code execution, privilege gain and persistence remain unobserved.
+- Added authoritative, selected and branch-complete evidence plus a six-input Boolean-only model and 64-state tests. Focused validation passed `7 tests, 77 subtests`; independent semantic/model review returned **ACCEPT**.
+
 ## Inotify rename-race checkpoint — 2026-11-01
 
 - CVE-2017-7533 is rejected for the exact recovered kernel despite the `4.1.27-abl` banner and `CONFIG_INOTIFY_USER=y`.

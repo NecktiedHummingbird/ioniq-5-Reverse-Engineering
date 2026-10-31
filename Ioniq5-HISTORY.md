@@ -2694,3 +2694,10 @@ and are superseded by corrections rather than silently rewritten.
 - Exact predecessor tracing reversed that initial impression. Both the watched-parent path and `vfs_rename` take stable dentry-name snapshots; inline bytes are copied under the dentry lock and external names retain a reference until release.
 - Those are the effects of upstream commit `49d31c2f389acfe83417083e1208422b4091cd9e`. The CVE-specific mutable-name premise is therefore rejected without claiming that all fsnotify code is safe.
 - No watch, rename, race, heap manipulation, target execution, corruption, privilege gain, or persistence operation was performed. The result reinforces the standing rule that source-shaped sinks and version banners are not substitutes for complete data-lifetime semantics.
+
+## 2026-11-01 — the IPv6 append check is genuinely too late
+
+- Exact UDPv6 call flow reaches a complete `__ip6_append_data` whose new-skb allocation and fraggap copy precede the signed remaining-copy calculation.
+- The negative branch does eventually return `-EINVAL` and free the current skb, but only after the copy that upstream reports can overwrite skb head/shared-info state. Branch-complete review found no equivalent early rejection.
+- This survives exact binary scrutiny as V-029, unlike the inotify candidate rejected immediately before it. Public evidence supports local crash/memory corruption; crafted-state achievement, actual overwrite, controlled corruption, code execution, root and persistence remain open.
+- No socket, syscall, packet, IPv6 option/fragment state, heap manipulation, target execution, overwrite, crash, privilege transition, or persistence action was performed.
