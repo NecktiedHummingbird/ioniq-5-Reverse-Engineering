@@ -3,6 +3,29 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.66.0 - V-028 runtime test blocked one layer down: the launcher is stuck on MICOM asks
+
+- Built the test properly this time: in the systemd workspace, a wrapper around `AppLauncher.sh` brings up our
+  compositor (esinit's own is gated behind the SPI check emulation fails), runs the vendor launcher, then introspects
+  and calls `com.lge.avn.applauncher` over the session bus whose address `Dbuslaunch.sh` leaves in
+  `/tmp/session_appmgr`.
+- Measured result: weston up (`pid 2070`), session bus address obtained, but **the launcher never registers its D-Bus
+  name**. Its own output explains why — it is blocked retrying the vehicle asks:
+  `askSysBootinfo Error Reply = Did not receive a reply`, then `askCustomSetting`, then `askSettingInfoValue`.
+  With no `com.lge.car.micom` peer answering on the bus, `AppLauncher` never reaches the point where it exports
+  `applauncher`, so introspection returns `ServiceUnknown` and the launch call is never attempted.
+- **This connects three separate threads of this project.** The ask sequence observed here (`AskSysBootinfo`,
+  `AskCustomSetting`, `AskSettingInfoValue`) matches the MICOM contract document exactly; the launcher's dependency
+  on it matches the unit's hard `Requires=`; and the reason the daemon does not answer is the `writeToDBus` defect
+  measured earlier. V-028's runtime execution is therefore gated by a vendor daemon bug, not by anything in the
+  emulation or by the launcher itself.
+- Also confirmed at the mechanism level while reading the vendor scripts: `Dbuslaunch.sh` writes the session bus
+  address to `/tmp/session_appmgr` and `DBUS_SESSION_BUS_ADDRESS=…` to **`/tmp/session_appmgr.env`** — the
+  world-writable `EnvironmentFile` behind V-012, in a `01777` `/tmp`. That is now sourced from the vendor script
+  rather than inferred.
+- Status of the revived chain: V-028 remains "exact static route, runtime exec unobserved", and the reason it stays
+  unobserved is now precise and recorded.
+
 ## 1.68.0 - reject the compat netfilter replace CVE by absent compiled path
 
 - Rejected CVE-2016-4997 for exact recovered `vmlinux`: IA32 emulation is disabled, `CONFIG_COMPAT=y` is absent, weak `compat_sys_setsockopt` aliases exact `sys_ni_syscall` and returns `-ENOSYS`, and no compat iptables translation/check symbol occurs in the authoritative map.

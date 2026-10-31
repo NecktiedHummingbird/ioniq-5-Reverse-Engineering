@@ -2990,3 +2990,13 @@ and are superseded by corrections rather than silently rewritten.
   boundary in that entry is precisely what the environment-file and trust-anchor entries need.
 - Writing down that my own commit was refuted is the point of keeping a register with evidence grades. A record that
   only ever accumulates confirmations is not a record, it is a press release.
+
+## 2026-10-31 — three threads turned out to be one thread
+
+- The launcher test failed for a reason that explains several earlier failures at once: it waits for the vehicle
+  daemon, and the daemon cannot reach the bus. The ask sequence in its output is the one measured from the MICOM link
+  weeks of work ago.
+- Reading the vendor startup scripts also closed the V-012 mechanism properly: the session-bus environment file is
+  written by the vendor's own script into world-writable /tmp, so the exposure is their design, not an inference.
+- The chain is not disproven, it is behind a bug we cannot fix without vendor source. That is a better statement
+  than "unverified".
