@@ -2386,3 +2386,37 @@ and are superseded by corrections rather than silently rewritten.
   and the handshake were three ways of not re-examining the foundation.
 - The fix is small and known: a pty pair, with the peer on the master and the daemon's device symlinked to
   the slave. Everything already built for the peer still applies.
+
+## 2026-11-01 — the FUMO equal path is a local relaunch contract
+
+- Caller tracing closed the largest ambiguity left by the FUMO descriptor
+  review. AppDMClient's stored `this+0x128` string is the USB mount path copied
+  by `slotUsbMounted`, and later mount/standby workflows feed it back into the
+  same staging function.
+- The apparently unchecked equal path also has two fixed local callers.
+  AppDMClient can stage from `/update/usb/bin` during standby handling, and a
+  helper does so only when `/update/force_launch` begins with exact text `run`.
+  That source makes the compared AppUpgrade paths identical and intentionally
+  skips repeated outer result-pair checks.
+- The inner FUMO executable creates the matching state: system- and
+  firmware-progress-zero branches write `force_launch=run`, while completion
+  cleanup writes `none`. This changes the interpretation from “unresolved
+  reachability” to “intended pre-staged relaunch.”
+- The correction does not turn the branch into a physical-media bypass. Who can
+  modify the local staging directory, which completed authentication state
+  precedes the marker write, whether the staged files stay immutable, and every
+  inner payload/write/boot boundary remain separate open questions.
+- Passive bench capture was extended for these markers, directories, and staged
+  hashes. No updater ran and no package, marker, target filesystem, partition,
+  or slot was modified.
+
+## 2026-10-31 — two real bugs fixed, and a blindfold
+
+- The pty approach was right and had two concrete defects, both now fixed: no devpts in the guest, and a
+  device path taken from the wrong argument. From a shell it now works end to end.
+- Inside systemd it still does not, and I can prove that without seeing anything: the daemon keeps writing to
+  the hardware chardev, so the device was never replaced. The wrapper runs; something inside it fails.
+- Every channel I would normally use to see that failure is closed in this environment. That is the actual
+  obstacle now, and it is worth naming plainly rather than continuing to vary the code and hope.
+- The lesson is one this project keeps teaching: build the observation channel into the environment before
+  the experiment, because retrofitting it under systemd is where the time goes.

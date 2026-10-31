@@ -3,6 +3,28 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.35.0 - pty mode works from a shell; the systemd path is unobservable
+
+- Found two concrete bugs and fixed both: the guest has **no `/dev/pts`**, so `posix_openpt` failed with
+  `No space left on device` until devpts was mounted; and the responder was reading its device argument from
+  the mode slot, so `pty /dev/ttyS1` symlinked a file literally named `pty`. With both fixed, pty mode works
+  from a research shell: `pty ready: pty -> /dev/pts/0`, and a real `/dev/ttyS1` symlink can be established.
+- Under systemd it still does not take effect: `micommanager` keeps writing **1056 bytes to the host chardev**
+  and reports **103 writes / 0 reads**, which proves `/dev/ttyS1` was never replaced — and therefore that the
+  wrapper's pty step did not succeed in that context.
+- Three different enablement routes were tried and all produced identical behaviour: an `ExecStartPre`
+  drop-in, an `ExecStart` override drop-in, and editing the vendor unit's `ExecStart` directly in the clone
+  (verified in the image by reading the file back). Since `esinit` simply `exec`s `/lib/systemd/systemd` and
+  there is no `/etc` override of that unit, enablement is not the obstacle — the wrapper runs, and what fails
+  inside it is invisible.
+- **The real blocker is observability**: a systemd-spawned script has no console, `/dev/kmsg` writes do not
+  appear in the serial log, guest filesystem writes are discarded with the snapshot, and the `micom-debug`
+  unit could not be enabled because `debugfs symlink` creates links relative to the image root rather than at
+  an absolute path.
+- Next step is therefore not about the protocol at all: give the wrapper a working console channel (for
+  example redirect its output to `/dev/console`, which is the one sink that does reach the serial log) and
+  read why the devpts mount or the symlink fails there.
+
 ## 1.34.0 - why the peer never answers: a tty is one line to the host, not a loopback
 
 - A readiness handshake was added (`/tmp/micom-ready` after a successful open, wrapper waits for it before
@@ -20,6 +42,33 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   host-side capture of guest writes is lost, which is acceptable because the peer can log what it answers.
 - Nothing about the framing, the id table or the responder's logic is invalidated; only the plumbing between
   peer and daemon was wrong.
+
+## 1.34.0 - FUMO equal-path provenance and relaunch state resolved
+
+- Traced AppDMClient's FUMO staging callers and resolved the `this+0x128`
+  member: `slotUsbMounted(QString, int, QString, QString)` copies its mount-path
+  argument there when index 1 is reported, sets the mounted-state byte, and
+  passes the same path to staging.
+- Proved the equal `/update/usb/bin/AppUpgrade` comparison branch is normal
+  software-reachable. `slotOnStandbyStatus(int)` has a fixed local staging call,
+  and its force helper reads the first line of `/update/force_launch`, requires
+  exact case-sensitive `run`, then stages from `/update/usb/bin`. This reaches
+  the branch that omits repeated AppDMClient `0/0` or `-404/-404` pair checks.
+- Reconstructed the matching inner-FUMO lifecycle. System- and firmware-mode
+  progress-zero branches write `force_launch=run` unless a mode global equals
+  1; completion cleanup overwrites an existing force marker with `none`.
+  The branch is therefore an intended pre-staged relaunch, not an unresolved
+  hypothetical outcome.
+- Kept the security boundary narrow: direct removable-media control of the
+  local staging directory, the named authentication state preceding the marker
+  write, source immutability across separate opens, inner payload binding,
+  partition writes, slot/boot acceptance, root, and persistence remain unproved.
+- Extended the passive disconnected-bench bundle to capture relaunch/completion
+  markers, update-directory metadata, and hashes for staged AppUpgrade/XML and
+  `/tmp/AppUpgrade`. Collection now distinguishes absence from read/query
+  failure, validates SHA-256 syntax, and returns a nonzero terminal status for
+  evidence failures. No recovered executable or updater was run and no target
+  file, package, marker, partition, or slot was modified.
 
 ## 1.33.0 - responder works from a shell, still silent under systemd
 

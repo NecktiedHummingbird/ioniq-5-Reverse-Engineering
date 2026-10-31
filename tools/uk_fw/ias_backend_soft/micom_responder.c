@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /* micom-responder — minimal /dev/ttyS1 peer for the Gen5W research VM.
  *
  * Framing, measured from 103 real frames emitted by micommanager_userspace:
@@ -17,6 +18,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define BOOTINFO_LEN 35
 
@@ -66,7 +68,10 @@ static void note(const char *fmt, ...)
 
 int main(int argc, char **argv)
 {
-	const char *dev = argc > 1 ? argv[1] : "/dev/ttyS1";
+	const char *mode = argc > 1 ? argv[1] : "";
+	const char *dev = (strcmp(mode, "pty") == 0)
+		? (argc > 2 ? argv[2] : "/dev/ttyS1")
+		: (argc > 1 ? argv[1] : "/dev/ttyS1");
 	int fd = -1;
 	struct termios tio;
 	unsigned int answered = 0, bootinfo = 0, attempt;
@@ -75,18 +80,45 @@ int main(int argc, char **argv)
 	 * written before this exists is lost, including an open failure. */
 	kmsg = open("/dev/kmsg", O_WRONLY);
 
-	for (attempt = 0; attempt < 120; attempt++) {
-		fd = open(dev, O_RDWR | O_NOCTTY);
-		if (fd >= 0)
-			break;
-		if (attempt == 0 || (attempt % 10) == 9)
-			note("open %s failed: %s (attempt %u)\n", dev,
-			     strerror(errno), attempt + 1);
-		sleep(1);
-	}
-	if (fd < 0) {
-		note("giving up on %s\n", dev);
-		return 1;
+	if (strcmp(mode, "pty") == 0) {
+		/* Peer owns the master; the daemon's device points at the slave, so the two
+		 * actually exchange frames instead of each talking to the host. */
+		char *slave;
+		int m = posix_openpt(O_RDWR | O_NOCTTY);
+
+		if (m < 0) {
+			note("posix_openpt failed: %s\n", strerror(errno));
+			return 1;
+		}
+		if (grantpt(m) < 0 || unlockpt(m) < 0) {
+			note("grantpt/unlockpt failed: %s\n", strerror(errno));
+			return 1;
+		}
+		slave = ptsname(m);
+		if (!slave) {
+			note("ptsname failed\n");
+			return 1;
+		}
+		unlink(dev);
+		if (symlink(slave, dev) < 0)
+			note("symlink %s -> %s failed: %s\n", dev, slave, strerror(errno));
+		else
+			note("pty ready: %s -> %s\n", dev, slave);
+		fd = m;
+	} else {
+		for (attempt = 0; attempt < 120; attempt++) {
+			fd = open(dev, O_RDWR | O_NOCTTY);
+			if (fd >= 0)
+				break;
+			if (attempt == 0 || (attempt % 10) == 9)
+				note("open %s failed: %s (attempt %u)\n", dev,
+				     strerror(errno), attempt + 1);
+			sleep(1);
+		}
+		if (fd < 0) {
+			note("giving up on %s\n", dev);
+			return 1;
+		}
 	}
 	if (tcgetattr(fd, &tio) == 0) {
 		cfmakeraw(&tio);
