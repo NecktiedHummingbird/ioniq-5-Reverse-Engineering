@@ -2590,3 +2590,9 @@ and are superseded by corrections rather than silently rewritten.
   kind of error that costs a great deal of time to unwind.
 - The run itself proved nothing, and I am recording it as proving nothing rather than as a failed experiment:
   zero commits means the application never got as far as the thing being measured.
+
+## 2026-11-01 — vmacache becomes the strongest remaining generic local-root candidate
+
+- Unlike many old-kernel candidates, CVE-2018-17182 needs no namespace, optional network protocol, special device, or privileged helper in its generic path.
+- Exact instructions retain every pre-fix generation-wrap semantic: two 32-bit invalidation sites, a live zero-wrap flush call, single-user no-clear return, and 32-bit lookup validation.
+- This is still a candidate, not a root result: the 2^32-state cycle, stale pointer, UAF dereference, controlled reuse, and privilege gain were not exercised.

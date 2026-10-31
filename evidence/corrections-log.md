@@ -578,6 +578,22 @@ Use the current VM/recovery notes and C12–C14 below for those boundaries.
 
 ---
 
+## C36 — vmacache is a live old-kernel candidate, not a banner inference
+
+- **Candidate:** CVE-2018-17182 applies to an ordinary MMU/thread surface and
+  public sources describe possible privilege gain, but a `4.1.27` string alone
+  cannot establish a missing vendor backport.
+- **Exact result:** both live invalidation paths perform 32-bit increments and
+  call exact `vmacache_flush_all` on zero; its `mm_users==1` route returns
+  without clearing pointers; lookup compares and stores only 32-bit
+  generations. Exact `mmput` independently binds the user-count field.
+- **Conclusion:** V-022 is exact pre-fix code, bounded by an unexecuted 2^32-state
+  cycle and unproved stale-pointer survival, dereference, reuse, corruption,
+  root, or persistence.
+- **Evidence:** `evidence/vendor-kernel-vmacache-cve-2018-17182.md`.
+
+---
+
 ## Standing practice that produced these corrections
 
 1. Cross-check a symbol table against an independent table before trusting names.

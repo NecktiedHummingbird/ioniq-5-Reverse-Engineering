@@ -332,6 +332,16 @@ bring-up defect. That question is open.
 - **Remediation:** apply `e4ec8cc8039a7063e24204299b462bd1383184a5` plus complete dominating initialization equivalent to `a8c006aafead3c45ae5d5601e3717055bccf41bc`; initialize full records before every queue append; restrict timer-node access; add sanitizer/KMSAN regression coverage in a disposable environment.
 - **Evidence:** `evidence/vendor-kernel-alsa-timer-follow-up.md`; reviewed excerpt `evidence/artifacts/kernel-candidates/snd-timer-padding-cve-2016-4569-4578.asm`; Boolean-only model `tools/uk_fw/alsa_tread_padding_model.py`.
 
+## V-022 — Linux vmacache generation-wrap use-after-free (EXACT PRE-FIX CODE; TARGET WRAP/UAF UNPROVEN)
+
+- **Status:** exact recovered `vmlinux` retains all four CVE-2018-17182 premises: 32-bit invalidation increments, zero-wrap calls, the `mm_users==1` cache-clear skip, and 32-bit lookup generation validation. No mapping cycle, thread lifecycle, counter wrap, stale pointer, dereference, corruption, or privilege transition was executed.
+- **Component:** SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`, Build ID `273378887b4cf563c10862fdf18b2292765df781`; `.text` VA `0xffffffff81000000`, file offset `0x200000`; `CONFIG_MMU=y`.
+- **Exact mechanism:** `vma_adjust` and `do_munmap` increment dword `mm+0x10` and call live `vmacache_flush_all` only when it wraps to zero. The helper `[0xffffffff810e96d2,0xffffffff810e9797)` returns without clearing task cache pointers when the exact mm user count at `mm+0x48` equals one. `vmacache_find` `[0xffffffff810e97c8,0xffffffff810e9864)` compares and stores only dword mm/task generations before using four cached VMA pointers. Upstream `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2` instead widens both generations to 64 bits and removes the wrap helper.
+- **Reachability:** generic upstream reachability uses ordinary MMU mappings and thread lifecycle with no user namespace, network protocol, special device, setuid binary, or optional module. It is post-entry escalation: local unprivileged execution is still required. A full cycle contains 4,294,967,296 generation states; runtime limits and practicality are unmeasured.
+- **Impact boundary:** NVD describes use-after-free with possible privilege gain. Exact static code establishes generation aliasing semantics only—not completed wrap, stale VMA survival/dereference, controlled reuse, write, RCE, root, SMACK escape, persistence, or owner-build applicability.
+- **Remediation:** backport `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2` or an equivalent 64-bit generation/removal fix; validate with vendor MM stress and memory-safety instrumentation in a disposable environment; do not exercise the wrap path on the owner unit.
+- **Evidence:** `evidence/vendor-kernel-vmacache-cve-2018-17182.md`; reviewed excerpt `evidence/artifacts/kernel-candidates/kernel-vmacache-cve-2018-17182.asm`; Boolean-only model `tools/uk_fw/vmacache_wrap_model.py`.
+
 ## V-012 — Production compositor shipped unstripped with full DWARF (HARDENING, informational)
 
 - **Status:** confirmed by inspection; informational hardening, not a vulnerability in itself.

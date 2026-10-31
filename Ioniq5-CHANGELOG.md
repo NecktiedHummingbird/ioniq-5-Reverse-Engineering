@@ -85,6 +85,23 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
 - Kept in the record as a correction of approach, not a failure of the daemon: the daemon's D-Bus bug is real
   and worth returning to, but it is not on the critical path if a publisher shim gets the UI drawing.
 
+## 1.45.0 - exact vmacache wrap semantics restore a local-root candidate
+
+- Researched ordinary unprivileged 4.1-era kernel escalation candidates and
+  prioritized CVE-2018-17182 because it needs no namespace, protocol, device,
+  setuid helper, or optional module in the generic path.
+- Bound exact live `vma_adjust`, `do_munmap`, `vmacache_flush_all`, `mmput`, and
+  `vmacache_find` control flow to recovered `vmlinux` identity and addresses.
+- Added V-022: both invalidation paths increment a 32-bit generation and call a
+  live flush helper on zero; its exact single-user route skips pointer clearing;
+  lookup compares and stores only 32-bit generations. None of the upstream
+  64-bit/removal fix effects is present.
+- Kept operational impact bounded: a complete cycle is 4,294,967,296 states,
+  and no mapping cycle, thread lifecycle, wrap, stale pointer, dereference,
+  controlled reuse, corruption, or root transition was run or established.
+- Added authoritative patch evidence and a reviewed Boolean-only model; full
+  semantic and model reviews returned `ACCEPT`.
+
 ## 1.44.0 - one ALSA timer padding disclosure survives a partial backport
 
 - Extended the ALSA review to CVE-2016-2544, CVE-2016-2548, CVE-2016-2549,

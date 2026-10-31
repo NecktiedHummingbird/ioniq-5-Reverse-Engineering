@@ -224,6 +224,14 @@ Note: `CONFIG_LGE_CARPLAY=y` in the kernel, yet no `carplay` symbols exist in
   redundant TPACKET_V3 field, but exact V1/V2 paths share the unchecked
   multiplication and later retain `frame_max`; their consequences remain
   impact-unknown and gated by `CAP_NET_RAW`.
+- V-022/CVE-2018-17182 is exact pre-fix code on an ordinary MMU/thread surface:
+  32-bit generations wrap into a live single-user flush helper that can retain
+  cache pointers, and lookup validates only the same 32-bit generation. Public
+  impact includes possible privilege gain. It requires a 2^32-state cycle and
+  careful lifetime conditions; no target wrap, stale VMA, controlled reuse,
+  corruption, or root is established. This is the highest-priority remaining
+  local-kernel escalation candidate for a disposable instrumented environment,
+  not the owner unit.
 - V-013/CVE-2017-15265 remains pre-fix in exact `snd-seq.ko`; a benign VM
   diagnostic confirmed uid/gid-65534 create/delete ioctl reachability, but a
   bounded race did not fault and no root primitive is established.

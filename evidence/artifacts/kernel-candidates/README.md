@@ -105,6 +105,7 @@ commits:
 - CVE-2016-7117: `34b88a68f26a75e4fded796f1a49c40f82234b7d`;
 - CVE-2017-8890: `657831ffc38e30092a2d5f03d385d710eb88b09a`;
 - CVE-2017-11176: `f991af3daabaecff34684fd51fac80319d1baad1`;
+- CVE-2018-17182: `7a9cdebdcc17e426fb5287e4a82db1dfe86339b2`;
 - CVE-2017-1000112: `85f1bd9a7b5a79d5baa8bf44af19658f7bf77bfa`;
 - CVE-2017-0861: `362bca57f5d78220f8b5907b875961af9436e229`;
 - CVE-2017-15265: `71105998845fb012937332fe2e806d443c09e026`;
@@ -121,6 +122,11 @@ under `work/online-kernel-candidates-20261101/cve-2017-7308/`:
 - companion frame-count fix `8f8d28e4d6d815a391285e121c3a53a0b6cb9e7b`,
   patch SHA-256
   `3e84b1acd9dd82dd0aedbb2ef301ce181993a2f68e106d1e3117d4608571b340`.
+
+`kernel-vmacache-cve-2018-17182.asm` retains both live 32-bit invalidation
+edges, exact zero-wrap calls, the single-user no-clear flush route, independent
+`mmput` user-count binding, and 32-bit lookup generation effects underlying
+V-022.
 
 `kernel-sysvipc-cve-2015-7613.asm`,
 `kernel-recvmmsg-cve-2016-7117.asm`, and

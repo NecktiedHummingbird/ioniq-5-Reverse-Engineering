@@ -153,8 +153,15 @@ followed by stateful service/CAN/persistence reconstruction.
   padding regions. This is a conditional local information disclosure, not
   root; module load, node/SMACK access, provider/event generation, and observed
   bytes remain unknown. See `evidence/vendor-kernel-alsa-timer-backports.md`
-  and `evidence/vendor-kernel-alsa-timer-follow-up.md`. CVE-2017-11176 is also
-  rejected by exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
+  and `evidence/vendor-kernel-alsa-timer-follow-up.md`. V-022 is a stronger
+  remaining local-root candidate: exact `vmlinux` retains CVE-2018-17182's
+  32-bit vmacache generations, zero-wrap calls, single-user flush skip, and
+  32-bit lookup validation. The generic surface needs no namespace or device,
+  but a complete cycle is 2^32 states and no target wrap, stale pointer, UAF,
+  corruption, or root transition was executed. See
+  `evidence/vendor-kernel-vmacache-cve-2018-17182.md` and Boolean-only
+  `tools/uk_fw/vmacache_wrap_model.py`. CVE-2017-11176 is also rejected by
+  exact semantic control flow: `CONFIG_POSIX_MQUEUE=y`, but failed
   lookup after `netlink_attachskb`'s return-one retry enters skb-only cleanup
   rather than detaching the stale socket. The loop has no explicit register
   clear, demonstrating why opcode absence alone is not a backport test. See
