@@ -319,9 +319,16 @@ Caller and state reconstruction resolves the equal path's role:
   `0x87395`; the standby workflow calls the helper at `0x87ee9`;
 - the exact FUMO child writes `force_launch=run` in system- and firmware-mode
   progress-zero branches at `0x11ff4c..0x11ff71` and
-  `0x1205a9..0x1205cb`, and in an additional same-handler branch at
+  `0x1205a9..0x1205cb`, and in an additional scheduled-update branch at
   `0x120371..0x1203a7`; all three are conditional on global
   `0x6d4f94 != 1`;
+- that additional branch first requires separately read, trimmed system- and
+  firmware-completion strings to compare case-sensitively equal to `complete`
+  at `0x11fb27..0x11fb62` and `0x120228..0x12029c`, then requires
+  `isScheduledUpdating` predicate `0xe8ad0` at `0x1202a2..0x1202ac`. The
+  predicate returns true for `this+0x201 != 0` or `this+0x1a0 == 0x19`; the
+  accepted branch writes both scheduled-completion markers before
+  `force_launch=run`;
 - completion cleanup at `0xfd3d0..0xfd9bb` overwrites the existing force marker
   with `none`, and force-relaunch helper `0x87150` does not call staging for that
   value.
@@ -330,8 +337,11 @@ Thus the equal branch is an intended pre-staged local relaunch and omits
 repeating the two AppDMClient result-pair contracts. This does not prove direct
 removable-media control of `/update/usb/bin`, unauthenticated creation of the
 force marker, immutable staging across the relaunch interval, or removal of
-inner payload/target checks. Entry into the progress callback has not yet been
-bound to a named completed signature/authentication state. The separate-open
+inner payload/target checks. The additional writer is bound to local completion
+text plus scheduled-update state, but those conditions are not a named
+signature/authentication result. Entry into the progress callback and the
+provenance of those completion states remain unbound to a completed
+authentication state. The separate-open
 TOCTOU boundary remains unresolved, but normal equal-path software reachability
 no longer is. Marker presence is still an explicit local non-encrypted-mode
 contract on the unequal path, not proof that USB media can create it or that

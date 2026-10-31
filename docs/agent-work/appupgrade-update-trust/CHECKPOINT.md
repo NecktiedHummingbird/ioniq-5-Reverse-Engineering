@@ -50,8 +50,10 @@ Date: 2026-11-01
     standby-status and exact `force_launch=run` workflows provide fixed local
     relaunch paths;
   - inner FUMO progress-zero branches write `force_launch=run` and completion
-    cleanup overwrites it with `none`; the preceding named authentication state
-    and source immutability remain unresolved;
+    cleanup overwrites it with `none`; the additional scheduled branch requires
+    both local completion strings plus `isScheduledUpdating`, but the provenance
+    of that state, the preceding named authentication state, and source
+    immutability remain unresolved;
   - explicit section-zero vehicle equality disabled at the reviewed USB call
     sites, while P5-family and later target checks remain.
 - Wrote `evidence/appupgrade-update-trust.md`,
@@ -74,8 +76,9 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
    and numeric boot-state values from exact code; trace the XML destination
    helper.
 3. Trace source stability across initial staging, repeated verifier/parser opens,
-   and the now-proven local relaunch; name the authentication state preceding
-   the FUMO progress-zero `force_launch=run` writes.
+   and the now-proven local relaunch; trace the provenance of the two local
+   completion strings and name any authentication state preceding the FUMO
+   progress-callback `force_launch=run` writes.
 4. Trace FUMO mode-byte uses into named decryption, signature, digest, archive,
    and write functions, and map inner AppUpgrade `car-variant`/system-version
    decisions without inferring that one skipped branch removes all trust

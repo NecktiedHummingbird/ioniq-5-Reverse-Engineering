@@ -171,9 +171,17 @@ handler:
   `/update/force_launch` at `0x11ff4c..0x11ff71`;
 - system-mode progress zero performs the corresponding writes at
   `0x120571..0x120593` and `0x1205a9..0x1205cb`;
-- an additional branch in the same progress handler writes the same force
-  path/value at `0x120371..0x1203a7`, again guarded by global
-  `0x6d4f94 != 1`;
+- an additional scheduled-update branch in the same progress handler writes
+  the same force path/value at `0x120371..0x1203a7`, again guarded by global
+  `0x6d4f94 != 1`. Reaching it first requires the separately read and
+  `QString::trimmed()` system- and firmware-completion strings to each compare
+  case-sensitively equal to `complete` (`0x11fb27..0x11fb62` and
+  `0x120228..0x12029c`) and requires predicate `0xe8ad0` to return true at
+  `0x1202a2..0x1202ac`. That predicate logs `isScheduledUpdating` and returns
+  true when `this+0x201` is nonzero or `this+0x1a0 == 0x19`. The branch then
+  writes `complete` to `/update/scheduled_update_complete` and
+  `/update/scheduled_update_complete_for_DM` at `0x1202cf..0x12036c` before the
+  guarded force-marker write;
 - another exact writer site for the same force path/value is present at
   `0x1151c3..0x1151fa`.
 
@@ -188,9 +196,11 @@ not all consult this marker.
 This proves normal software reachability and provenance of the equal local
 source. It does **not** prove that removable media directly controls
 `/update/usb/bin`, that an unauthenticated package creates `force_launch`, or
-that files remain immutable between initial staging and relaunch. Entry into
-the inner progress callback has not yet been bound to a named completed
-signature/payload-authentication state. The equal branch is best described as
+that files remain immutable between initial staging and relaunch. The additional writer is therefore bound to local completion text and a
+scheduled-update state predicate, but neither condition is itself a named
+signature or payload-authentication result. Entry into the inner progress
+callback and the provenance of those completion states have not yet been bound
+to a completed authentication state. The equal branch is best described as
 an intended pre-staged relaunch that omits repeated AppDMClient pair checks, not
 as a first-entry authentication bypass.
 
