@@ -2477,3 +2477,31 @@ and are superseded by corrections rather than silently rewritten.
   ran twice, the peer was not serving the instance that connected, and no boot-info reply was logged.
 - The remaining work is coordination, not discovery. That is a much better place to be than the last several
   rounds, where the question was still what was broken.
+
+## 2026-11-01 — updater relaunch state is progress, not proof
+
+- Exact callback tracing changed the meaning of one tempting local marker.
+  FUMO writes `force_launch=run` after recording progress as `processing`; when
+  progress reaches 100 it records `complete` and changes the force value to
+  `none`. The run value is therefore not completion evidence.
+- Some callback traffic now has a name—`DeltaUpdateProgressHandler`—but the
+  direct writer reads no named signature, digest, certificate, or payload-auth
+  result. The unresolved question moved upstream: can a valid progress event
+  happen before package authentication, rather than what the marker means.
+- The scheduled route remains different: it reads both completion strings and
+  checks scheduled-update state before writing `run`. Those are still
+  operational conditions, not cryptographic proof.
+- A concurrent correction also keeps the residual AF_PACKET frame-count gap
+  impact-unknown for V1/V2. Public TPACKET_V3 redundancy does not settle the
+  exact common multiplication and later `frame_max` use.
+
+## 2026-10-31 — a zero that meant nothing happened
+
+- The peer is properly decoupled now, and the wrapper reliably reaches the daemon. Along the way I found that
+  a number I had reported as success was empty: zero D-Bus errors because zero attempts, with the wrapper
+  killed mid-wait before it ever started the daemon.
+- That is the second time in this session that "no errors" was the absence of work rather than the absence of
+  faults. It is worth writing down as a rule: a counter of failures is only meaningful alongside a counter of
+  attempts.
+- With the daemon genuinely running, the exchange is happening and publication is still failing. The SMACK
+  ordering theory is weakened by its own test, which is what tests are for.

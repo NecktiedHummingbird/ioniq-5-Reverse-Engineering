@@ -3,6 +3,44 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.38.0 - the peer is decoupled and the plugin runs; the D-Bus wall remains
+
+- The peer now runs as its own systemd unit (`micom-peer.service`) so it outlives the daemon's restart
+  cycle, and `ExecStartPre` steps are prefixed with `-` so an already-mounted devpts no longer fails the
+  unit. Result: `MMWRAP peer waited=1 ready=yes link=/dev/pts/0`, unit active on both starts.
+- **A correction to the previous entry, which matters.** The "`writeToDBus` errors: 0" recorded there was an
+  artefact: the wrapper was blocked in a 120 s wait for `smack.service` and was killed by the activation
+  timeout before it ever reached `exec`, so the daemon never ran and could not produce errors. Zero errors
+  meant zero attempts.
+- Fixed by applying the ruleset directly in the wrapper rather than waiting: `/sbin/smackctl apply` returns
+  **rc=0** and the wrapper now always reaches `MMWRAP exec daemon`.
+- With the daemon actually running the real picture returns: **26 `writeToDBus` errors** and the MICOM
+  exchange still happening (the daemon attempts to publish, so it is reading replies). No `bootinfo reply`
+  lines this boot, which means the ask sequence differed — the peer answered with empty payloads rather than
+  the 35-byte ones, so the boot-info ids were not requested at startup here.
+- So the state is: peer decoupled and healthy, ruleset applied early, daemon running and exchanging frames,
+  and **D-Bus publication still failing**. Applying SMACK rules earlier did not fix it, which weakens the
+  SMACK hypothesis for this specific failure.
+- Next diagnostic is cheap and specific: from inside the wrapper, run
+  `dbus-send --system --print-reply --dest=org.freedesktop.DBus / org.freedesktop.DBus.ListNames` and print
+  its exit status and first line. That distinguishes "root cannot reach the system bus at this moment" from
+  "the daemon's own connection setup is at fault".
+
+## 1.39.0 - qualify FUMO force-marker progress provenance
+
+- Traced callback FDE `0x11f1b0..0x120a9e` and the exact file-writer calls for
+  the FUMO completion and force markers. Progress zero writes `processing` and
+  then `force_launch=run`; progress 100 writes `complete` and then changes the
+  force value to `none`.
+- Named exact `DeltaUpdateProgressHandler` and timer routes into the callback.
+  Their direct force-write branches read no named signature, digest,
+  certificate, or payload-authentication result. Thus `force_launch=run` alone
+  is operational progress state, not completion or authentication evidence.
+- Retained the upstream boundary: this does not show that unauthenticated input
+  can cause a valid progress event, update acceptance, writes, slot/boot trust,
+  root, or persistence. The scheduled writer still separately requires both
+  completion strings and scheduled-update state.
+
 ## 1.37.0 - SMACK ordering was the D-Bus fault
 
 - **Root cause of `[writeToDBus] There is no connection` found: ordering, not permissions.** `smack.service`
