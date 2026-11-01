@@ -3,6 +3,17 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 2.02.0 - the harvest route is closed: the vendor daemon publishes no region
+
+- Tested the most promising remaining idea — take the structure's layout from the component that would populate it. Ran
+  `micommanager_userspace` with a `/dev/ttyS1` peer and a system bus: the daemon runs (`pid 723`) and creates
+  **zero `qipc_*` files**.
+- So the vendor daemon is **not** the publisher of the MICOM status region. Combined with the region name appearing in
+  `ApplicationManager`'s own strings, the picture is that the **client creates the region and lacks the data to fill it**.
+- That closes the empirical shortcut. Both remaining routes are now static: read `initBootInfo`/`parseMicomBootInfo`, or
+  obtain vendor source. There is no artefact to harvest in this projection.
+- Recorded with the elimination list rather than as another open thread.
+
 ## 2.01.0 - segment existence excluded; the layout of the MICOM status structure is the last unknown
 
 - Created the named region deliberately and verified it: `ihu-shim` reports **six segments created**, including

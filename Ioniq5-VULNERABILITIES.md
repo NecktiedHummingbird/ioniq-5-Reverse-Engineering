@@ -953,6 +953,12 @@ vulnerability is claimed, and this test does not move either entry.
 - That collapses the last two open questions into one: whether the boot info arrives by `ay` reply or by shared region,
   what is missing is **the layout and validity rules of the MICOM status structure**. Reachability, environment, segment
   existence and payload length have all been excluded by measurement.
+- **The "harvest a populated region from the vendor daemon" route was tested and is not available.** Running
+  `micommanager_userspace` with a `/dev/ttyS1` peer and a system bus produced: daemon **running** (`pid 723`) but
+  **zero `qipc_*` files created**. So the vendor daemon is not the publisher of the MICOM status region — consistent with
+  the region name appearing in `ApplicationManager`'s own strings, i.e. the client creates it and the missing thing is the
+  **data** it would fill it with. There is therefore no template to harvest from the daemon in this projection, and that
+  route is closed.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty

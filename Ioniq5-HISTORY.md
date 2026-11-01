@@ -3260,3 +3260,10 @@ and are superseded by corrections rather than silently rewritten.
   D-Bus payload that a validating parser would not accept. The same reasoning now applies to the region.
 - Stopping here is deliberate. Everything environmental is excluded by measurement, the instruments are documented, and
   what is left is disassembly time on a stripped binary.
+
+## 2026-10-31 — the shortcut was worth testing and does not exist
+
+- Harvesting a populated region from the vendor daemon would have answered the layout question by observation instead of
+  reading assembly. The daemon creates no such region, so the shortcut is closed and the honest route is disassembly.
+- Worth recording precisely because it was the best remaining idea: knowing it is unavailable stops the next person from
+  spending a session on it.
