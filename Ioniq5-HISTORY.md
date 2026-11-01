@@ -3170,3 +3170,10 @@ and are superseded by corrections rather than silently rewritten.
   subtle way, and the cost of discovering that has exceeded what the question is worth today.
 - What remains is bounded and nameable, and the next attempt should be a full syscall trace or vendor source, not another
   experiment of my own design.
+
+## 2026-10-31 — the untargeted trace answered what four targeted ones did not
+
+- One full trace named the failing step: the interface is valid, the call is retried, and with a peer present the reply is
+  still rejected. Everything about reachability is now settled, and what is left is the content of thirty-five bytes.
+- Four instruments, three invalid first. The lesson is not "trace harder", it is that targeted tracing kept constraining
+  the view to what I already believed, while the untargeted one showed me the sentence I needed.

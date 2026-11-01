@@ -849,10 +849,24 @@ vulnerability is claimed, and this test does not move either entry.
   has been testing: it is not a D-Bus reachability problem, and it is not a Qt key-file shared-memory attach. What
   remains is either an object created by a component that never runs in this projection, or an in-process condition —
   neither of which `openat` or `connect` will show.
-- **Where this stops, deliberately.** Three instruments have now been built for this one question and each was first
-  invalid in a way that had to be discovered (a process that exited early, a trace that captured three lines, a run with
-  no bus at all). The next honest step is not another variant but a **full syscall trace** (`strace -f` untargeted) in
-  this validated setup, or vendor source. Continuing to guess at instruments has cost more than it has returned.
+- **The untargeted trace then located the failing step, by name.** A full `strace -f` (3,465 calls) with the bus and
+  compositor up shows `ApplicationManager` writing these to its log:
+
+  `MicomInterfaceM::askSysBootInfo():iface is VALID`
+  `AskSysBootinfo Retry = 0 / 1 / 2`
+
+  So the **interface check passes** and the failure is in the **call**, not in constructing or reaching the interface.
+  In that run no `com.lge.car.micom` owner was running, so the retries are "no peer" — which is consistent and separately
+  confirmed by the boots where `micom-service` was up and the launcher consumed its answers.
+- **Where that leaves the cause:** with a peer present the reply arrives (the launcher consumes it), and
+  `ApplicationManager` *still* fails `initBootInfo`. The remaining candidate is therefore the **content** of the 35-byte
+  `ay` — its validation in `parseMicomBootInfo` — rather than reachability, interface construction, or any shared-memory
+  mechanism. Both file-backed and D-Bus reachability paths have now been excluded by measurement.
+- **Where this stops, deliberately.** Four instruments have been built for this question and each was first invalid in a
+  way that had to be discovered (exited process, three-line trace, no-bus run, then a valid full trace). The next step is
+  no longer an experiment of my design: it is reconstructing `parseMicomBootInfo`'s acceptance criteria from the
+  disassembly anchors already recorded (`0x258808` validity block, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`),
+  or obtaining vendor source.
 
 ## Rejected / out-of-scope items
 

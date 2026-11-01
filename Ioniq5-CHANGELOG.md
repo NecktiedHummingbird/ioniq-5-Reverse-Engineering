@@ -3,6 +3,19 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.91.0 - the failing step named: interface valid, call retried, reply content rejected
+
+- The untargeted `strace -f` (3,465 calls) paid off where three targeted instruments had not. It shows
+  `ApplicationManager` logging `MicomInterfaceM::askSysBootInfo():iface is VALID` followed by `AskSysBootinfo Retry = 0/1/2`.
+- So the **interface check passes**; the failure is at the call. In that run no `com.lge.car.micom` owner existed, so the
+  retries are "no peer" — consistent with the separate boots where `micom-service` ran and the launcher consumed replies.
+- With a peer present the reply arrives yet `initBootInfo` still fails, which leaves the **content of the 35-byte `ay`** as
+  the remaining candidate. Reachability, interface construction, and both shared-memory mechanisms are now excluded by
+  measurement.
+- **Stopping the experiment loop.** Four instruments for this question, each first invalid in a way that had to be
+  discovered. The next step is not another of my designs: it is reconstructing `parseMicomBootInfo`'s acceptance criteria
+  from the anchors already recorded, or vendor source.
+
 ## 1.90.0 - boot-info attach: file-backed and D-Bus both eliminated; stopping the instrument loop
 
 - Re-ran the `openat` trace with conditions **verified** rather than assumed: system bus actually running
