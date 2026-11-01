@@ -870,13 +870,21 @@ vulnerability is claimed, and this test does not move either entry.
   The peer **was not running** in that environment, so it answered nothing — meaning `ApplicationManager`'s four asks
   were again "no peer" and the **payload content remains untested**. This is not a negative about the payload; it is a
   failure to run the experiment.
-- **Where this stops, deliberately.** Five instruments have now been built for this question and each was first invalid
-  in a way that had to be discovered: an exited process, a three-line trace, a run with no bus, console markers eaten by a
-  systemd spinner, and now a peer that did not start. The next step is no longer an experiment of my design. Two options
-  remain, both stated plainly: (a) determine why `micom-service` exits in the research-init environment (its own
-  `/tmp/ms.log` has not been read), so the payload can finally be tested against a live peer; or (b) reconstruct
-  `parseMicomBootInfo`'s acceptance criteria from the anchors already recorded (`0x258808`, `cmpl $0x1c` at `0x258705`,
-  byte read at `0x25872a`), or vendor source.
+- **Root cause of the "peer did not start": it was never installed there.** The `micom-service` binary had been injected
+  into the **esinit** workspace but not into the **softbackend** workspace, so every research-init test invoked a
+  non-existent path, which failed silently to a log that was therefore empty. Checked directly:
+  `stat /usr/bin/micom-service` resolves in `esinit-fs` and does not in `softbackend`.
+- **With it installed, the payload was tested against a live peer for the first time, and the result is a clean,
+  interpretable negative:**
+
+  `RESULT_SVC=720` · `RESULT_SVC_ANSWERS=1` · `RESULT_ASK=1` · `RESULT_VALID=0` · `RESULT_ATTACH_FAIL=1`
+
+  The peer **ran** and **answered** `AskSysBootinfo`; `ApplicationManager` asked once, never logged
+  `reply is VALID`, and still failed `initBootInfo attach`. So the 35 zero bytes are **received and rejected** — the
+  payload's content is confirmed as the blocker, which every earlier attempt had failed to test.
+- **Next step, now unambiguous:** establish what `parseMicomBootInfo` requires. Either empirical variants against this
+  now-working oracle (`RESULT_VALID` is the pass/fail signal), or reconstruction from the recorded anchors
+  (`0x258808`, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`).
 
 ## Rejected / out-of-scope items
 

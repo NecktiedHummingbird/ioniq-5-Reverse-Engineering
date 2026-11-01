@@ -3186,3 +3186,12 @@ and are superseded by corrections rather than silently rewritten.
 - What has been genuinely settled is narrower but real: not the bus, not the file-backed attach, not the interface. The
   remaining unknown is the content of thirty-five bytes, and it needs either a live peer or a static reading of the
   parser.
+
+## 2026-10-31 — six failures, then a real answer
+
+- The peer never started because I had installed it in one workspace and tested in another. One stat call would have shown
+  it at any point in the last five attempts, and instead I built four increasingly elaborate instruments around a missing
+  file.
+- With that fixed, the payload question answered itself: the peer answers, the client asks, and the reply is rejected. The
+  blocker has been the content of thirty-five bytes all along, which nothing I ran before could have shown.
+- The lesson is the least flattering of the session: check the binary exists before tracing what it does.

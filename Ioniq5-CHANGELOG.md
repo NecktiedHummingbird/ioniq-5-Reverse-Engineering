@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.93.0 - the payload is finally tested: answered and rejected
+
+- Found why the peer never started: `micom-service` had been installed in the **esinit** workspace but never in
+  **softbackend**, so every research-init test ran a non-existent path that failed silently to an empty log. Verified with
+  `stat`: present in one, absent in the other.
+- With it installed, the first genuine test of the payload against a live peer:
+
+  `RESULT_SVC=720` · `RESULT_SVC_ANSWERS=1` · `RESULT_ASK=1` · `RESULT_VALID=0` · `RESULT_ATTACH_FAIL=1`
+
+  The peer ran and answered `AskSysBootinfo`; `ApplicationManager` asked once, never logged `reply is VALID`, and still
+  failed `initBootInfo attach`. **The 35 zero bytes are received and rejected.**
+- That is the answer every earlier attempt failed to obtain: the blocker is the **content** of the reply, not
+  reachability, interface, or any shared-memory mechanism.
+- **Next step, unambiguous:** establish what `parseMicomBootInfo` requires — either variants against this now-working
+  oracle (`RESULT_VALID` is the signal) or reconstruction from the anchors already recorded.
+
 ## 1.92.0 - the payload test still has not run: the peer was not up
 
 - Ran the oracle test with clean console markers this time (research init, so no systemd spinner):
