@@ -2,8 +2,12 @@
 
 Date: 2026-11-08
 Original clean bundle baseline: `70467e83cbc26deee907e4029d7aaa3d43463293`
-Current integration HEAD: `32baeae8ba009577e2e77239bbfc738c894bb021`
-Workspace: changes below are unstaged; nothing from this bundle is committed or pushed.
+Reviewed integration base: `32baeae8ba009577e2e77239bbfc738c894bb021`
+Actual delivery commit: `3f6bd7e60cba92cae364a228c6cb44706d947554`
+
+The reviewed 11-path bundle was staged on the integration base, then absorbed by
+concurrent commit `3f6bd7e` before the parent could create its planned dedicated
+commit. That commit was pushed to `ioniq/main`. Published history is preserved.
 
 ## Bounded result
 
@@ -54,9 +58,12 @@ Workspace: changes below are unstaged; nothing from this bundle is committed or 
   `evidence/artifacts/update-candidates/README.md`.
 
 `Ioniq5-CHANGELOG.md` is context-only for this bundle. Concurrent commit
-`32baeae8ba009577e2e77239bbfc738c894bb021` absorbed the intended changelog
-paragraph together with unrelated V-036 work. That commit and its other paths
-are preserved and are not attributed to this delivery.
+`32baeae8ba009577e2e77239bbfc738c894bb021` had already absorbed the intended
+changelog paragraph together with unrelated V-036 work. Delivery commit
+`3f6bd7e` contains the 11 reviewed paths listed here plus concurrent changes to
+`Ioniq5-CHANGELOG.md`, `Ioniq5-HISTORY.md`, and `Ioniq5-VULNERABILITIES.md`.
+Those three paths and the commit title belong to the concurrent VM investigation
+and are not attributed to this AppFUMO package.
 
 Deterministic default report SHA-256:
 `7702f40e87033dfb9bbb271b3615c0ec5212d17c16c3965b151306e62b38bfc3`.

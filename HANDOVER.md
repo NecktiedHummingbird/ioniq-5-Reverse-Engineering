@@ -440,11 +440,13 @@ followed by stateful service/CAN/persistence reconstruction.
   `a6bbe8e74630e7a64001a8bad2b5f67846f465473612a14e8bccf3aad47c5510`;
   deterministic default report SHA-256 is
   `7702f40e87033dfb9bbb271b3615c0ec5212d17c16c3965b151306e62b38bfc3`.
-- Validation status is retained in
-  `docs/agent-work/appfumo-shell-boundary/CHECKPOINT.md`. No target, recovered
-  executable/helper, archive/update, operational shell payload/trigger,
-  signature bypass, privilege action, root action, or persistence mechanism was
-  executed or created.
+- Validation and delivery provenance are retained in
+  `docs/agent-work/appfumo-shell-boundary/CHECKPOINT.md`. The reviewed 11-path
+  package was absorbed into pushed concurrent commit `3f6bd7e`; its three
+  unrelated IONIQ documentation paths remain attributed to the concurrent VM
+  investigation. No target, recovered executable/helper, archive/update,
+  operational shell payload/trigger, signature bypass, privilege action, root
+  action, or persistence mechanism was executed or created.
 
 ## AppFUMO decryption producer/runtime provenance checkpoint — 2026-11-03
 
