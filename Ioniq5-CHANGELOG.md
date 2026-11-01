@@ -3,6 +3,24 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.88.0 - provenance incident: a scoped `git add` still committed the shared index
+
+- **What happened:** commit `3f6bd7e` (mine, the `openat` finding) captured **14 files** instead of the 3 I intended. A
+  parallel workstream had an 11-file AppFUMO shell-boundary bundle **already staged**, and `git add <3 paths>` adds to the
+  index rather than replacing it — `git commit` then commits the whole index. The paths I named had no bearing on what
+  was captured.
+- **Verification, not assumption:** their 11 files show **no unstaged modifications** relative to that commit, i.e. they
+  were captured exactly as staged, byte-for-byte. Nothing was altered, reordered or dropped, and they have since recorded
+  delivery provenance themselves in `4df555a`.
+- **Why this matters beyond tidiness:** it is the *second* index-scoping failure of this session. The first swept a
+  parallel changelog entry into my commit while my own edit silently failed to apply. Both came from treating the index
+  as private; it is shared state and `git add` cannot be used to scope a commit.
+- **Discipline adopted from here:** (1) check `git diff --cached --name-only` before committing and stop if it lists
+  anything I did not author; (2) prefer `git commit -- <paths>`, which scopes by command rather than by index contents;
+  (3) keep to disjoint files where the work allows it.
+- Recorded after the other workstream's correction landed and the workspace was confirmed clean, so this note could not
+  itself be swept into somebody else's commit.
+
 ## 1.87.0 - the attach is not file-backed: openat shows no qipc path
 
 - Ran `ApplicationManager` detached under `strace -f -e trace=openat` while it reached its usual failure

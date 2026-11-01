@@ -3141,3 +3141,14 @@ and are superseded by corrections rather than silently rewritten.
   tracing that cracked AppHomeScreen simply does not see it.
 - Recording the failure of a favourite technique is worth as much as recording its success — otherwise the next attempt
   starts from the same wrong assumption I did.
+
+## 2026-10-31 — the index is not mine
+
+- A commit of mine swallowed eleven files belonging to a parallel workstream, because their content was already staged and
+  a paths-scoped `git add` does not shrink an index. Everything landed intact, and they have recorded the provenance
+  themselves, but the mechanism is worth writing down.
+- This is the same error as the earlier swept-changelog-entry, and the same root cause: assuming `git add` scopes a
+  commit. It does not. Only `git commit -- <paths>` does, and checking the staged set beforehand is cheaper than
+  discovering it afterwards.
+- Held off all staging while the other workstream corrected the record, then wrote this note into a clean tree so it could
+  not contaminate their commit. That part at least was done in the right order.
