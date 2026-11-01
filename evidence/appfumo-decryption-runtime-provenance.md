@@ -40,7 +40,8 @@ effective privilege, root, or persistence.
 | metadata binding | **resolved** | local row 64 is `decryptionFile(QString,QString)`; local row 60 is `copyWhatsNewFiles()` |
 | generated `decryptionFile` forwarding | **resolved, separate** | row-64 generated call `0x16e030`, documented previously |
 | selected direct producer family | **resolved** | three sites are in exact `copyWhatsNewFiles()` FDE/function |
-| complete producer provenance | **unresolved** | no complete dynamic/indirect/external dispatch proof |
+| bounded exact-ELF Qt/D-Bus dispatch audit | **resolved, no row-64 candidate observed** | literal connects/invokes/timers and selected-object adaptors/subscriptions classified |
+| complete producer provenance | **unresolved** | synthesized/indexed, indirect, cross-library, external, and runtime paths remain open |
 | logged-build identity | **unknown** | log contains no binary hash/Build ID |
 | logged invocation mechanism | **unknown** | text does not distinguish direct call, Qt meta-call, or another dispatch route |
 | attacker control | **unknown** | neither evidence set proves control of paths or timing |
@@ -154,10 +155,15 @@ encFile  = <package base>/whatsnew/whatsnew_controls/<enumerated relative file>
 destPath = /update/whatsnew/{whatsnew_controls_new|whatsnew_controls_new_usb_in_ota}/<same paired names>
 ```
 
-These conclusions classify the three selected direct producers. They do not
-make the prior bounded textual direct-reference scan complete for dynamic,
-indirect, reflective, queued, virtual, external-process, or cross-library
-invocation.
+These conclusions classify the three selected direct producers. A follow-up
+finds no row-64 candidate among all exact-ELF old-style connects, imported named
+invokes, string timers, selected constructor connections, or the selected
+object's six D-Bus adaptors and 12 D-Bus signal subscriptions. It also resolves
+option `1` as `ExportAdaptors`, which does not export ordinary parent slots. That
+bounded negative still does not prove absence of synthesized/indexed, indirect,
+reflective, Qt-library-internal, external-process, or cross-library invocation.
+See
+[`appfumo-decryption-producer-provenance.md`](appfumo-decryption-producer-provenance.md).
 
 ## Exact downstream shell boundary
 
@@ -291,8 +297,9 @@ shell-ready target command.
 - binary identity and Build ID of the AppUpgrade instance that wrote the log;
 - equality between that installed/logged build and the exact recovered ELF;
 - direct-call versus generated Qt meta-call versus another runtime mechanism;
-- complete dynamic, indirect, external-process, and cross-library producers;
-- external, IPC, D-Bus, UI, or service reachability;
+- complete synthesized/indexed, indirect, external-process, and cross-library producers;
+- runtime registration success, bus policy, external IPC/UI/service reachability,
+  or any D-Bus route outside the reviewed non-row-64 adaptors/subscriptions;
 - attacker influence over package base, enumerated files, destinations, or
   timing;
 - result acceptance, final payload binding, partition writes, slot/boot

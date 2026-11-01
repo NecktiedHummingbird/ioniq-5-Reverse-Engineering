@@ -1,0 +1,187 @@
+{
+  "artifact": {
+    "build_id": "863a8730e66a1c5245a1bf458fe2554adee0351a",
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size": 5066264
+  },
+  "dbus_registration": {
+    "helper_call_va": "0x1261bd",
+    "helper_va": "0xb8b40",
+    "privacy": {
+      "callable_coordinates_emitted": false,
+      "final_service": {
+        "length": 35,
+        "sha256": "dccfbf2d807d3909dafea63ac513e71237cdfaeece6abd077f0dd74b693128d6"
+      },
+      "object_path": {
+        "length": 38,
+        "sha256": "4b15e297cc833f21126d08a0ab17b2dd27fcc504f2136981fe1e4c53f1223a5d"
+      },
+      "service_template": {
+        "length": 27,
+        "sha256": "823761d45cdafeef6788272cf97168b094c78b53e4ec8eb09239f08b2b11ee48"
+      },
+      "service_token": {
+        "length": 10,
+        "sha256": "4b3bf0b1b7c02a14e8c1147970f88231aa8c620572f6fabb126598b61fd2b603"
+      }
+    },
+    "register_option_definition_va": "0xb8e41",
+    "register_option_name": "ExportAdaptors",
+    "register_option_value": 1,
+    "same_object_helper_chain": true,
+    "same_object_subscriptions": {
+      "count": 12,
+      "ordered_member_sha256": "3f32403de2b736c9c3bf83387bf5d8a9025a2e78cabd8c66650e4c808904affe",
+      "target_matches": 0
+    },
+    "selected_adaptor_count": 6,
+    "selected_adaptor_totals": {
+      "public_slots": 16,
+      "signals": 14,
+      "target_rows": 0
+    },
+    "selected_forwarders": {
+      "count": 16,
+      "ordered_member_sha256": "d84df26f1a242c24ec7f69928aa53f84a32a08fa56b7ebc2451a5ce27b405020",
+      "target_matches": 0
+    }
+  },
+  "direct_target_edges": {
+    "count": 4,
+    "edges": [
+      {
+        "call_va": "0x10281c",
+        "classification": "row-60 system-tree producer"
+      },
+      {
+        "call_va": "0x102de9",
+        "classification": "row-60 top-level archive producer"
+      },
+      {
+        "call_va": "0x103398",
+        "classification": "row-60 controls-tree producer"
+      },
+      {
+        "call_va": "0x16e030",
+        "classification": "generated row-64 forwarding"
+      }
+    ]
+  },
+  "dispatch_inventory": {
+    "bounded_zero_counts": {
+      "connect_slots_by_name": 0,
+      "post_event": 0,
+      "qmeta_call_event_import": 0,
+      "qobject_disconnect": 0,
+      "send_event": 0
+    },
+    "direct_call_counts": {
+      "connect_impl": 18,
+      "dbus_connect": 32,
+      "invoke_method": 105,
+      "old_connect": 90,
+      "register_object": 1,
+      "register_service": 1,
+      "timer_string": 4
+    },
+    "named_invoke": {
+      "connection_type": "AutoConnection",
+      "count": 105,
+      "distinct_member_count": 105,
+      "ordered_provenance_sha256": "bbed9d9b56cae4e8f60489b8bc0016532cd8e4566d2108aa9134a9e8f927470c",
+      "target_matches": 0
+    },
+    "old_style_connect": {
+      "connection_types": {
+        "AutoConnection": 89,
+        "DirectConnection": 1
+      },
+      "count": 90,
+      "ordered_provenance_sha256": "39c53249612ee523be992eb71ae2d81dd7b52c5778803940c9563191bf6b1d3e",
+      "target_matches": 0
+    },
+    "selected_constructor": {
+      "callback_ranges": [
+        {
+          "direct_target_references": 0,
+          "end_va_exclusive": "0x1309bb",
+          "start_va": "0x1305c0"
+        },
+        {
+          "direct_target_references": 0,
+          "end_va_exclusive": "0x130d77",
+          "start_va": "0x1309c0"
+        }
+      ],
+      "connect_impl_call_vas": [
+        "0x126787",
+        "0x12681c"
+      ],
+      "connect_impl_callback_binding": "resolved",
+      "connect_impl_connection_type": "AutoConnection",
+      "connect_impl_count": 2,
+      "connection_types": {
+        "AutoConnection": 28,
+        "DirectConnection": 1
+      },
+      "old_style_connect_count": 29,
+      "ordered_provenance_sha256": "df9ba8d985d01a7a33d6eea295c78594acee5e3f3871e820298c20052c56fad6"
+    },
+    "string_timer": {
+      "count": 4,
+      "ordered_member_sha256": "06a4212f2ec645ecd53315475413ec2457b613511bde65cce792cbdfca0ac9d9",
+      "target_matches": 0
+    }
+  },
+  "meta_call_chain": {
+    "absolute_method_index": null,
+    "generated_forwarding": {
+      "argument_copy": "a[1]/a[2] to local QString values",
+      "call_va": "0x16e030",
+      "case_va": "0x16dfc6",
+      "return": "QString to a[0] when non-null"
+    },
+    "index_scope": "local-to-selected-metaobject",
+    "parent_local_method_count": 11,
+    "selected_local_method_count": 85,
+    "target_local_index": 64
+  },
+  "schema_version": 1,
+  "scope": {
+    "attacker_control_proven": false,
+    "complete_dynamic_producer_absence_proven": false,
+    "exact_static": true,
+    "runtime_invocation_proven": false
+  },
+  "target_name_inventory": {
+    "absent_signature_form_count": 4,
+    "bare_name_count": 4,
+    "occurrences": [
+      {
+        "classification": "logging/function-label",
+        "offset": "0x20c058",
+        "xref_count": 4
+      },
+      {
+        "classification": "target-body logging-label",
+        "offset": "0x2293f8",
+        "xref_count": 2
+      },
+      {
+        "classification": "logging/function-label",
+        "offset": "0x22d208",
+        "xref_count": 2
+      },
+      {
+        "classification": "selected metadata payload",
+        "offset": "0x446479",
+        "xref_count": 0
+      }
+    ]
+  },
+  "tool": {
+    "name": "appfumo-decryption-dispatch-provenance",
+    "version": "1.1.0"
+  }
+}

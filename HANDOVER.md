@@ -6,6 +6,73 @@ passes the standby/profile-confirm gate and visibly foregrounds authentic
 separately. The remaining integration goal is stable Home↔Navigation operation,
 followed by stateful service/CAN/persistence reconstruction.
 
+## AppFUMO `decryptionFile` producer-provenance checkpoint — 2026-11-08
+
+- Analysis began at requested HEAD
+  `c886e103c9378cbc6f3884e738f4870bab7a3826`. During final validation, a
+  five concurrent external commits advanced HEAD through `4dd644e37`,
+  `332fc60cc`, `bb3fe7ba8`, and `f2f4bd215` to
+  `1d5da8111b26a64d7efaff4c69e368f93bc7ec2c`. They changed only
+  `Ioniq5-CHANGELOG.md`, `Ioniq5-HISTORY.md`, and
+  `Ioniq5-VULNERABILITIES.md`; this audit did not create, stage, amend, reset,
+  or push those commits. The pre-existing unrelated
+  `tools/uk_fw/ias_backend_soft/micom_service.c` modification was not inspected
+  or changed. During implementation and review, nothing was delegated, staged,
+  committed, pushed, reset, or stashed; parent integration later staged exactly
+  the 15 reviewed package paths.
+- Exact AppUpgrade identity remains SHA-256
+  `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7`,
+  Build ID `863a8730e66a1c5245a1bf458fe2554adee0351a`. Four bare
+  `decryptionFile` strings were classified: three logging/function labels and
+  selected metadata payload `0x446479`. No normalized/declarative signature or
+  old-style target encoding occurs.
+- `AppUpgradeEngine::qt_metacall` first calls parent `AppEngineBase` dispatch,
+  handles residual local IDs `0..84`, then subtracts 85; the parent handles 11
+  local rows after QObject. Row 64 is therefore local, not an asserted absolute
+  index. Its generated case copies the two QString arguments and forwards to
+  `0x100b30`, but availability is not invocation evidence.
+- The direct target inventory remains three calls in row-60
+  `copyWhatsNewFiles()`—system tree `0x10281c`, top-level archive `0x102de9`,
+  controls tree `0x103398`—plus generated forwarding `0x16e030`.
+- All 90 old-style connects resolve to static signal/member strings; all 105
+  imported named invokes resolve to distinct literal names and request
+  AutoConnection. None selects row 64. The selected constructor has 29 string
+  connects (28 Auto, one Direct) and two Auto functors, also non-target. Four
+  string timers select another slot. No row-64 candidate exists for attributing
+  queued/direct/blocking semantics or queued QString copying.
+- The constructor calls session-bus helper `0xb8b40` with this exact object.
+  The helper attaches six adaptors and calls `registerObject` with option
+  `1 = ExportAdaptors`. Those adaptors have 30 local rows (16 slots, 14 signals),
+  no target row, and 16 non-target literal forwarders. ExportAdaptors does not
+  export ordinary parent slots. Twelve separate D-Bus signal subscriptions
+  select other ordinary slots, not row 64.
+- No audited route selects row 64. Runtime registration/policy,
+  synthesized/indexed or cross-library/external producers, exact-ELF invocation,
+  arguments, and attacker control remain unknown.
+- Independent review and re-review returned `CHANGES_REQUIRED`. The first round
+  covered the interpreter/validation record and lack of durable regeneration;
+  re-review required machine consumption of registration fields, true
+  `connectImpl` callback def-use, row-derived adaptor forwarders, and removal of
+  an optional proximity-only claim. The remediation adds
+  `tools/uk_fw/appfumo_decryption_dispatch_provenance.py`, strict manifest,
+  compact deterministic privacy-safe JSON report, and
+  `tests/test_appfumo_decryption_dispatch_provenance.py`. Constructor target and
+  register dataflow now bind helper/option values; callback slot objects and
+  function fields are tracked per call; and all 16 public adaptor rows are bound
+  through static dispatch and implementation bodies to same-name invokes.
+  Validation uses the project-approved `<platformio-env>/bin/python3` and the
+  requested focused pytest command; the old focused test reports `19 passed,
+  25 subtests passed`, and the final combined command reports `37 passed,
+  31 subtests passed`. Corrected independent re-review returned **ACCEPT**. The
+  full tests-scoped suite passed `736 tests, 351451 subtests`; the post-stage
+  public harness passed `pass=3 info=4 pending=0 blocked=0 fail=0`, scanning
+  `388` files with zero privacy blockers and three informational identifiers.
+- Added `evidence/appfumo-decryption-producer-provenance.md`, compact retained
+  evidence, and a resumable package under
+  `docs/agent-work/appfumo-decryption-producer-provenance/`. No target code or
+  D-Bus request was executed; no payload, malformed input, package, staging,
+  privilege, root, or persistence action was created.
+
 ## CVE-2018-9568 socket clone creator checkpoint — 2026-11-07
 
 - Work began on requested baseline
@@ -604,10 +671,10 @@ followed by stateful service/CAN/persistence reconstruction.
 
 ## AppFUMO Qt 5 meta-object provenance checkpoint — 2026-11-03
 
-- Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` row index 64 as public slot `QString decryptionFile(QString encFile, QString destPath)`. The method is declared in the selected meta-object, but 64 is not asserted as its absolute method index because `methodOffset()` and inheritance context are not inputs; it is not signal number 64, and the meta-object has seven signals.
+- Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` row index 64 as public slot `QString decryptionFile(QString encFile, QString destPath)`. The method is declared in the selected meta-object. The later 2026-11-08 follow-up resolves parent `AppEngineBase` and the 11/85 local-count subtractions, but 64 is still not an asserted absolute method index because the QObject-derived runtime offset is unavailable; it is not signal number 64, and the meta-object has seven signals.
 - Relocation-bound static metacall `0x16df80`, jump-table entry 64 (`0xffd299c6 -> 0x16dfc6`), and exact instructions resolve forwarding: `a[1] -> encFile -> %rdx`, `a[2] -> destPath -> %rcx`, call `0x100b30`, QString return -> `a[0]`. The target verifier call is `0x100bb0`.
 - Added a bounded defensive decoder, synthetic/optional exact tests, strict evidence manifest plus current-excerpt hash verification, deterministic exact report, and `evidence/appfumo-qt-metaobject-provenance.md`. Exact report SHA-256 is `330799c5215a0d3fda7c8870820240cb023c9b3a6c9673100778a038fe1d14a3`; focused validation passed `29 tests, 8228 subtests`, the full tests-scoped suite passed `664 tests, 351250 subtests`, and the public/privacy harnesses passed.
-- Complete producer provenance remains unresolved: dynamic meta-invocation, indirect/external paths, exact-ELF runtime invocation, external/D-Bus reachability, attacker control, update acceptance, root, and persistence are unknown. A separate hash-bound public log now observes runtime activity on an unidentified build; V-032's Boolean model remains unchanged and fail-closed.
+- Complete producer provenance remains unresolved. The later 2026-11-08 follow-up rejects row-64 selection through the audited literal connects/invokes/timers and selected-object adaptors/subscriptions, while synthesized/indexed, indirect/cross-library/external paths, registration success/policy, exact-ELF runtime invocation, attacker control, update acceptance, root, and persistence remain unknown. A separate hash-bound public log observes runtime activity on an unidentified build; V-032's Boolean model remains unchanged and fail-closed.
 
 ## Inner FUMO authentication-coverage checkpoint — 2026-11-03
 

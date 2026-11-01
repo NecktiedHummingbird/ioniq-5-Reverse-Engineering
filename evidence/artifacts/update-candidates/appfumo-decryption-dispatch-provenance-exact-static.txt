@@ -1,0 +1,251 @@
+# AppFUMO decryptionFile dispatch-provenance exact-static excerpt
+# Exact ELF SHA-256: 464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7
+# Build ID: 863a8730e66a1c5245a1bf458fe2554adee0351a
+# Tools: Homebrew LLVM 23.1.3 plus approved PlatformIO penv Python 3.13.14
+# Addresses are link-time VAs. No recovered target code was executed.
+# Full generated disassembly remains ignored under work/.
+
+## Exact name/signature inventory
+
+NUL-terminated bare `decryptionFile` occurrences (VA equals file offset):
+
+  0x20c058  function-label/logging pool; 4 RIP-relative uses, all passed to logging
+  0x2293f8  target-body logging label; 2 RIP-relative uses in [0x100b30,0x10110c)
+  0x22d208  separate function-label/logging pool; 2 RIP-relative uses, all passed to logging
+  0x446479  selected AppUpgradeEngine QByteArrayData payload for metadata string record 98
+
+Exact byte-scan counts:
+
+  `decryptionFile`                                      4
+  `decryptionFile(QString,QString)`                     0
+  `QString decryptionFile(QString encFile, QString destPath)`  0
+  `1decryptionFile(QString,QString)`                    0
+  `2decryptionFile(QString,QString)`                    0
+
+The metadata payload at 0x446479 is reached through its QByteArrayData descriptor,
+not through a direct .text RIP-relative reference. The other three bare strings
+are logging/function labels, not old-style Qt member encodings.
+
+## Selected metadata and qt_metacall chain
+
+Selected static QMetaObject fields:
+
+  0x6ce9c0 -> 0x6ce280  superdata (AppEngineBase)
+  0x6ce9c8 -> 0x445260  AppUpgradeEngine stringdata
+  0x6ce9d0 -> 0x444760  revision-7 metadata
+  0x6ce9d8 -> 0x16df80  generated static metacall
+
+AppEngineBase static QMetaObject at 0x6ce280 has 11 local methods and QObject
+superdata. AppUpgradeEngine has 85 local methods. Its qt_metacall first calls the
+AppEngineBase qt_metacall, dispatches returned residual IDs 0..84, then subtracts
+85:
+
+  16f0a0: e8 db c6 ff ff                callq   0x16b780
+  16f0a5: 85 c0                         testl   %eax, %eax
+  16f0a7: 78 23                         js      0x16f0cc
+  16f0a9: 85 db                         testl   %ebx, %ebx
+  16f0ab: 75 3b                         jne     0x16f0e8
+  16f0ad: 83 f8 54                      cmpl    $0x54, %eax
+  16f0b0: 7f 17                         jg      0x16f0c9
+  16f0b2: 89 c2                         movl    %eax, %edx
+  16f0b4: 48 89 e9                      movq    %rbp, %rcx
+  16f0b7: 31 f6                         xorl    %esi, %esi
+  16f0bd: 4c 89 e7                      movq    %r12, %rdi
+  16f0c0: e8 bb ee ff ff                callq   0x16df80
+  16f0c9: 83 e8 55                      subl    $0x55, %eax
+
+The parent qt_metacall similarly calls QObject::qt_metacall, dispatches residual
+IDs 0..10, and subtracts 11 at 0x16b7c9. Thus row 64 is a local residual ID;
+these bytes do not supply QObject's runtime method count and do not make 64 the
+absolute QMetaObject method index.
+
+Local row 60 is public slot `void copyWhatsNewFiles()`; local row 64 is public
+slot `QString decryptionFile(QString,QString)`. The generated row-64 case copies
+a[1] and a[2] into local QStrings, calls 0x100b30 at 0x16e030, and conditionally
+assigns the QString result to a[0]. Availability of this path is not an
+invocation observation.
+
+## Direct target inventory
+
+Bounded whole-.text direct branch/reference scan:
+
+  0x10281c -> 0x100b30  copyWhatsNewFiles system-tree file producer
+  0x102de9 -> 0x100b30  copyWhatsNewFiles top-level archive producer
+  0x103398 -> 0x100b30  copyWhatsNewFiles controls-tree file producer
+  0x16e030 -> 0x100b30  generated local-row-64 forwarding
+
+The first three sites remain in exact FDE [0x101110,0x104c1b), bound by row 60
+to copyWhatsNewFiles(). No additional direct call, jump, or address-materializing
+textual reference to 0x100b30 was observed. This bounded negative does not cover
+indirect, dynamically synthesized, cross-library, or external invocation.
+
+## Construction and selected-object D-Bus registration
+
+The process entry path allocates 0x2d0 bytes and directly constructs the selected
+object before QApplication::exec:
+
+   27ea0: bf d0 02 00 00                movl    $0x2d0, %edi
+   27ea5: e8 46 a3 ff ff                callq   0x221f0 <_Znwm@plt>
+   27eaa: 48 8b 74 24 08                movq    0x8(%rsp), %rsi
+   27eaf: 48 89 c7                      movq    %rax, %rdi
+   27eb2: 48 89 c3                      movq    %rax, %rbx
+   27eb5: e8 46 d9 0f 00                callq   0x125800
+   27eba: e8 21 bc ff ff                callq   0x23ae0 <QApplication::exec@plt>
+
+The constructor calls registration helper 0xb8b40 with this in %rdi and a fixed
+10-byte registration token in the QString at %rsi:
+
+  1261a8: 48 8d 35 97 5b 10 00          leaq    0x22bd46(%rip), %rsi
+  1261b2: e8 d9 f9 f2 ff                callq   0x55b90
+  1261b7: 4c 89 e6                      movq    %r12, %rsi
+  1261ba: 48 89 df                      movq    %rbx, %rdi
+  1261bd: e8 7e 29 f9 ff                callq   0xb8b40
+
+Helper 0xb8b40 stores this in %rbx, obtains sessionBus, constructs six
+QDBusAbstractAdaptor subclasses with %rbx as parent, formats/registers a fixed
+service, then registers %rbx at a fixed object path:
+
+   b8b57: 48 89 fb                      movq    %rdi, %rbx
+   b8b73: e8 e8 94 f6 ff                callq   QDBusConnection::sessionBus@plt
+   b8c4a: 48 89 de                      movq    %rbx, %rsi
+   b8c53: e8 a8 fc 0b 00                callq   0x178900
+   b8c62: 48 89 de                      movq    %rbx, %rsi
+   b8c6b: e8 40 ed 0b 00                callq   0x1779b0
+   b8c7a: 48 89 de                      movq    %rbx, %rsi
+   b8c83: e8 88 f4 0b 00                callq   0x178110
+   b8c92: 48 89 de                      movq    %rbx, %rsi
+   b8c9b: e8 c0 f7 0b 00                callq   0x178460
+   b8caa: 48 89 de                      movq    %rbx, %rsi
+   b8cb3: e8 a8 f8 0b 00                callq   0x178560
+   b8cc2: 48 89 de                      movq    %rbx, %rsi
+   b8ccb: e8 60 fa 0b 00                callq   0x178730
+   b8d12: e8 89 a8 f6 ff                callq   QDBusConnection::registerService@plt
+   b8e31: 48 89 da                      movq    %rbx, %rdx
+   b8e41: b9 01 00 00 00                movl    $0x1, %ecx
+   b8e46: e8 95 9e f6 ff                callq   QDBusConnection::registerObject@plt
+
+Constructor call target 0xb8b40 and same-object registerObject dataflow bind the
+manifest helper. The last `%ecx` definition dominating registerObject is exact
+`movl $0x1,%ecx` at 0xb8e41; actual value 1 matches the manifest and alone
+derives the Qt 5 name ExportAdaptors. The fixed registration bytes are not
+retained as callable coordinates:
+
+  final service: 35 bytes; SHA-256 dccfbf2d807d3909dafea63ac513e71237cdfaeece6abd077f0dd74b693128d6
+  object path:   38 bytes; SHA-256 4b15e297cc833f21126d08a0ab17b2dd27fcc504f2136981fe1e4c53f1223a5d
+
+The six constructed adaptor metadata sets are:
+
+  AppInterfaceAdaptor:      17 local methods = 13 signals + 4 public slots
+  AppbaseAdaptor:            9 local methods =  0 signals + 9 public slots
+  AudiotransitionAdaptor:    1 local method  =  0 signals + 1 public slot
+  NotificationAdaptor:       1 local method  =  1 signal  + 0 public slots
+  RegistrationAdaptor:       1 local method  =  0 signals + 1 public slot
+  ScreentransitionAdaptor:   1 local method  =  0 signals + 1 public slot
+
+No adaptor row is named decryptionFile. Access bits classify all 16 slot rows
+as public. Each row is machine-bound through its selected static-metacall row
+dispatch and implementation body to one literal QMetaObject::invokeMethod
+member with the same name:
+
+  NotifyOSDRequest, NotifyRequestHomeScreen, NotifyStatusbarRequest,
+  NotifySystemPopupRequest, ccpdial, ccpkey, faceplatedial, faceplatekey,
+  hide_window_bg, rrcdial, rrckey, show_window_fg, swrckey, audiomode,
+  registration, request
+
+Metadata-order bound-forwarder SHA-256:
+  d84df26f1a242c24ec7f69928aa53f84a32a08fa56b7ebc2451a5ce27b405020
+
+This registration exports adaptor interfaces; it does not export all ordinary
+AppUpgradeEngine public slots. Registration success and bus-policy/caller
+reachability were not observed.
+
+The same helper makes 12 QDBusConnection::connect calls whose receiver is %rbx
+(the AppUpgradeEngine object) and whose old-style slot strings are:
+
+  onNotifyOsdPopupCaptureStart(int,QString)
+  slotNotifyLanguageChanged(int)
+  slotNotifySystemPopupResponse(int,int,int)
+  slotNotifyCurrentPopUpStatus(int,int,int)
+  slotNotifySystemPopupState(int,int)
+  slotNotifyChecboxButtonStatus(int,bool)
+  slotUpdateSignal(int,int,int)
+  slotNofityScheduledUpdateFinish(int,QString,QString)
+  slotUpdateAvailable(int)
+  slotNotifySystemUpdateChanged(int)
+  slotNotifyDimmingStatus(int)
+  slotSignalCallbackFromMain(int,int)
+
+The actual retained strings have Qt old-style prefix `1`. Their ordered-list
+SHA-256 is 3f32403de2b736c9c3bf83387bf5d8a9025a2e78cabd8c66650e4c808904affe.
+None selects row 64. These incoming D-Bus signal subscriptions are distinct from
+ExportAdaptors method exposure.
+
+## Targeted Qt dispatch inventory
+
+Whole exact-ELF direct imported-call inventory:
+
+  QObject::connect old-style string overload       90
+  QObject::connectImpl                             18
+  QMetaObject::invokeMethod named overload        105
+  QDBusConnection::connect                         32
+  QTimer::singleShot string overload                4
+  QDBusConnection::registerService                  1
+  QDBusConnection::registerObject                   1
+  QMetaObject::connectSlotsByName                    0
+  QCoreApplication::postEvent / sendEvent            0
+  explicit QObject::disconnect call                  0
+
+All 90 old-style connect sites resolve to two static qFlagLocation literals
+with per-call signal/member register provenance and connection type. None
+contains decryptionFile. Canonical ordered-provenance SHA-256:
+  39c53249612ee523be992eb71ae2d81dd7b52c5778803940c9563191bf6b1d3e
+
+The selected AppUpgradeEngine constructor contains 29 old-style connects: 28
+AutoConnection and one DirectConnection. Its 58 literal signal/slot strings do
+not contain decryptionFile. Canonical ordered-provenance SHA-256:
+  df9ba8d985d01a7a33d6eea295c78594acee5e3f3871e820298c20052c56fad6
+
+The selected constructor also contains two connectImpl functor connections at
+0x126787 and 0x12681c. Per-call slot-object def-use binds their `+0x10` callback
+fields to 0x1305c0 and 0x1309c0 respectively, and the first stack connection-type
+operand to AutoConnection. Neither bounded callback body contains a direct
+reference to 0x100b30 or the decryptionFile name.
+
+All 105 imported invokeMethod callsites have bounded per-call literal-member
+operand provenance; all names are distinct and none is decryptionFile. Every
+site sets ConnectionType to 0 (AutoConnection). Canonical ordered-provenance
+SHA-256:
+  bbed9d9b56cae4e8f60489b8bc0016532cd8e4566d2108aa9134a9e8f927470c
+
+All four string-form QTimer::singleShot sites have qFlagLocation-to-member
+operand provenance for updateFailTimeoutSlot(), not decryptionFile. Canonical
+ordered-member SHA-256:
+  06a4212f2ec645ecd53315475413ec2457b613511bde65cce792cbdfca0ac9d9
+
+No direct connectSlotsByName, postEvent, sendEvent, or explicit
+disconnect call was observed. QMetaCallEvent is not imported. These negatives do
+not exclude queued delivery performed inside linked Qt libraries, dynamically
+synthesized/index-based calls, or external/cross-library callers.
+
+Because no audited connect/invoke/D-Bus producer targets row 64, no queued,
+direct, or blocking connection type—and no queued QString metatype-copy path—can
+be attributed to a row-64 candidate producer. Independently, the generated
+row-64 static metacall copies the two QString values from a[] into locals before
+calling 0x100b30. Metadata type 10 (QString) and generated forwarding availability
+do not prove a producer, queued delivery, or attacker control.
+
+## Deterministic regeneration
+
+The retained strict manifest and compact JSON report are:
+
+  appfumo-decryption-dispatch-provenance-manifest.json
+  appfumo-decryption-dispatch-provenance.json
+
+They are regenerated by tools/uk_fw/appfumo_decryption_dispatch_provenance.py
+and verified by tests/test_appfumo_decryption_dispatch_provenance.py. The
+analyzer checks the exact ELF, Homebrew LLVM executable identities, normalized
+instruction stream, targeted metadata/relocations, per-call operand provenance,
+counts/hashes, and D-Bus privacy invariants. It emits no operator path or
+callable D-Bus service/object coordinate. The independent review initially
+returned CHANGES_REQUIRED because this durable regeneration path and the exact
+pytest interpreter/command were absent; those review items are addressed here.

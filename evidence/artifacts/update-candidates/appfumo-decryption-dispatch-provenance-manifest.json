@@ -1,0 +1,427 @@
+{
+  "artifact": {
+    "build_id": "863a8730e66a1c5245a1bf458fe2554adee0351a",
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size": 5066264
+  },
+  "expected": {
+    "absent_forms": [
+      "decryptionFile(QString,QString)",
+      "QString decryptionFile(QString encFile, QString destPath)",
+      "1decryptionFile(QString,QString)",
+      "2decryptionFile(QString,QString)"
+    ],
+    "bare_name": {
+      "occurrences": [
+        {
+          "classification": "logging/function-label",
+          "offset": 2146392,
+          "xref_vas": [
+            396424,
+            396617,
+            397629,
+            398075
+          ]
+        },
+        {
+          "classification": "target-body logging-label",
+          "offset": 2266104,
+          "xref_vas": [
+            1052121,
+            1052357
+          ]
+        },
+        {
+          "classification": "logging/function-label",
+          "offset": 2281992,
+          "xref_vas": [
+            1311393,
+            1311629
+          ]
+        },
+        {
+          "classification": "selected metadata payload",
+          "offset": 4482169,
+          "xref_vas": []
+        }
+      ],
+      "text": "decryptionFile"
+    },
+    "bounded_zeros": {
+      "connect_slots_by_name": 0,
+      "post_event": 0,
+      "qmeta_call_event_import": 0,
+      "qobject_disconnect": 0,
+      "send_event": 0
+    },
+    "call_counts": {
+      "connect_impl": 18,
+      "dbus_connect": 32,
+      "invoke_method": 105,
+      "old_connect": 90,
+      "register_object": 1,
+      "register_service": 1,
+      "timer_string": 4
+    },
+    "constructor": {
+      "callbacks": [
+        {
+          "end_va_exclusive": 1247675,
+          "start_va": 1246656
+        },
+        {
+          "end_va_exclusive": 1248631,
+          "start_va": 1247680
+        }
+      ],
+      "connect_impl_calls": [
+        1206151,
+        1206300
+      ],
+      "connection_types": {
+        "AutoConnection": 28,
+        "DirectConnection": 1
+      },
+      "end_va_exclusive": 1208292,
+      "old_connect_count": 29,
+      "start_va": 1202176
+    },
+    "direct_edges": [
+      {
+        "call_va": 1058844,
+        "classification": "row-60 system-tree producer"
+      },
+      {
+        "call_va": 1060329,
+        "classification": "row-60 top-level archive producer"
+      },
+      {
+        "call_va": 1061784,
+        "classification": "row-60 controls-tree producer"
+      },
+      {
+        "call_va": 1499184,
+        "classification": "generated row-64 forwarding"
+      }
+    ],
+    "machine_anchors": [
+      {
+        "mnemonic": "movq",
+        "operands": "%rdi, %rbx",
+        "va": 756567
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x235a0 <_ZN15QDBusConnection15registerServiceERK7QString@plt>",
+        "va": 757010
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rdx",
+        "va": 757297
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x1, %ecx",
+        "va": 757313
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22ce0 <_ZN15QDBusConnection14registerObjectERK7QStringP7QObject6QFlagsINS_14RegisterOptionEE@plt>",
+        "va": 757318
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rdi, %rbx",
+        "va": 1202194
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rdi",
+        "va": 1204666
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xb8b40 <.text+0x94310>",
+        "va": 1204669
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x220b0 <_ZN7QObject11connectImplEPKS_PPvS1_S3_PN9QtPrivate15QSlotObjectBaseEN2Qt14ConnectionTypeEPKiPK11QMetaObject@plt>",
+        "va": 1206151
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x220b0 <_ZN7QObject11connectImplEPKS_PPvS1_S3_PN9QtPrivate15QSlotObjectBaseEN2Qt14ConnectionTypeEPKiPK11QMetaObject@plt>",
+        "va": 1206300
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x24450 <_ZN7QObject11qt_metacallEN11QMetaObject4CallEiPPv@plt>",
+        "va": 1488800
+      },
+      {
+        "mnemonic": "cmpl",
+        "operands": "$0xa, %eax",
+        "va": 1488813
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x16b410 <.text+0x146be0>",
+        "va": 1488832
+      },
+      {
+        "mnemonic": "subl",
+        "operands": "$0xb, %eax",
+        "va": 1488841
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rcx, %rbx",
+        "va": 1499014
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x10(%rcx), %rdx",
+        "va": 1499078
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x8(%rbx), %rdx",
+        "va": 1499121
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%r12, %rcx",
+        "va": 1499175
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%r13, %rdx",
+        "va": 1499178
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x100b30 <.text+0xdc300>",
+        "va": 1499184
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "(%rbx), %rdi",
+        "va": 1499249
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbp, %rsi",
+        "va": 1499257
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x24010 <_ZN7QStringaSERKS_@plt>",
+        "va": 1499260
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x16b780 <.text+0x146f50>",
+        "va": 1503392
+      },
+      {
+        "mnemonic": "cmpl",
+        "operands": "$0x54, %eax",
+        "va": 1503405
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x16df80 <.text+0x149750>",
+        "va": 1503424
+      },
+      {
+        "mnemonic": "subl",
+        "operands": "$0x55, %eax",
+        "va": 1503433
+      }
+    ],
+    "metaobjects": [
+      {
+        "class_name": "AppEngineBase",
+        "metadata_va": 4452768,
+        "method_count": 11,
+        "role": "parent_engine",
+        "signal_count": 0,
+        "static_metacall_va": 1487888,
+        "static_object_va": 7135872,
+        "stringdata_va": 4453280
+      },
+      {
+        "class_name": "AppUpgradeEngine",
+        "metadata_va": 4474720,
+        "method_count": 85,
+        "role": "selected_engine",
+        "signal_count": 7,
+        "static_metacall_va": 1499008,
+        "static_object_va": 7137728,
+        "stringdata_va": 4477536
+      },
+      {
+        "class_name": "AppInterfaceAdaptor",
+        "metadata_va": 4519776,
+        "method_count": 17,
+        "role": "adaptor_app_interface",
+        "signal_count": 13,
+        "static_metacall_va": 1610736,
+        "static_object_va": 7143840,
+        "stringdata_va": 4520544
+      },
+      {
+        "class_name": "AppbaseAdaptor",
+        "metadata_va": 4529440,
+        "method_count": 9,
+        "role": "adaptor_appbase",
+        "signal_count": 0,
+        "static_metacall_va": 1613088,
+        "static_object_va": 7144224,
+        "stringdata_va": 4529888
+      },
+      {
+        "class_name": "AudiotransitionAdaptor",
+        "metadata_va": 4528704,
+        "method_count": 1,
+        "role": "adaptor_audio",
+        "signal_count": 0,
+        "static_metacall_va": 1614512,
+        "static_object_va": 7144160,
+        "stringdata_va": 4528832
+      },
+      {
+        "class_name": "NotificationAdaptor",
+        "metadata_va": 4527360,
+        "method_count": 1,
+        "role": "adaptor_notification",
+        "signal_count": 1,
+        "static_metacall_va": 1614336,
+        "static_object_va": 7144032,
+        "stringdata_va": 4527488
+      },
+      {
+        "class_name": "RegistrationAdaptor",
+        "metadata_va": 4526336,
+        "method_count": 1,
+        "role": "adaptor_registration",
+        "signal_count": 0,
+        "static_metacall_va": 1613264,
+        "static_object_va": 7143968,
+        "stringdata_va": 4526496
+      },
+      {
+        "class_name": "ScreentransitionAdaptor",
+        "metadata_va": 4525312,
+        "method_count": 1,
+        "role": "adaptor_screen",
+        "signal_count": 0,
+        "static_metacall_va": 1613456,
+        "static_object_va": 7143904,
+        "stringdata_va": 4525472
+      }
+    ],
+    "ordered_hashes": {
+      "adaptor_forwarders": "d84df26f1a242c24ec7f69928aa53f84a32a08fa56b7ebc2451a5ce27b405020",
+      "constructor_connect_pairs": "df9ba8d985d01a7a33d6eea295c78594acee5e3f3871e820298c20052c56fad6",
+      "dbus_subscriptions": "3f32403de2b736c9c3bf83387bf5d8a9025a2e78cabd8c66650e4c808904affe",
+      "invoke_members": "bbed9d9b56cae4e8f60489b8bc0016532cd8e4566d2108aa9134a9e8f927470c",
+      "old_connect_pairs": "39c53249612ee523be992eb71ae2d81dd7b52c5778803940c9563191bf6b1d3e",
+      "timer_members": "06a4212f2ec645ecd53315475413ec2457b613511bde65cce792cbdfca0ac9d9"
+    },
+    "registration": {
+      "adaptor_calls": [
+        {
+          "call_va": 756819,
+          "constructor_va": 1542400,
+          "metaobject_fn_va": 1614224,
+          "metaobject_role": "adaptor_app_interface",
+          "vptr_va": 7143720
+        },
+        {
+          "call_va": 756843,
+          "constructor_va": 1538480,
+          "metaobject_fn_va": 1614112,
+          "metaobject_role": "adaptor_appbase",
+          "vptr_va": 7143048
+        },
+        {
+          "call_va": 756867,
+          "constructor_va": 1540368,
+          "metaobject_fn_va": 1614000,
+          "metaobject_role": "adaptor_audio",
+          "vptr_va": 7143160
+        },
+        {
+          "call_va": 756891,
+          "constructor_va": 1541216,
+          "metaobject_fn_va": 1613776,
+          "metaobject_role": "adaptor_notification",
+          "vptr_va": 7143384
+        },
+        {
+          "call_va": 756915,
+          "constructor_va": 1541472,
+          "metaobject_fn_va": 1613664,
+          "metaobject_role": "adaptor_registration",
+          "vptr_va": 7143496
+        },
+        {
+          "call_va": 756939,
+          "constructor_va": 1541936,
+          "metaobject_fn_va": 1613552,
+          "metaobject_role": "adaptor_screen",
+          "vptr_va": 7143608
+        }
+      ],
+      "helper_va": 756544,
+      "option_value": 1,
+      "privacy": {
+        "final_service": {
+          "length": 35,
+          "sha256": "dccfbf2d807d3909dafea63ac513e71237cdfaeece6abd077f0dd74b693128d6"
+        },
+        "object_path": {
+          "length": 38,
+          "sha256": "4b15e297cc833f21126d08a0ab17b2dd27fcc504f2136981fe1e4c53f1223a5d"
+        },
+        "service_template": {
+          "length": 27,
+          "placeholder_count": 1,
+          "sha256": "823761d45cdafeef6788272cf97168b094c78b53e4ec8eb09239f08b2b11ee48"
+        },
+        "service_token": {
+          "anchor_instruction_va": 1204648,
+          "length": 10,
+          "sha256": "4b3bf0b1b7c02a14e8c1147970f88231aa8c620572f6fabb126598b61fd2b603"
+        }
+      },
+      "subscription_call_vas": [
+        757689,
+        758176,
+        758664,
+        759152,
+        759640,
+        760128,
+        760616,
+        761104,
+        761592,
+        762088,
+        762576,
+        763239
+      ]
+    }
+  },
+  "llvm": {
+    "instruction_count": 470739,
+    "instruction_sha256": "693dce0d89faabeea30512fe0a696a733e9bdd64fd7be7379dba98a44d2dc0c8",
+    "objdump_sha256": "7b04d723638c0793efbd31b99b2389f36ceb8c803bdc1008e43ea7525958376f",
+    "objdump_size": 813808,
+    "readelf_sha256": "80a1f8ffc44c5a1e4dbeaa5c409cd98a01cb2fa73e1ccc2eeb22a3b7ee2e1cb0",
+    "readelf_size": 1805104,
+    "version": "Homebrew LLVM version 23.1.3"
+  },
+  "schema_version": 1
+}

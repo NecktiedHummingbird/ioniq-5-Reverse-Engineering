@@ -1,4 +1,4 @@
-# AppUpgradeEngine local meta-method 64: declaration resolved, producer provenance unresolved
+# AppUpgradeEngine local meta-method 64: declaration and bounded dispatch provenance
 
 ## Result
 
@@ -24,24 +24,36 @@ The metadata binding and machine-code forwarding are separately established:
   internal calls `0x10281c`, `0x102de9`, and `0x103398` are now classified by
   branch and pathname producer in
   [`appfumo-decryption-runtime-provenance.md`](appfumo-decryption-runtime-provenance.md);
-- **complete producer provenance — unresolved:** the bounded direct-reference
-  scan does not enumerate dynamic Qt meta-invocation, indirect calls, or
-  external paths and therefore cannot prove complete producer absence.
+- **bounded exact-ELF dispatch audit — resolved, no row-64 candidate found:** a
+  follow-up classifies all 90 old-style `QObject::connect` calls, all 105
+  imported named `QMetaObject::invokeMethod` calls, selected constructor
+  connections, string timers, and the selected object's D-Bus
+  registration/adaptors/subscriptions; none selects row 64. Constructor
+  slot-object def-use binds the two functor callbacks, and selected adaptor
+  metadata rows are bound through static dispatch and implementation bodies to
+  same-name invokes. A deterministic exact-input analyzer, strict manifest,
+  compact report, and focused tests regenerate this bounded result;
+- **complete producer provenance — unresolved:** dynamically synthesized or
+  index-based meta-invocation, indirect/cross-library/external callers, and
+  runtime registration/invocation remain outside that bounded negative and
+  cannot be treated as absent.
 
 Index 64 is the **local row index in the selected `AppUpgradeEngine`
-meta-object**, so the method is declared in that selected meta-object. It is not
-asserted to be the absolute `QMetaObject` method index: that requires
-`QMetaObject::methodOffset()` and the inheritance context, neither of which is
-an input to this package. It is not signal number 64. The metadata header's
-signal count is **7**; the selected row's slot flags independently classify it
-as a slot rather than a signal.
+meta-object**, so the method is declared in that selected meta-object. Follow-up
+exact bytes resolve the direct parent as `AppEngineBase` with 11 local methods:
+its `qt_metacall` first subtracts those 11 after QObject, and the selected
+`qt_metacall` dispatches residual IDs `0..84` before subtracting 85. The exact
+QObject runtime method count is still not supplied here, so 64 is not asserted
+to be the absolute `QMetaObject` method index. It is not signal number 64. The
+metadata header's signal count is **7**; the selected row's slot flags
+independently classify it as a slot rather than a signal.
 
 This result narrows the parameterized verifier call at `0x100bb0`. A separate
 hash-bound public log now records runtime `decryptionFile` activity on an
 unidentified installed build, but it does not identify that build with this ELF
-or distinguish direct from meta-call dispatch. Neither evidence set establishes
-external or D-Bus reachability, attacker control, update acceptance, root, or
-persistence.
+or distinguish direct from meta-call dispatch. Neither evidence set establishes external reachability or any D-Bus route
+outside the reviewed non-row-64 adaptors/subscriptions, attacker control, update
+acceptance, root, or persistence.
 
 ## Exact identity and retained package
 
@@ -172,21 +184,36 @@ Follow-up exact-static analysis resolves these three direct sites as branches
 inside `copyWhatsNewFiles()` and classifies their argument producers: top-level
 `.whatsnew.tar.gz`, enumerated system-tree files, and enumerated controls-tree
 files, all on the nonzero encryption-mode branch. The generated `0x16e030` edge
-remains separate. This still does not make the scan complete for dynamic or
-indirect dispatch. Accordingly complete producer provenance remains
-`unresolved`; exact-ELF runtime invocation, external reachability, and attacker
-control remain unknown. See
-[`appfumo-decryption-runtime-provenance.md`](appfumo-decryption-runtime-provenance.md).
+remains separate. A further targeted dispatch audit finds no row-64 candidate
+among exact-ELF literal connects, named invokes, timers, selected constructor
+functors, or selected-object D-Bus adaptors/subscriptions. This still does not
+make the scan complete for dynamically synthesized/indexed, indirect,
+cross-library, or external dispatch. Accordingly complete producer provenance
+remains `unresolved`; exact-ELF runtime invocation and attacker control remain
+unknown. See
+[`appfumo-decryption-runtime-provenance.md`](appfumo-decryption-runtime-provenance.md)
+and
+[`appfumo-decryption-producer-provenance.md`](appfumo-decryption-producer-provenance.md).
 
 ## D-Bus claim boundary
 
-A `QDBusConnection::registerObject` option value of 1 observed elsewhere in the
-program means `ExportAdaptors` under Qt 5. That general fact does not identify
-this `AppUpgradeEngine` object, an adaptor exposing this slot, an object path, a
-service registration, or a permitted caller. This package therefore makes no
-claim that local method 64 is D-Bus reachable, and does not claim D-Bus absence.
-Complete object/adaptor and runtime registration proof would be required in
-either direction.
+The follow-up now binds the relevant call rather than treating it as an
+elsewhere-only fact. Constructor `0x125800` passes the same
+`AppUpgradeEngine::this` to helper `0xb8b40`. That helper obtains the session
+bus, attaches six concrete `QDBusAbstractAdaptor` children, attempts one fixed
+service registration, and calls `registerObject` with that same object, a fixed
+path, and option value `1`.
+
+Under Qt 5, value `1` is `ExportAdaptors`: it exports attached adaptor
+interfaces, not every ordinary public slot in the parent metadata. The six
+constructed adaptors have 30 local methods (16 public slots and 14 signals), no
+`decryptionFile` row, and 16 literal forwarding names unrelated to row 64.
+Twelve separate `QDBusConnection::connect` subscriptions deliver D-Bus signals
+to other literal `AppUpgradeEngine` slots and likewise do not select row 64.
+Thus row 64 is not exported or subscribed by the reviewed registration paths.
+Registration success, bus policy, permitted callers, exact-ELF runtime identity,
+and dynamic/cross-library paths remain unknown. See
+[`appfumo-decryption-producer-provenance.md`](appfumo-decryption-producer-provenance.md).
 
 ## Defensive decoder
 
@@ -268,8 +295,9 @@ named and typed: local `AppUpgradeEngine` metadata row 64 forwards
 `decryptionFile(QString encFile, QString destPath)` to `0x100b30`, whose verifier
 call is at `0x100bb0`.
 
-The package does **not** resolve complete producer provenance. It also leaves
-unknown:
+The package does **not** resolve complete producer provenance. The bounded
+exact-ELF audit rejects only the reviewed literal connect/invoke/timer and
+selected-object adaptor/subscription routes. It also leaves unknown:
 
 - runtime invocation of this exact recovered ELF and complete argument values
   (the separate public log observes normalized path classes on a build whose
