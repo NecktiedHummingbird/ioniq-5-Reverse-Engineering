@@ -646,6 +646,16 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   libraries — neither attempted.
 - Neither V-007 nor V-014 moves on this. No parser vulnerability is claimed.
 
+## 1.67.0 - bind direct decryption producers to copyWhatsNewFiles and normalize public runtime evidence
+
+- Exact Qt local row 60 resolves to public slot `void copyWhatsNewFiles()`; generated row-60 case `0x16e59f` calls entry `0x101110`, and exact FDE `[0x101110,0x104c1b)` contains all three selected direct `decryptionFile` calls at `0x10281c`, `0x102de9`, and `0x103398`.
+- Homebrew LLVM instruction flow resolves the nonzero encryption-mode branches and argument families: top-level branch-selected package archive to fixed update-temp archive, enumerated system-tree files to paired normal/USB-in-OTA destinations, and enumerated controls-tree files to paired normal/USB-in-OTA destinations. Generated row-64 forwarding call `0x16e030` remains separate.
+- The expected hash-bound public log contains seven exact-shape records, not the previously stated six: lines `1414,1710,7279,11714,11975,17205,21713`. All seven have matched bounded `copyWhatsNewFiles` context and normalized removable-USB archive to update-temp archive classes.
+- Added a fail-closed read-only log parser with regular-file/stability/size checks, strict expected SHA-256 by default, explicit synthetic mode, exact grammar, duplicate/ambiguity/traversal/control rejection, and deterministic UTF-8/LF normalized JSON. Transient tokens and raw volume labels are not retained or emitted.
+- Public-log runtime observation is not attributed to the exact recovered ELF: logged-build identity and direct-versus-meta invocation mechanism are unknown. Complete dynamic/indirect/external provenance, external/D-Bus reachability, attacker control, update acceptance, root, and persistence remain unknown.
+- Focused validation passed `39 tests, 8230 subtests`; the full tests-scoped suite passed `674 tests, 351252 subtests`; public/privacy harnesses, exact-report encoding determinism, `py_compile`, and `git diff --check` passed.
+- No recovered target/helper was executed and no device/radio, malformed target artifact, update package, payload, bypass, partition/slot/boot state, root action, or persistence material was created or exercised.
+
 ## 1.66.0 - resolve AppUpgradeEngine local Qt metadata row 64 without overclaiming producers
 
 - Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` row 64 to public slot `QString decryptionFile(QString encFile, QString destPath)`. The value 64 is the selected local row index, is not asserted as the absolute `QMetaObject` method index, and is not signal number 64; signal count is seven. The absolute index remains unknown without `methodOffset()` and inheritance context.
