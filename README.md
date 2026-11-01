@@ -183,5 +183,6 @@ recorded honestly rather than cropped out — the control image is the evidence 
 | ![Compositor control](docs/vm/05-compositor-control-2026-10-31.png) | ![HMI frame](docs/vm/06-hmi-frame-2026-10-31.png) |
 | Test pattern rendered by the vendor compositor through our backend — **173 distinct colours**, proving the whole path from backend to framebuffer works. | `AppHomeScreen` running with its surfaces mapped: uniformly black because no buffer is ever attached. `initMicomShareMem() -> pszSrc NULL` is why the launcher's dispatch never completes. |
 
-Both frames are 240×90 downscaled dumps of the backend framebuffer, moved out of the guest over a
-`-chardev file` serial port (console transfer corrupts above roughly 8 KB).
+Both frames are downscaled dumps of the backend framebuffer (240×90 natively, shown here upscaled 4×), moved out of
+the guest over a `-chardev file` serial port — console transfer corrupts above roughly 8 KB, which is why that channel
+is used.
