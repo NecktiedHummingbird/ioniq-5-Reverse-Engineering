@@ -1,0 +1,688 @@
+{
+  "artifact": {
+    "build_id": "863a8730e66a1c5245a1bf458fe2554adee0351a",
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size": 5066264
+  },
+  "expected": {
+    "anchors": [
+      {
+        "mnemonic": "pushq",
+        "operands": "%r15",
+        "va": 641984
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rsi, %rbx",
+        "va": 641994
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rdi",
+        "va": 642059
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x7f830 <.text+0x5b000>",
+        "va": 642089
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x177dee(%rip), %rsi    # 0x214a30",
+        "va": 642107
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x178248(%rip), %rsi    # 0x214ea0",
+        "va": 642129
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x240(%rsp), %rbx",
+        "va": 642718
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x222f0 <_ZNK9QFileInfo6suffixEv@plt>",
+        "va": 642751
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x183c3b(%rip), %rdx    # 0x220b31",
+        "va": 642799
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "(%rsp), %rdi",
+        "va": 642928
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x1788a2(%rip), %rdi    # 0x215840",
+        "va": 642967
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbp, %rdi",
+        "va": 643213
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rax, 0x8(%rsp)",
+        "va": 643310
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x17874d(%rip), %rdi    # 0x21584c",
+        "va": 643320
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 643370
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 643407
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0xd0(%rsp), %rax",
+        "va": 643486
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rax, 0x240(%rsp)",
+        "va": 643496
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rsi",
+        "va": 643535
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x45820 <.text+0x20ff0>",
+        "va": 643538
+      },
+      {
+        "mnemonic": "jne",
+        "operands": "0x9d670 <.text+0x78e40>",
+        "va": 643630
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0xd0(%rsp), %rax",
+        "va": 644276
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rax, 0x230(%rsp)",
+        "va": 644286
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x230(%rsp), %rbp",
+        "va": 644309
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rcx",
+        "va": 644330
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbp, %rdx",
+        "va": 644347
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x140030 <.text+0x11b800>",
+        "va": 644350
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x4b960 <.text+0x27130>",
+        "va": 644390
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "0x4(%rax), %esi",
+        "va": 644419
+      },
+      {
+        "mnemonic": "je",
+        "operands": "0x9d9d0 <.text+0x791a0>",
+        "va": 644476
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%r12, %rdi",
+        "va": 644660
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22210 <_ZNK7QString7indexOfERKS_iN2Qt15CaseSensitivityE@plt>",
+        "va": 645113
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x24190 <_ZNK9QFileInfo12absolutePathEv@plt>",
+        "va": 645180
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x178036(%rip), %rdi    # 0x21587e",
+        "va": 645185
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 645235
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 645270
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0x9d19e <.text+0x7896e>",
+        "va": 645374
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x177daf(%rip), %rdi    # 0x215861",
+        "va": 645803
+      },
+      {
+        "mnemonic": "xorl",
+        "operands": "%ecx, %ecx",
+        "va": 645820
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 645853
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0x9d19e <.text+0x7896e>",
+        "va": 645914
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x7f830 <.text+0x5b000>",
+        "va": 646591
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646617
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646634
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x7f830 <.text+0x5b000>",
+        "va": 646697
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646723
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646740
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x7f830 <.text+0x5b000>",
+        "va": 646801
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646831
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x783e0 <.text+0x53bb0>",
+        "va": 646848
+      },
+      {
+        "mnemonic": "pushq",
+        "operands": "%r15",
+        "va": 993504
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22420 <_ZNK4QDir13entryInfoListE6QFlagsINS_6FilterEES0_INS_8SortFlagEE@plt>",
+        "va": 994146
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22e00 <_ZNK9QFileInfo8baseNameEv@plt>",
+        "va": 994820
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x227f0 <_ZNK9QFileInfo8filePathEv@plt>",
+        "va": 994833
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22ed0 <_ZNK9QFileInfo16absoluteFilePathEv@plt>",
+        "va": 994846
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22740 <_ZNK9QFileInfo14completeSuffixEv@plt>",
+        "va": 995182
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23630 <_ZN7QString14compare_helperEPK5QChariPKciN2Qt15CaseSensitivityE@plt>",
+        "va": 995237
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x24080 <_ZNK7QString4leftEi@plt>",
+        "va": 995282
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23630 <_ZN7QString14compare_helperEPK5QChariPKciN2Qt15CaseSensitivityE@plt>",
+        "va": 995368
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0xc0(%rsp), %rax",
+        "va": 996028
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x97d20 <.text+0x734f0>",
+        "va": 996068
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x40(%r14), %rdi",
+        "va": 996759
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbp, %rsi",
+        "va": 996763
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x9cbc0 <.text+0x78390>",
+        "va": 996766
+      },
+      {
+        "mnemonic": "pushq",
+        "operands": "%r13",
+        "va": 1284032
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23800 <popen@plt>",
+        "va": 1284199
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x21fe0 <pclose@plt>",
+        "va": 1284272
+      },
+      {
+        "mnemonic": "pushq",
+        "operands": "%r15",
+        "va": 1310768
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rdx, %rsi",
+        "va": 1310770
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rcx, 0x10(%rsp)",
+        "va": 1310815
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x55bf0 <.text+0x313c0>",
+        "va": 1310831
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x55bf0 <.text+0x313c0>",
+        "va": 1310842
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbx, %rsi",
+        "va": 1310863
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x45820 <.text+0x20ff0>",
+        "va": 1310866
+      },
+      {
+        "mnemonic": "jne",
+        "operands": "0x140340 <.text+0x11bb10>",
+        "va": 1310885
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x10(%rsp), %rdx",
+        "va": 1311084
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 1311113
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 1311178
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 1311212
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rbp, %rdx",
+        "va": 1311233
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22c30 <_ZNK7QString3argERKS_i5QChar@plt>",
+        "va": 1311247
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23f10 <_ZN7QString6appendERKS_@plt>",
+        "va": 1311291
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x55bf0 <.text+0x313c0>",
+        "va": 1311356
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x1397c0 <.text+0x114f90>",
+        "va": 1311455
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x8(%rsp), %rsi",
+        "va": 1311460
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22d00 <_ZN5QFileC1ERK7QString@plt>",
+        "va": 1311468
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x237c0 <_ZN5QFile6removeEv@plt>",
+        "va": 1311476
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23420 <sync@plt>",
+        "va": 1311489
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x10(%rsp), %rcx",
+        "va": 1311494
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "(%rcx), %rax",
+        "va": 1311502
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rax, (%r13)",
+        "va": 1311505
+      }
+    ],
+    "direct_calls": [
+      {
+        "call_vas": [
+          507450,
+          524437,
+          525040,
+          643538,
+          1051568,
+          1310866
+        ],
+        "target": 284704
+      },
+      {
+        "call_vas": [
+          996766
+        ],
+        "target": 641984
+      },
+      {
+        "call_vas": [
+          644350
+        ],
+        "target": 1310768
+      },
+      {
+        "call_vas": [],
+        "target": 993504
+      }
+    ],
+    "fdes": [
+      {
+        "end_exclusive": 286069,
+        "role": "verifier",
+        "start": 284704
+      },
+      {
+        "end_exclusive": 647776,
+        "role": "resource-route",
+        "start": 641984
+      },
+      {
+        "end_exclusive": 998879,
+        "role": "resource-route-caller",
+        "start": 993504
+      },
+      {
+        "end_exclusive": 1312218,
+        "role": "navigation-transform",
+        "start": 1310768
+      },
+      {
+        "end_exclusive": 1284347,
+        "role": "command-helper",
+        "start": 1284032
+      }
+    ],
+    "literals": [
+      {
+        "length": 13,
+        "role": "decrypt-command-template",
+        "sha256": "e9a1b119470ad484406b8f970eae52356541ef06a2d6205e64781162ab0fe95e",
+        "va": 2171543
+      },
+      {
+        "length": 35,
+        "role": "decrypt-helper",
+        "sha256": "1a12e9f0ff1d60e312180343f2d930ef423c5e16af6b87c80ca99da0ea9f989d",
+        "va": 2143448
+      },
+      {
+        "length": 18,
+        "role": "destination-command-template",
+        "sha256": "fdb4a3952fdd568c09a93e871b0a2d319a1ab1304e1fefea6c8e73691e92ea60",
+        "va": 2171557
+      },
+      {
+        "length": 33,
+        "role": "destination-tree-adp",
+        "sha256": "0e5d35644c149a32e383cdc43d40b1ff8411f0e1bd0c58644430589924476b41",
+        "va": 2182896
+      },
+      {
+        "length": 33,
+        "role": "destination-tree-amp",
+        "sha256": "8311e2f1250607b91869d0b405d610a4e1f9c5a8714573d995a8aee502fda5bb",
+        "va": 2182856
+      },
+      {
+        "length": 34,
+        "role": "destination-tree-mkbd",
+        "sha256": "c749148260b81a4828ca7bcbd7de146f62bd8847c0d0dbd858ee59cbad2dcf21",
+        "va": 2182816
+      },
+      {
+        "length": 34,
+        "role": "destination-tree-vess",
+        "sha256": "708d317a8befc84cf3856b3c31f5b214c0b1f132ebecc51c08dd2c1249d61e53",
+        "va": 2182936
+      },
+      {
+        "length": 3,
+        "role": "encrypted-suffix",
+        "sha256": "5fb2ab76ed9bda034b192c48c7069359252fccda168d925acc0ae7d316c0b53e",
+        "va": 2231089
+      },
+      {
+        "length": 11,
+        "role": "news-basename",
+        "sha256": "73b38a3a629e7cd25d74a69b12b21cb2af609051cb979c9c21de9e91308593b5",
+        "va": 2185280
+      },
+      {
+        "length": 20,
+        "role": "news-destination-template",
+        "sha256": "fc0b23ad9227152b3e84ee5712215c9d4aeef6b6efb9387e9eae1c40a74e9961",
+        "va": 2185292
+      },
+      {
+        "length": 17,
+        "role": "news-fallback-destination-template",
+        "sha256": "77593c789e8e56109d048f81cc632d235294a30092e0774a6e7adec9f569af1a",
+        "va": 2185313
+      },
+      {
+        "length": 10,
+        "role": "selector-adp",
+        "sha256": "c27d5b7c44e681b2dbeaf808a013ba8e24aba74b0ab6d4d598ebd1ff34d617e1",
+        "va": 2184643
+      },
+      {
+        "length": 10,
+        "role": "selector-amp",
+        "sha256": "26f7b2280588ac289058bb9d72a1f56b5dff8578e7784b9a982fb4678a6d8f58",
+        "va": 2184632
+      },
+      {
+        "length": 10,
+        "role": "selector-mkbd",
+        "sha256": "f97b091cc104613bfb60c5298d188a59fb5c363e26e129c0e8a8391ae30174a3",
+        "va": 2184621
+      },
+      {
+        "length": 10,
+        "role": "selector-vess",
+        "sha256": "a5333958d35935029eb495b75ca07f96da5415cb6262533c9fc14ab2a0643f8e",
+        "va": 2184654
+      },
+      {
+        "length": 10,
+        "role": "software-basename",
+        "sha256": "866b488bc9f06068d8998a28515d7799b3dc2e46e1c414fdf2cc99ea235e46a0",
+        "va": 2185331
+      },
+      {
+        "length": 9,
+        "role": "software-destination-template",
+        "sha256": "97e86632f10248a008b358245dcff24002486ab2a147bbc83cfa29f42b801f77",
+        "va": 2185342
+      },
+      {
+        "length": 31,
+        "role": "source-tree-adp",
+        "sha256": "55c7ffada0f6312bff351bd7deb7fa3f140148396616a8ad6fbc3a7904659242",
+        "va": 2181752
+      },
+      {
+        "length": 31,
+        "role": "source-tree-amp",
+        "sha256": "485e724f16fa30a00106dbd496f96720c2a54bb63bad151c187d38ccf1e7ec0b",
+        "va": 2181720
+      },
+      {
+        "length": 32,
+        "role": "source-tree-mkbd",
+        "sha256": "7a263eaa76c5408b0acab43acc9105484e9101b43eccab21c4b24d39db230ba1",
+        "va": 2181680
+      },
+      {
+        "length": 32,
+        "role": "source-tree-vess",
+        "sha256": "dd29fa1c18f7f117f7dd5ec5a2c1d1747b54b54978bc137b0b22e47757350085",
+        "va": 2181784
+      }
+    ],
+    "producer_classes": [
+      {
+        "destination_tree_role": "destination-tree-mkbd",
+        "name": "mkbd-resource",
+        "selector_role": "selector-mkbd",
+        "source_tree_role": "source-tree-mkbd"
+      },
+      {
+        "destination_tree_role": "destination-tree-amp",
+        "name": "amp-resource",
+        "selector_role": "selector-amp",
+        "source_tree_role": "source-tree-amp"
+      },
+      {
+        "destination_tree_role": "destination-tree-adp",
+        "name": "adp-resource",
+        "selector_role": "selector-adp",
+        "source_tree_role": "source-tree-adp"
+      },
+      {
+        "destination_tree_role": "destination-tree-vess",
+        "name": "vess-resource",
+        "selector_role": "selector-vess",
+        "source_tree_role": "source-tree-vess"
+      }
+    ]
+  },
+  "llvm": {
+    "fde_count": 3789,
+    "fde_sha256": "2c71813a3f098f8f949c6acee1080c0147df182e589f8b8b576798ce4807eb07",
+    "instruction_count": 470739,
+    "instruction_sha256": "693dce0d89faabeea30512fe0a696a733e9bdd64fd7be7379dba98a44d2dc0c8",
+    "objdump_sha256": "7b04d723638c0793efbd31b99b2389f36ceb8c803bdc1008e43ea7525958376f",
+    "objdump_size": 813808,
+    "readelf_sha256": "80a1f8ffc44c5a1e4dbeaa5c409cd98a01cb2fa73e1ccc2eeb22a3b7ee2e1cb0",
+    "readelf_size": 1805104,
+    "version": "Homebrew LLVM version 23.1.3"
+  },
+  "schema_version": 1
+}

@@ -1,22 +1,25 @@
-# Inner FUMO authentication coverage leaves parameterized executable reauthentication unresolved
+# Inner FUMO authentication coverage leaves executable reauthentication unresolved
 
 ## Result
 
 The exact embedded EU `260128` FUMO updater contains real public-key, digest,
 and component checks. A whole-`.text` scan inventories every direct call to its
 file-signature verifier and file-MD5 helper. Fixed and enumerated operands prove
-checks over the descriptor, firmware archive, firmware entries, and navigation
-files, but several verifier paths accept caller-provided QStrings whose complete
-producer provenance has not been bounded. No explicit running/staged
-`AppUpgrade` verifier operand was identified, but its absence is not proved.
+checks over the descriptor, firmware archive, firmware entries, navigation
+files, and controller resources. Follow-up exact-static work resolves direct
+calls `0x9d1d2` and `0x140092` as one nested controller-resource route, not
+running/staged updater pathname roles. The separate `0x100bb0` metadata path
+still accepts caller-provided QStrings whose complete dynamic producer
+provenance has not been bounded. No explicit running/staged `AppUpgrade`
+verifier operand was identified, but global absence is not proved.
 
 Separately, startup reduces `argv[0]` to an application base directory used to
 find resources, and the reviewed worker `execv` wrapper does not verify its
 executable inside that FDE before the call.
 
-Classification: **complete direct-call instruction inventory; parameterized
-verifier-target provenance incomplete, so inner executable reauthentication
-remains unknown**.
+Classification: **complete direct-call instruction inventory; both formerly
+parameterized direct targets resolved, while dynamic/indirect/external
+executable reauthentication remains unknown**.
 
 This maps a major part of V-031's later-authentication question without closing
 it. The reviewed startup, file-MD5, and relaunch paths do not establish
@@ -97,9 +100,9 @@ A whole-`.text` direct-call scan of the exact ELF found six calls to `0x45820`:
 | `0x7be3a` | `[0x7bc50,0x7f82a)` | application-base-directory `/.lge.upgrade.xml` descriptor |
 | `0x80095` | `[0x7fe40,0x80595)` | `%1/HU/firmware/update.tar.gz` firmware archive |
 | `0x802f0` | `[0x7fe40,0x80595)` | `QFileInfo::absoluteFilePath()` from firmware-directory enumeration |
-| `0x9d1d2` | `[0x9cbc0,0x9e260)` | caller-assembled input; complete producer set not bounded here |
+| `0x9d1d2` | `[0x9cbc0,0x9e260)` | absolute pathname of an enumerated `.enc` controller-resource member under one of four fixed resource trees; sole direct caller `0xf359e` |
 | `0x100bb0` | `[0x100b30,0x10110c)` | `AppUpgradeEngine::decryptionFile(QString encFile, QString destPath)` verifier input; generated local row 64 forwards `a[1]`/`a[2]`, and three direct calls in row-60 `copyWhatsNewFiles()` FDE `[0x101110,0x104c1b)` resolve archive/system/control producer families; a bounded literal Qt/D-Bus audit finds no additional row-64 candidate, while synthesized/indexed, indirect, cross-library, external, and runtime producers remain unresolved |
-| `0x140092` | `[0x140030,0x1405da)` | parameterized navigation verify/decryption input; immediate caller traced, complete upstream producer set not bounded here |
+| `0x140092` | `[0x140030,0x1405da)` | QString copy of the same `0x9d1d2` source pathname, before pathname-based transformation to derived JSON/binary output; sole direct caller `0x9d4fe` |
 
 The descriptor path is itself conditional: one branch calls the verifier at
 `0x7be3a`, while the alternate path constructs a `QFile` at `0x7c2ee` and opens
@@ -107,8 +110,22 @@ it at `0x7c31d` without that direct verifier call. This report does not infer
 which mode is selected on an installed unit.
 
 The first three rows have bounded descriptor/archive/enumeration provenance.
-The latter parameterized routes do not contain an explicit fixed updater path,
-but that negative observation is insufficient. The Qt 5 revision-7 metadata and
+Exact-static follow-up now bounds the two formerly parameterized direct rows.
+Whole-instruction direct-call scans find only `0xf359e -> 0x9cbc0` and
+`0x9d4fe -> 0x140030`, while no direct call targets upstream FDE entry
+`0xf28e0`. That caller enumerates ZIP base names and selects one of four fixed
+controller classes; `0x9cbc0` enumerates `.enc` members under corresponding
+fixed `/update/extInfoUpdate/...` trees. It verifies the member pathname at
+`0x9d1d2`, and only exact-zero status reaches `0x9d4fe`; nested FDE `0x140030`
+verifies a QString copy of the same source pathname at `0x140092` and then uses
+it as a pathname in the decrypt-helper pipeline. The bounded route excludes
+running/staged updater, descriptor, and general firmware pathname roles. Both
+verifier and transform reopen the path, however, so byte/object identity and
+output success remain unknown. See
+`evidence/appfumo-parameterized-verifier-provenance.md`.
+
+The remaining `0x100bb0` route has a different producer boundary. The Qt 5
+revision-7 metadata and
 generated dispatcher now resolve `0x16e030` as local `AppUpgradeEngine` metadata
 row 64, `QString decryptionFile(QString encFile, QString destPath)`: `a[1]` is copied
 to the `%rdx` `encFile` local, `a[2]` to the `%rcx` `destPath` local, and the
@@ -275,12 +292,14 @@ to either source.
 
 This finding establishes the direct verifier/hash call inventory and several
 resolved trust subjects. It does **not** decide whether all reviewed direct inner
-FUMO paths close V-031's outer-executable identity boundary, because some direct
-verifier targets remain parameterized and incompletely traced. These also remain
-unresolved:
+FUMO paths close V-031's outer-executable identity boundary. The formerly
+parameterized direct calls `0x9d1d2` and `0x140092` are now bounded to one
+controller-resource route, but the separate metadata-forwarded `0x100bb0` path
+and non-direct mechanisms still have incomplete runtime producers. These also
+remain unresolved:
 
-- complete producer provenance for the parameterized signature-verifier targets;
-  local `AppUpgradeEngine` rows 60 and 64 now bind the selected direct
+- complete producer provenance for metadata-forwarded verifier target
+  `0x100bb0`; local `AppUpgradeEngine` rows 60 and 64 bind the selected direct
   `copyWhatsNewFiles()` producers and generated `decryptionFile` forwarding;
   reviewed literal Qt/D-Bus routes contain no additional candidate, but
   synthesized/indexed, indirect/cross-library/external paths and complete

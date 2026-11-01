@@ -5,6 +5,31 @@ reports supporting update-path assessments. Original firmware and recovered
 executables remain ignored under `work/`; retained files must not contain target
 payloads, bypasses, private operator paths, or executable target material.
 
+## AppFUMO parameterized verifier provenance
+
+- [`appfumo-parameterized-verifier-provenance-exact-static.asm`](appfumo-parameterized-verifier-provenance-exact-static.asm):
+  exact Homebrew LLVM 23.1.3 FDE and selected instruction evidence without raw
+  instruction bytes (SHA-256
+  `6c0abdf94c0cec730d890cdacb0d87b44bc49410a7815007e0159a28ff22e187`);
+- [`appfumo-parameterized-verifier-provenance-manifest.json`](appfumo-parameterized-verifier-provenance-manifest.json):
+  strict ELF/tool, complete instruction/FDE identity, machine-anchor, direct-call,
+  literal-role, and producer-class expectations (SHA-256
+  `3631df881c6d5cd7a0e72979f5d2ad2491900e49dc74b99f78fc94ab6fbba665`);
+- [`appfumo-parameterized-verifier-provenance.json`](appfumo-parameterized-verifier-provenance.json):
+  normalized deterministic report (SHA-256
+  `b04af647133dbe480590d27927daae994e17e72911dd9df4a62ee1260b96adb1`).
+
+The two previously parameterized direct targets are one nested controller-
+resource route. `0x9d1d2` receives an enumerated encrypted member under one of
+four fixed resource trees; `0x140092` receives a QString copy of that same
+source pathname before a pathname-based transformation to derived JSON or
+binary output. These are not running/staged updater, descriptor, or general
+firmware pathname roles in the bounded direct route. Verification and
+transformation reopen the pathname, so authenticated-byte identity, output
+success, final consumption, and all indirect/virtual/cross-process producers
+remain unknown. Assessment:
+[`../../appfumo-parameterized-verifier-provenance.md`](../../appfumo-parameterized-verifier-provenance.md).
+
 ## AppFUMO decryption direct producers and public-log observation
 
 - [`appfumo-decryption-producer-exact-static.asm`](appfumo-decryption-producer-exact-static.asm):

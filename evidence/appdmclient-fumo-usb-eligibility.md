@@ -397,8 +397,9 @@ of these states; its deterministic no-input report has SHA-256
 ## Remaining work
 
 1. Determine runtime source immutability/mutability. V-032 inventories the
-   exact inner FUMO direct signature/hash calls and resolves startup/relaunch,
-   but parameterized verifier-target producers remain incomplete; resolve them
+   exact inner FUMO direct signature/hash calls and resolves startup/relaunch.
+   Follow-up resolves `0x9d1d2` and `0x140092` as a nested controller-resource
+   route; resolve the separate metadata-forwarded `0x100bb0` producer boundary
    plus indirect/external/loader checks and exact final payload binding. Also
    determine whether a named authentication
    state necessarily precedes each valid progress event that can attempt

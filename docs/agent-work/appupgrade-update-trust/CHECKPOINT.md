@@ -91,9 +91,9 @@ Date: 2026-11-01
     verifier `[0x45820,0x45d75)` has exactly six direct call sites and file-MD5
     helper `[0x140f50,0x1413e4)` has exactly two. Fixed/enumerated operands cover
     the descriptor, archive, firmware entries, resources, and navigation files.
-    Parameterized verifier operands remain incomplete: `0x100bb0` receives its
-    target through `%rdx`, while direct caller `0x16e030` forwards a QString from
-    a meta-call argument structure. Worker relaunch `[0x6c9a0,0x6cab5)` calls
+    The metadata-forwarded verifier operand remains incomplete: `0x100bb0`
+    receives its target through `%rdx`, while direct caller `0x16e030` forwards
+    a QString from a meta-call argument structure. Worker relaunch `[0x6c9a0,0x6cab5)` calls
     `execv` without a direct pre-exec verifier/hash step inside that FDE. Added
     V-032, retained assembly and parameter callers, a thirteen-input schema-v2
     model, and exhaustive Boolean tests. Outer-executable reauthentication stays
@@ -102,6 +102,19 @@ Date: 2026-11-01
     subtests`; the full suite passed `553 tests, 148482 subtests`; the public
     harness passed; corrected independent exact-binary/package review returned
     **ACCEPT**.
+  - resolved the two remaining parameterized direct verifier targets in the exact
+    embedded FUMO ELF. Whole-instruction scans prove `0xf359e -> 0x9cbc0` and
+    `0x9d4fe -> 0x140030`; no direct call targets upstream FDE `0xf28e0`.
+    Calls `0x9d1d2` and `0x140092` receive the same encrypted controller-resource
+    source pathname, first directly and then through a QString copy, under one
+    of four fixed controller trees. The bounded route excludes running/staged
+    updater, descriptor, and general firmware pathname roles. Exact-zero
+    verification dominates transformation, but verifier and helper reopen the
+    path, helper status is ignored, and only a nonempty destination QString is
+    checked; authenticated-byte and final-consumption binding remain unknown.
+    Added a strict fail-closed analyzer, 12 focused tests with 6 subtests,
+    exact-static/manifest/report artifacts, and public evidence. Focused and
+    full suites pass; repository harness and privacy validation pass.
 - Wrote `evidence/appupgrade-update-trust.md`,
   `evidence/appdmclient-fumo-usb-eligibility.md`, and corrected the broad
   marker-equals-unchecked-path documentation.
@@ -121,7 +134,7 @@ All exact binaries, disassemblies, maps, and extracted ELFs remain ignored under
 2. Name the second stored AppDMClient version reference and numeric boot-state
    values from exact code; trace the XML destination helper.
 3. Determine runtime source mutability/immutability. Resolve complete producers
-   for the parameterized direct signature-verifier targets plus remaining
+   for the remaining metadata-forwarded verifier route (`0x100bb0`) plus
    indirect/external/loader checks and final payload binding. Continue upstream
    from `DeltaUpdateProgressHandler` to
    determine whether a named authentication state necessarily precedes each
