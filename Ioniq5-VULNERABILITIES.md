@@ -919,6 +919,15 @@ vulnerability is claimed, and this test does not move either entry.
   logs `attach fail` and `read error`. My previous sentence — that a *provider of the region* was missing — was wrong and
   is withdrawn. The `QSharedMemory` is the consumer side; the supply side is the boot-info retrieval that already fails
   before it.
+- **`/dev/shm` is absent from the image and its absence is not the cause.** The image ships **no `/dev/shm`** at all — no
+  `esinit` line mounts it and no `fstab` entry exists for it, the same class of gap as the missing `/dev/pts` found earlier.
+  Mounting a `tmpfs` there (`chmod 1777`) before starting `ApplicationManager` changes nothing:
+  `attach fail` and `read error` still occur, `reply is VALID` still never appears. So POSIX shared memory availability is
+  excluded too.
+- **Two separate findings, kept separate:** the missing `/dev/shm` is a genuine environment gap that may affect other
+  components in this projection (worth fixing on principle, alongside `/dev/pts`), while the boot-info retrieval failure has
+  now survived every environmental candidate tested — bus reachability, `/dev/shm`, peer presence, payload content, and
+  file-backed segment paths.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty

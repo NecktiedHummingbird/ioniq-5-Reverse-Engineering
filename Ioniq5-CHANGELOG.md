@@ -3,6 +3,17 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.99.0 - /dev/shm excluded as the cause; the gap itself is recorded
+
+- The image ships **no `/dev/shm`** — nothing in `esinit` mounts it and no `fstab` entry exists, the same class of hole as
+  the missing `/dev/pts` found much earlier. Worth fixing on principle for the VM regardless of this bug.
+- Mounting a `tmpfs` there with `chmod 1777` and re-running the oracle changes **nothing**: `attach fail` and `read error`
+  persist, `reply is VALID` still absent. So POSIX shared-memory availability is **excluded** as the cause.
+- The boot-info retrieval failure has now survived every environmental candidate: bus reachability, `/dev/shm`, peer
+  presence, payload content, file-backed segment paths.
+- Kept as two findings: the environment gap is real and separate; the retrieval failure remains unexplained and is now the
+  sole blocker for V-036 and for V-028's runtime test.
+
 ## 1.98.0 - CORRECTION: `pszSrc` is a source buffer, not a missing provider
 
 - Own correction, from disassembling the block that emits `initMicomShareMem() -> pszSrc NULL`. It is preceded by

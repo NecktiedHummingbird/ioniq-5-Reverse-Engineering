@@ -3236,3 +3236,10 @@ and are superseded by corrections rather than silently rewritten.
   withdrawn rather than left to mislead.
 - Worth noting the shape: the wrong answer was more satisfying than the right one — a hidden provider is a better story
   than a retrieval call that fails. That is why it needed checking.
+
+## 2026-10-31 — another good hypothesis, another clean no
+
+- The missing /dev/shm looked like the answer, since a missing /dev/pts had genuinely broken things earlier in this project.
+  Providing it changed nothing, which is a clean elimination rather than a vague result.
+- Two things are worth keeping from it: the environment gap as its own small finding, and the growing list of eliminated
+  candidates for the retrieval failure — bus, /dev/shm, peer, payload, file-backed paths.
