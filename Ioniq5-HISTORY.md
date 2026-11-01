@@ -3227,3 +3227,12 @@ and are superseded by corrections rather than silently rewritten.
   ever opened. I had been looking for a file when the code wanted a pointer.
 - The narrower claim I was about to hand off would have sent the next person into the parser for a fault that lives one
   layer below it.
+
+## 2026-10-31 — my own reframing was wrong, and the disassembly said so
+
+- I had concluded that a missing shared-memory provider explained everything. The code shows a QSharedMemory being detached
+  three instructions earlier: it is a destination, and pszSrc is the data that should have filled it.
+- So the failure is still the boot-info retrieval, exactly where it was, and the previous entry's tidy explanation is
+  withdrawn rather than left to mislead.
+- Worth noting the shape: the wrong answer was more satisfying than the right one — a hidden provider is a better story
+  than a retrieval call that fails. That is why it needed checking.

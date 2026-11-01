@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.98.0 - CORRECTION: `pszSrc` is a source buffer, not a missing provider
+
+- Own correction, from disassembling the block that emits `initMicomShareMem() -> pszSrc NULL`. It is preceded by
+  `movq 0x40(%rbx), %rdi` and a call to **`QSharedMemory::detach`** — so the `QSharedMemory` involved is a **destination
+  owned by `ApplicationManager`**, and `pszSrc` is the **source buffer** it is supposed to be filled from.
+- Therefore the NULL source is a **consequence of the earlier boot-info failure**, not evidence of a third-party provider
+  that never runs here. My previous entry said the opposite ("what is missing is a provider of that region") and that
+  sentence is **withdrawn**.
+- The missing thing remains the **boot info itself**, retrieved by the MICOM path that logs `attach fail` and
+  `read error` — supply side, not consumer side. This distinction matters because it points the next attempt back at the
+  retrieval path rather than at inventing a new shared-memory object.
+- Recorded promptly: the wrong reading was only a few minutes old, and a wrong direction costs more than an unanswered
+  question.
+
 ## 1.97.0 - reframed: the boot-info path ends in `initMicomShareMem() -> pszSrc NULL`
 
 - Read more of the same log with the peer answering. The sequence is:

@@ -911,9 +911,14 @@ vulnerability is claimed, and this test does not move either entry.
   populated by the MICOM side**, and a D-Bus `ay` reply alone does not satisfy it — which explains why every payload
   variant was rejected *and* why no `qipc` file open was ever seen: the region may be created by a component that never
   runs here, and consumed by pointer rather than by name.
-- **Consequence:** the "35 bytes are wrong" reading is now too narrow. The more accurate statement is that the boot-info
-  path terminates in `initMicomShareMem` with no source, so what is missing is a **provider of that region**, not a
-  better D-Bus payload. Locating that region's key or creation path is the next concrete task.
+- **Correction to the reading above, from the disassembly.** The block that emits `pszSrc NULL` sits immediately after
+  `movq 0x40(%rbx), %rdi` and a call to **`QSharedMemory::detach`**, i.e. the `QSharedMemory` there is a **destination owned
+  by `ApplicationManager`**, and `pszSrc` is its **source buffer**. So the NULL source is a **consequence** of the earlier
+  boot-info failure, not evidence of a third-party provider that never runs.
+- **Consequence, restated correctly:** the missing thing remains the **boot info itself**, obtained via the MICOM path that
+  logs `attach fail` and `read error`. My previous sentence — that a *provider of the region* was missing — was wrong and
+  is withdrawn. The `QSharedMemory` is the consumer side; the supply side is the boot-info retrieval that already fails
+  before it.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty
