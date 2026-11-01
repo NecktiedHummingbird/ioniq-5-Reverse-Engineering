@@ -3103,3 +3103,11 @@ and are superseded by corrections rather than silently rewritten.
   overwrite. That is a small lesson with a lot of history in this session.
 - The caveat survives the better measurement: a changing pid cannot prove a spawned instance stays alive across
   retries, so the entry keeps its limit even while gaining its evidence.
+
+## 2026-10-31 — the caveat resolved the other way
+
+- Ten samples over twenty seconds returned nothing, which is the clearest kind of evidence: the dependency is simply not
+  there while the launcher keeps retrying it.
+- So the loop is a failure loop, not a poll. The entry that had been hedging in the right direction now states the
+  opposite conclusion, and the hedge is retired because it was tested rather than carried.
+- That leaves one log file to read, which is the cheapest possible next step and exactly where this should stop.

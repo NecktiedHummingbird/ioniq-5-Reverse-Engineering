@@ -3,6 +3,18 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.78.0 - V-036's caveat resolved against the stronger reading: it is a spawn-fail loop
+
+- Sampled `pidof ApplicationManager` ten times, two seconds apart, across a twenty-second window while the retry loop
+  continued. Result: **`ALWRAPSEQ` empty** — no pid at any sample.
+- So the dependent application is **not running** during the retry window. The loop is a **spawn-fail retry**, not a
+  poll of a live instance, and liveness across retries is **disproven** for that window rather than merely unproven.
+- The entry's framing is corrected accordingly: V-036 is "the launcher repeatedly fails to bring its own dependent
+  application up and dispatches nothing while retrying", not "the launcher polls a dependency that is present".
+- Remaining question, now narrow: **why does `ApplicationManager` exit?** Its own output goes to `/tmp/am.log` in the
+  harness and has not been read yet — that is the next single diagnostic, and it is a log read rather than an
+  experiment.
+
 ## 1.77.0 - V-036 re-measured: the loop persists with an ApplicationManager process present
 
 - The earlier correction was itself correct to be cautious, but the measurement it lacked is now taken. With the pid

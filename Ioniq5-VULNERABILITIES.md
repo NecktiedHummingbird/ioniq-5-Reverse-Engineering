@@ -772,9 +772,16 @@ vulnerability is claimed, and this test does not move either entry.
   `appId[2][ApplicationManager]` occurrences: **20**
 
   So an `ApplicationManager` process was running before the launcher and a *different* process of the same name was
-  running after it — i.e. the launcher spawns its own instance — and the loop still ran 20 times. The measurement now
-  supports the stronger reading, but with a caveat that matters: a changing pid cannot distinguish "a spawned instance
-  that persists" from "a spawn that exits and is retried", so liveness **across** the retries is still unproven.
+  running after it — i.e. the launcher spawns its own instance — and the loop still ran 20 times.
+
+- **The caveat is now resolved, against the stronger reading.** Ten `pidof ApplicationManager` samples taken two seconds
+  apart across twenty seconds, while the loop continued, produced **no pids at all** (`ALWRAPSEQ` empty). So during the
+  retry window the dependent application is **not running**: the loop is a **spawn-fail retry**, not a poll of a live
+  instance. Liveness across retries is not merely unproven, it is **disproven** for the sampled window.
+- Consequence for the entry's framing: V-036 is not "the launcher polls a dependency that is present", it is "the
+  launcher repeatedly fails to bring its own dependent application up, and dispatches nothing while retrying". The
+  remaining question is why `ApplicationManager` exits, which its own log (`/tmp/am.log` in the harness) should answer
+  and which this project has not yet read.
 - **Why it matters beyond the emulation:** the launcher's dispatch path is what V-028 relies on, so this loop is the
   demonstrated reason V-028's runtime execution could not be reproduced here. Anything that prevents
   `ApplicationManager` from being observed as running — a crash, a missing dependency, or withholding it — plausibly
