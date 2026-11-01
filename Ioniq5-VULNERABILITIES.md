@@ -928,6 +928,21 @@ vulnerability is claimed, and this test does not move either entry.
   components in this projection (worth fixing on principle, alongside `/dev/pts`), while the boot-info retrieval failure has
   now survived every environmental candidate tested — bus reachability, `/dev/shm`, peer presence, payload content, and
   file-backed segment paths.
+- **A run where `attach fail` disappeared was checked and is *not* a fix.** With `ihu-shim` executed before the service, the
+  oracle reported `attach fail = 0` and `read error = 0` — which looks like success. It is not: the same run shows
+  `HAS_BOOTINFO=0`, i.e. **`ApplicationManager` never entered `initBootInfo` at all**. Verified rather than assumed, which
+  is the only reason the false positive was caught.
+- **What the ordered log shows instead, and it is order-independent across runs:**
+
+  `initMicomShareMem() -> Start` → **`initMicomShareMem() -> pszSrc NULL`** → `askSysBootInfo():iface is VALID`
+
+  Two useful facts follow. First, `initMicomShareMem` runs **before** the `AskSysBootinfo` call, so the D-Bus ask is not
+  what supplies `pszSrc`. Second, the reliable, reproducible failure across orderings is the **NULL `pszSrc`**, not the
+  attach: the attach failure appears only when a different path runs first.
+- **New lead from the binary's own strings:** `ApplicationManager` contains the literal **`MICOM_STATUS_MESSAGE`**, which
+  matches a segment name already seen in `AppHomeScreen`'s trace
+  (`qipc_sharedmemory_MICOMSTATUSMESSAGE…`) and which `ihu-shim` is able to create. That makes a MICOM status region the
+  most likely source for `pszSrc`, and testing it is a matter of ensuring that segment exists before the client starts.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty

@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 2.00.0 - a false positive caught, and `MICOM_STATUS_MESSAGE` named as the likely source
+
+- A run reported `attach fail = 0` and looked like a fix. It was not: the same run has `HAS_BOOTINFO=0`, meaning
+  `ApplicationManager` never entered `initBootInfo`. Caught by verifying rather than concluding — the trap that has produced
+  most of this session's wasted effort.
+- The ordered log is more useful than either failure line: `initMicomShareMem() -> Start` →
+  **`initMicomShareMem() -> pszSrc NULL`** → `askSysBootInfo():iface is VALID`. So **`initMicomShareMem` runs before the
+  D-Bus ask**, and the reproducible failure across orderings is the **NULL `pszSrc`**, not the attach.
+- **New lead from the binary's strings:** it contains `MICOM_STATUS_MESSAGE`, matching a segment name already observed in
+  `AppHomeScreen`'s trace (`qipc_sharedmemory_MICOMSTATUSMESSAGE…`) and one that `ihu-shim` can create. That makes a MICOM
+  status region the most likely source for `pszSrc`.
+- Next test is concrete: ensure that segment exists before the client starts, and watch whether `pszSrc` becomes non-NULL —
+  with `HAS_BOOTINFO`/log-line counts checked first so another empty run cannot be mistaken for progress.
+
 ## 1.99.0 - /dev/shm excluded as the cause; the gap itself is recorded
 
 - The image ships **no `/dev/shm`** — nothing in `esinit` mounts it and no `fstab` entry exists, the same class of hole as

@@ -3243,3 +3243,11 @@ and are superseded by corrections rather than silently rewritten.
   Providing it changed nothing, which is a clean elimination rather than a vague result.
 - Two things are worth keeping from it: the environment gap as its own small finding, and the growing list of eliminated
   candidates for the retrieval failure — bus, /dev/shm, peer, payload, file-backed paths.
+
+## 2026-10-31 — a fix that was really an empty run
+
+- One configuration made the failure line disappear, and the reason was that the code never reached it. Checking the log
+  for the function's own entry line turned a would-be celebration into a correction.
+- The ordering in the log is worth more than either error message: the shared-memory initialisation happens before the
+  D-Bus ask, and its NULL source is the failure that reproduces. That points at a MICOM status region whose name the binary
+  itself mentions.
