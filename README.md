@@ -137,3 +137,51 @@ met before the repository is made public.
 Security findings that could affect real vehicles are tracked in a separate
 register outside this public tree and are handled under coordinated-disclosure
 rules.
+
+## Latest bring-up — 2026-10-31
+
+State after a long session working the VM end to end. Everything below was measured, not assumed; the
+scaffold and its hand-off notes live in `tools/uk_fw/ias_backend_soft/`.
+
+### What now works
+
+- **Authentic boot chain**: `init=/lib/systemd/esinit` reaches `Reached target Multi-User System`. Two vendor
+  defects had to be worked around in a copy-on-write clone and both are recorded: `check-mount.sh` ships mode
+  `0644` (no execute bit) and eleven `fstab` entries demand `mmcblk0pN` partitions the projection lacks.
+- **Our own Weston backend** (`ias-backend-soft.so`): the vendor `weston` runs it with `ias-shell.so`, publishes
+  `ias_crtc`/`ias_mode`, and `wrandr` reports `CRTC = 1, 1920x720 @ 60000`. The shipped compositor is
+  **LG-patched**: `struct weston_output` differs from upstream 1.10 by `0x18` bytes, so a plugin built against
+  upstream headers initialises fields in the wrong place and crashes it — `vendor-abi.patch` restores the layout.
+- **EGL**: the image ships **no software rasteriser**, only Intel DRI. Injecting Debian `swrast_dri.so` with
+  `libLLVM-3.9` and setting `LIBGL_DRIVERS_PATH`/`MESA_LOADER_DRIVER_OVERRIDE=swrast` is what makes GL work.
+- **Frame capture**: a `weston_screenshooter` client plus a backend framebuffer dump. `--use-pixman` is
+  mandatory, because the default renderer cannot read pixels back.
+- **MICOM adaptors**: `micom-responder` provides the `/dev/ttyS1` peer (the guest is missing `/dev/pts`, so it
+  runs on a pty) and `micom-service` owns `com.lge.car.micom` on the session-independent system bus. With them,
+  the launcher reaches readiness for the first time:
+
+  ```
+  [  OK  ] Started HKMC Preminum AVN 2.1 -Launcher.
+  micom-svc: AskSysBootinfo -> 35 bytes
+  ApplicationLauncher::getAppProcessByAppId appId[2][ApplicationManager]
+  ```
+
+### What is still blocked, and why
+
+The launcher registers and begins dispatching, then loops on `appId[2][ApplicationManager]` because
+`ApplicationManager` cannot initialise boot information — it reports `initMicomShareMem() -> pszSrc NULL`.
+Seven environmental hypotheses have been excluded by measurement (bus reachability, interface construction,
+file-backed segments, peer presence, payload content, `/dev/shm`, segment existence). What remains is the
+**layout and validity rules of the MICOM status structure**, which is disassembly work on a stripped binary.
+Register entry **V-036** records this, with the elimination list and the anchors.
+
+Because the client commits surfaces but never attaches a buffer, the HMI frame itself is black. That is
+recorded honestly rather than cropped out — the control image is the evidence that the compositor renders.
+
+| Compositor control (`weston-simple-shm`) | Current HMI frame |
+| --- | --- |
+| ![Compositor control](docs/vm/05-compositor-control-2026-10-31.png) | ![HMI frame](docs/vm/06-hmi-frame-2026-10-31.png) |
+| Test pattern rendered by the vendor compositor through our backend — **173 distinct colours**, proving the whole path from backend to framebuffer works. | `AppHomeScreen` running with its surfaces mapped: uniformly black because no buffer is ever attached. `initMicomShareMem() -> pszSrc NULL` is why the launcher's dispatch never completes. |
+
+Both frames are 240×90 downscaled dumps of the backend framebuffer, moved out of the guest over a
+`-chardev file` serial port (console transfer corrupts above roughly 8 KB).
