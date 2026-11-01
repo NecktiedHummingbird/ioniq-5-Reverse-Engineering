@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.77.0 - V-036 re-measured: the loop persists with an ApplicationManager process present
+
+- The earlier correction was itself correct to be cautious, but the measurement it lacked is now taken. With the pid
+  written to a file so console spinners cannot obscure it, one boot recorded:
+
+  `ALWRAPAM before_launcher pid=2079` · `ALWRAPAM after_loop pid=2317` · `appId[2]` occurrences **20**
+
+- So an `ApplicationManager` process was running before the launcher, a **different** process of the same name was
+  running after it — the launcher spawns its own — and the retry loop still ran twenty times.
+- **The caveat is recorded with it:** a changing pid cannot distinguish "a spawned instance that persists" from "a spawn
+  that exits and is retried". Liveness *across* the retries therefore remains unproven, and V-036 says exactly that
+  rather than claiming the stronger version twice.
+- The practical point stands either way: the launcher retries `appId 2` twenty times and dispatches nothing meanwhile,
+  which is why V-028's runtime tests measured this loop rather than the launch path.
+
 ## 1.76.0 - correction inside V-036: the dependency's liveness was never confirmed
 
 - Verifying my own newest entry found an overstatement in it. V-036 said the `appId[2]` loop persisted "after
@@ -618,6 +633,15 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   hostile field values. A real answer needs structured generation or a coverage-guided harness driving the plugin
   libraries — neither attempted.
 - Neither V-007 nor V-014 moves on this. No parser vulnerability is claimed.
+
+## 1.66.0 - resolve AppUpgradeEngine local Qt meta-method 64 without overclaiming producers
+
+- Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` method 64 to public slot `QString decryptionFile(QString encFile, QString destPath)`. The index is local to that meta-object, not inherited/global and not signal number 64; signal count is seven.
+- The relocation-bound generated dispatcher resolves `a[1] -> encFile -> %rdx`, `a[2] -> destPath -> %rcx`, call `0x100b30`, and QString return -> `a[0]`. The function's verifier call remains `0x100bb0`.
+- Added an explicit-selection, read-only decoder with strict ELF/Qt bounds, synthetic and optional exact tests, bounded static excerpts, a schema-checked forwarding manifest, and a deterministic report (SHA-256 `1aab186debb6a338097cd3a3e39f1f09cf31af1cba4e302a3079d2922f370d61`).
+- Metadata binding and machine-code forwarding are resolved separately; complete producer provenance remains unresolved. Dynamic meta-invocation, indirect/external paths, runtime invocation, external/D-Bus reachability, attacker control, update acceptance, root, and persistence remain unknown. V-032's fail-closed Boolean model is unchanged.
+- Focused validation passed `24 tests, 8215 subtests`; the full suite passed `659 tests, 351237 subtests`; the public and privacy harnesses passed; deterministic exact-report comparison passed.
+- No recovered target or helper was executed; no device, network/radio path, malformed target input, payload, bypass, package, partition, root action, or persistence material was exercised or created.
 
 ## 1.65.0 - map inner FUMO authentication coverage and its unresolved parameters
 

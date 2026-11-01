@@ -3093,3 +3093,13 @@ and are superseded by corrections rather than silently rewritten.
   liveness is simply unknown. The entry now says that, and so does its list of what is not established.
 - This is the same failure this whole session kept producing, in its smallest form: preferring a satisfying reading to a
   supported one. At least this time it was caught before it left the building.
+
+## 2026-10-31 — measured it properly the second time
+
+- Capturing the pid to a file instead of letting a spinner eat it produced the number I had guessed at earlier: the
+  application was running before the launcher, a different instance was running after, and the loop still ran twenty
+  times.
+- The improvement did not come from a better idea, it came from recording the value somewhere the console could not
+  overwrite. That is a small lesson with a lot of history in this session.
+- The caveat survives the better measurement: a changing pid cannot prove a spawned instance stays alive across
+  retries, so the entry keeps its limit even while gaining its evidence.

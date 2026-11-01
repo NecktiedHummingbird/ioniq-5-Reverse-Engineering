@@ -763,11 +763,18 @@ vulnerability is claimed, and this test does not move either entry.
   loop — **twenty occurrences in one boot**. While the loop persists, **no external request is dispatched at all**: in
   the same boot, a well-formed `launch` call was accepted by the bus and produced **zero** `appId[999]` dispatch
   entries.
-- **A correction to an earlier version of this entry.** It stated that the loop persisted "after `ApplicationManager`
-  was started and running". That was **not verified**: `ApplicationManager` was launched before the launcher in that
-  boot, but the `pidof` value was obscured in the captured console by a systemd progress line, and no exit or crash was
-  recorded either way. The accurate statement is that the loop persisted *with the application launched*, and its
-  liveness at that moment is unconfirmed.
+- **A correction to an earlier version of this entry, now re-measured.** It first stated the loop persisted "after
+  `ApplicationManager` was started and running", which was unverified because a systemd progress line had obscured the
+  process check. Re-measured with the pid captured to a file so the console could not swallow it, in one boot:
+
+  `ALWRAPAM before_launcher pid=2079`
+  `ALWRAPAM after_loop pid=2317`
+  `appId[2][ApplicationManager]` occurrences: **20**
+
+  So an `ApplicationManager` process was running before the launcher and a *different* process of the same name was
+  running after it — i.e. the launcher spawns its own instance — and the loop still ran 20 times. The measurement now
+  supports the stronger reading, but with a caveat that matters: a changing pid cannot distinguish "a spawned instance
+  that persists" from "a spawn that exits and is retried", so liveness **across** the retries is still unproven.
 - **Why it matters beyond the emulation:** the launcher's dispatch path is what V-028 relies on, so this loop is the
   demonstrated reason V-028's runtime execution could not be reproduced here. Anything that prevents
   `ApplicationManager` from being observed as running — a crash, a missing dependency, or withholding it — plausibly
