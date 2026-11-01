@@ -3,6 +3,19 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.94.0 - variant probing rejected; the criteria must be read, not guessed
+
+- Used the working oracle to test three plausible payloads in one boot: all zeros, byte 28 = `0x01`, byte 28 = `0xFF`.
+  Result across five `ApplicationManager` instances: **`valid=0` and attach failure for every variant**.
+- The oracle is sound — the peer answered each time and the client asked — but the search is **unguided**: 35 bytes of
+  unknown semantics will not be found by single-field guesses.
+- **This thread concludes where it should:** the acceptance criteria have to be **read from `parseMicomBootInfo`**, using
+  the anchors already recorded (`0x258808`, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`, tag at `0x317c40`), on a
+  stripped binary — or obtained as vendor source. Further variant guessing is not warranted and will not be attempted.
+- Net position for V-036 after this stretch: reachability, interface construction and shared-memory mechanisms all
+  excluded **by measurement**; the reply content confirmed as the blocker; and the tool to test any future candidate now
+  exists and is documented.
+
 ## 1.93.0 - the payload is finally tested: answered and rejected
 
 - Found why the peer never started: `micom-service` had been installed in the **esinit** workspace but never in

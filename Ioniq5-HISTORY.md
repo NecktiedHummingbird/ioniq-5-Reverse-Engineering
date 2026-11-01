@@ -3195,3 +3195,10 @@ and are superseded by corrections rather than silently rewritten.
 - With that fixed, the payload question answered itself: the peer answers, the client asks, and the reply is rejected. The
   blocker has been the content of thirty-five bytes all along, which nothing I ran before could have shown.
 - The lesson is the least flattering of the session: check the binary exists before tracing what it does.
+
+## 2026-10-31 — the oracle works and the guessing does not
+
+- Three payload variants, five client instances, one answer: rejected. The instrument is finally sound, which makes the
+  negative credible rather than another artefact.
+- Stopping here is the right call. Thirty-five bytes with unknown meaning is not a search space to brute-force, and the
+  next real step is reading the parser on a stripped binary — work with a defined shape, not another experiment.

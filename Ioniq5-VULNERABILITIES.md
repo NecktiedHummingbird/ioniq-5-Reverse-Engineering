@@ -882,9 +882,18 @@ vulnerability is claimed, and this test does not move either entry.
   The peer **ran** and **answered** `AskSysBootinfo`; `ApplicationManager` asked once, never logged
   `reply is VALID`, and still failed `initBootInfo attach`. So the 35 zero bytes are **received and rejected** — the
   payload's content is confirmed as the blocker, which every earlier attempt had failed to test.
-- **Next step, now unambiguous:** establish what `parseMicomBootInfo` requires. Either empirical variants against this
-  now-working oracle (`RESULT_VALID` is the pass/fail signal), or reconstruction from the recorded anchors
-  (`0x258808`, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`).
+- **Empirical variant probing does not converge, and is reported as such.** With the oracle working, `micom-service` was
+  changed to cycle payload variants on successive asks and five `ApplicationManager` instances were run against it:
+
+  `variant 0` (all zeros) → `valid=0`, attach fail · `variant 1` (byte 28 = `0x01`) → `valid=0`, attach fail ·
+  `variant 2` (byte 28 = `0xFF`) → `valid=0`, attach fail
+
+  So plausible single-field guesses are all rejected. The space is 35 bytes with unknown semantics, and blind variants
+  will not find it — the signal is clean but the search is unguided.
+- **Conclusion for this thread, stated plainly:** the payload's acceptance criteria must be **read from the parser**, not
+  guessed. The anchors for that work are already recorded (`0x258808` validity block, `cmpl $0x1c` at `0x258705`, byte read
+  at `0x25872a`, plus the `parseMicomBootInfo` tag at `0x317c40`), and the binary is stripped, so it is genuine
+  disassembly work — or vendor source. No further variant guessing is warranted.
 
 ## Rejected / out-of-scope items
 
