@@ -3177,3 +3177,12 @@ and are superseded by corrections rather than silently rewritten.
   still rejected. Everything about reachability is now settled, and what is left is the content of thirty-five bytes.
 - Four instruments, three invalid first. The lesson is not "trace harder", it is that targeted tracing kept constraining
   the view to what I already believed, while the untargeted one showed me the sentence I needed.
+
+## 2026-10-31 — five instruments, five invalidities
+
+- The oracle test ran cleanly and proved the service was not running, which means the payload question is exactly where it
+  was. Recording that as a failure to run the experiment rather than a finding about the payload is the only honest
+  reading, and it is the fifth time this question has been blocked by my own setup.
+- What has been genuinely settled is narrower but real: not the bus, not the file-backed attach, not the interface. The
+  remaining unknown is the content of thirty-five bytes, and it needs either a live peer or a static reading of the
+  parser.

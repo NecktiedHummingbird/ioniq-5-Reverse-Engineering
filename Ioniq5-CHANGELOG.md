@@ -3,6 +3,19 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.92.0 - the payload test still has not run: the peer was not up
+
+- Ran the oracle test with clean console markers this time (research init, so no systemd spinner):
+  `RESULT_SVC=` **empty**, `RESULT_ASK=4`, `RESULT_VALID=0`, `RESULT_ATTACH_FAIL=1`, `RESULT_SVC_ANSWERS=0`.
+- The peer **was not running**, so it answered nothing. `ApplicationManager`'s four asks were therefore again "no peer",
+  and **the 35-byte payload's content remains untested**. This is a failure to run the experiment, not a negative result
+  about the payload — and the distinction is exactly the one this thread keeps having to make.
+- **Five instruments for this question, each first invalid in a discoverable way:** an exited process, a three-line
+  trace, a run with no bus, markers eaten by a systemd spinner, and now a peer that did not start.
+- Two honest options remain, and I am not starting a sixth instrument of my own design: (a) read `/tmp/ms.log` and fix why
+  `micom-service` exits in research init, so the payload can finally be tested against a live peer; or (b) reconstruct
+  `parseMicomBootInfo`'s criteria from the recorded disassembly anchors.
+
 ## 1.91.0 - the failing step named: interface valid, call retried, reply content rejected
 
 - The untargeted `strace -f` (3,465 calls) paid off where three targeted instruments had not. It shows

@@ -862,11 +862,21 @@ vulnerability is claimed, and this test does not move either entry.
   `ApplicationManager` *still* fails `initBootInfo`. The remaining candidate is therefore the **content** of the 35-byte
   `ay` — its validation in `parseMicomBootInfo` — rather than reachability, interface construction, or any shared-memory
   mechanism. Both file-backed and D-Bus reachability paths have now been excluded by measurement.
-- **Where this stops, deliberately.** Four instruments have been built for this question and each was first invalid in a
-  way that had to be discovered (exited process, three-line trace, no-bus run, then a valid full trace). The next step is
-  no longer an experiment of my design: it is reconstructing `parseMicomBootInfo`'s acceptance criteria from the
-  disassembly anchors already recorded (`0x258808` validity block, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`),
-  or obtaining vendor source.
+- **The oracle test was inconclusive for a mundane reason, and is recorded as such.** Running the peer and
+  `ApplicationManager` together with clean console markers gave:
+
+  `RESULT_SVC=` (empty) · `RESULT_ASK=4` · `RESULT_VALID=0` · `RESULT_ATTACH_FAIL=1` · `RESULT_SVC_ANSWERS=0`
+
+  The peer **was not running** in that environment, so it answered nothing — meaning `ApplicationManager`'s four asks
+  were again "no peer" and the **payload content remains untested**. This is not a negative about the payload; it is a
+  failure to run the experiment.
+- **Where this stops, deliberately.** Five instruments have now been built for this question and each was first invalid
+  in a way that had to be discovered: an exited process, a three-line trace, a run with no bus, console markers eaten by a
+  systemd spinner, and now a peer that did not start. The next step is no longer an experiment of my design. Two options
+  remain, both stated plainly: (a) determine why `micom-service` exits in the research-init environment (its own
+  `/tmp/ms.log` has not been read), so the payload can finally be tested against a live peer; or (b) reconstruct
+  `parseMicomBootInfo`'s acceptance criteria from the anchors already recorded (`0x258808`, `cmpl $0x1c` at `0x258705`,
+  byte read at `0x25872a`), or vendor source.
 
 ## Rejected / out-of-scope items
 
