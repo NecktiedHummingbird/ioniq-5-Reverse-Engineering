@@ -5,6 +5,28 @@ reports supporting update-path assessments. Original firmware and recovered
 executables remain ignored under `work/`; retained files must not contain target
 payloads, bypasses, private operator paths, or executable target material.
 
+## AppFUMO decryption direct producers and public-log observation
+
+- [`appfumo-decryption-producer-exact-static.asm`](appfumo-decryption-producer-exact-static.asm):
+  bounded Homebrew LLVM 23.1.3 FDE and instruction excerpts (SHA-256
+  `d8783cbdc41f5aae6663f339ff2debe2c3e425c8a243845e823b53f087099eb1`);
+- [`appfumo-copywhatsnew-index-60.json`](appfumo-copywhatsnew-index-60.json):
+  deterministic metadata report binding local public slot
+  `void copyWhatsNewFiles()` (SHA-256
+  `8f9adf55fbb3f0f65ef565175901a92144d33cf0ebc28bb57bffe39bbb386ee1`);
+- [`appfumo-decryption-public-log.json`](appfumo-decryption-public-log.json):
+  normalized, token/volume-label-free report over the hash-bound tracked public
+  log (SHA-256
+  `0dc7fb9c2775b2b201ca3b7e38438f75f1db3aa9ddac4298f315ad2e6f35bb66`).
+
+The exact ELF's three selected direct sites are in the `copyWhatsNewFiles()`
+FDE and classify archive/system/control producer families. The expected public
+log contains seven matching records, including line 21713 beyond the previously
+listed six. Its installed binary identity and invocation mechanism remain
+unknown; dynamic/indirect/external producer completeness and attacker control
+are not established. Assessment:
+[`../../appfumo-decryption-runtime-provenance.md`](../../appfumo-decryption-runtime-provenance.md).
+
 ## AppFUMO Qt 5 local meta-method 64
 
 - [`appfumo-qt-metaobject-exact-static.txt`](appfumo-qt-metaobject-exact-static.txt):

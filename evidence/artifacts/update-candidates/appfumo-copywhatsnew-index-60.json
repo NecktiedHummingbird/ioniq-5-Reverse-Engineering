@@ -1,0 +1,172 @@
+{
+  "analysis_status": {
+    "forwarding": {
+      "basis": "machine code is outside metadata-only decoding",
+      "status": "unresolved"
+    },
+    "metadata_binding": {
+      "basis": "bounded Qt 5 revision-7 metadata decoding",
+      "status": "resolved"
+    },
+    "producer_provenance": {
+      "basis": "metadata does not identify runtime invokers or argument producers",
+      "status": "unresolved"
+    }
+  },
+  "claim_boundary": {
+    "attacker_control_established": false,
+    "complete_producer_provenance_established": false,
+    "external_reachability_established": false,
+    "metadata_decoder_establishes_machine_code_forwarding": false,
+    "persistence_established": false,
+    "root_established": false,
+    "runtime_invocation_established": false,
+    "update_acceptance_established": false
+  },
+  "input": {
+    "elf": {
+      "class": "ELF64",
+      "endianness": "little-endian",
+      "machine": "x86-64"
+    },
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size_bytes": 5066264
+  },
+  "metaobject": {
+    "class_name": {
+      "data_file_offset": 4480512,
+      "data_va": "0x445e00",
+      "descriptor_fields": {
+        "allocation_word": "0x00000000",
+        "refcount": -1,
+        "reserved_padding_word": 0,
+        "signed_data_offset": 2976,
+        "size_bytes": 16
+      },
+      "descriptor_file_offset": 4477536,
+      "descriptor_raw_hex": "ffffffff100000000000000000000000a00b000000000000",
+      "descriptor_va": "0x445260",
+      "string_index": 0,
+      "text": "AppUpgradeEngine"
+    },
+    "header_file_offset": 4474720,
+    "header_raw_words": [
+      7,
+      0,
+      0,
+      0,
+      85,
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7
+    ],
+    "header_va": "0x444760",
+    "header_word_count": 14,
+    "method": {
+      "absolute_method_index": null,
+      "argument_count": 0,
+      "declaration": "void copyWhatsNewFiles()",
+      "declared_in_selected_metaobject": true,
+      "flags": {
+        "access": "public",
+        "cloned": false,
+        "compatibility": false,
+        "const": false,
+        "method_type": "slot",
+        "raw": 10,
+        "raw_hex": "0x0000000a",
+        "revisioned": false,
+        "scriptable": false
+      },
+      "index_scope": "local-to-declaring-metaobject",
+      "index_scope_basis": "selected revision-7 row; QMetaObject::methodOffset and inheritance context are required for an absolute method index",
+      "local_index": 60,
+      "name": {
+        "data_file_offset": 4482089,
+        "data_va": "0x446429",
+        "descriptor_fields": {
+          "allocation_word": "0x00000000",
+          "refcount": -1,
+          "reserved_padding_word": 0,
+          "signed_data_offset": 2321,
+          "size_bytes": 17
+        },
+        "descriptor_file_offset": 4479768,
+        "descriptor_raw_hex": "ffffffff1100000000000000000000001109000000000000",
+        "descriptor_va": "0x445b18",
+        "string_index": 93,
+        "text": "copyWhatsNewFiles"
+      },
+      "parameter_record": {
+        "file_offset": 4477212,
+        "raw_words": [
+          43
+        ],
+        "va": "0x44511c",
+        "word_count": 1,
+        "word_interval": {
+          "end_exclusive": 624,
+          "start": 623
+        },
+        "word_offset": 623
+      },
+      "parameters": [],
+      "raw_words": [
+        93,
+        0,
+        623,
+        2,
+        10
+      ],
+      "return_type": {
+        "encoding": "built-in",
+        "metatype_id": 43,
+        "name": "void",
+        "raw_word": 43
+      },
+      "row_file_offset": 4475976,
+      "row_va": "0x444c48",
+      "signal_number": null,
+      "signature": "copyWhatsNewFiles()",
+      "tag": {
+        "data_file_offset": 4480542,
+        "data_va": "0x445e1e",
+        "descriptor_fields": {
+          "allocation_word": "0x00000000",
+          "refcount": -1,
+          "reserved_padding_word": 0,
+          "signed_data_offset": 2958,
+          "size_bytes": 0
+        },
+        "descriptor_file_offset": 4477584,
+        "descriptor_raw_hex": "ffffffff0000000000000000000000008e0b000000000000",
+        "descriptor_va": "0x445290",
+        "string_index": 2,
+        "text": ""
+      }
+    },
+    "method_count": 85,
+    "method_row_word_count": 5,
+    "method_table_file_offset": 4474776,
+    "method_table_va": "0x444798",
+    "method_table_word_offset": 14,
+    "revision": 7,
+    "signal_count": 7
+  },
+  "request": {
+    "local_method_index": 60,
+    "metadata_va": "0x444760",
+    "stringdata_va": "0x445260"
+  },
+  "schema_version": 2,
+  "tool": {
+    "name": "qt5-metaobject-rev7",
+    "version": "1.1.0"
+  }
+}

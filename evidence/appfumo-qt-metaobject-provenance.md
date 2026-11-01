@@ -19,9 +19,14 @@ The metadata binding and machine-code forwarding are separately established:
   copies `a[1]` to the `encFile` local passed in `%rdx`, copies `a[2]` to the
   `destPath` local passed in `%rcx`, calls `0x100b30`, and writes the returned
   `QString` to `a[0]` when non-null;
-- **complete producer provenance — unresolved:** a bounded direct-reference scan
-  does not enumerate dynamic Qt meta-invocation, indirect calls, or external
-  paths and therefore cannot prove complete producer absence.
+- **selected direct producer family — resolved in follow-up:** exact local row 60
+  binds `copyWhatsNewFiles()` to FDE entry `0x101110`; the three implementation-
+  internal calls `0x10281c`, `0x102de9`, and `0x103398` are now classified by
+  branch and pathname producer in
+  [`appfumo-decryption-runtime-provenance.md`](appfumo-decryption-runtime-provenance.md);
+- **complete producer provenance — unresolved:** the bounded direct-reference
+  scan does not enumerate dynamic Qt meta-invocation, indirect calls, or
+  external paths and therefore cannot prove complete producer absence.
 
 Index 64 is the **local row index in the selected `AppUpgradeEngine`
 meta-object**, so the method is declared in that selected meta-object. It is not
@@ -31,9 +36,12 @@ an input to this package. It is not signal number 64. The metadata header's
 signal count is **7**; the selected row's slot flags independently classify it
 as a slot rather than a signal.
 
-This result narrows the parameterized verifier call at `0x100bb0`. It does not
-establish runtime invocation, external or D-Bus reachability, attacker control,
-update acceptance, root, or persistence.
+This result narrows the parameterized verifier call at `0x100bb0`. A separate
+hash-bound public log now records runtime `decryptionFile` activity on an
+unidentified installed build, but it does not identify that build with this ELF
+or distinguish direct from meta-call dispatch. Neither evidence set establishes
+external or D-Bus reachability, attacker control, update acceptance, root, or
+persistence.
 
 ## Exact identity and retained package
 
@@ -160,8 +168,15 @@ negative observation does not exclude:
   direct-reference inventory;
 - object registration, adaptor behavior, policy, and runtime reachability.
 
-Accordingly producer provenance remains `unresolved`; runtime invocation,
-external reachability, and attacker control remain unknown.
+Follow-up exact-static analysis resolves these three direct sites as branches
+inside `copyWhatsNewFiles()` and classifies their argument producers: top-level
+`.whatsnew.tar.gz`, enumerated system-tree files, and enumerated controls-tree
+files, all on the nonzero encryption-mode branch. The generated `0x16e030` edge
+remains separate. This still does not make the scan complete for dynamic or
+indirect dispatch. Accordingly complete producer provenance remains
+`unresolved`; exact-ELF runtime invocation, external reachability, and attacker
+control remain unknown. See
+[`appfumo-decryption-runtime-provenance.md`](appfumo-decryption-runtime-provenance.md).
 
 ## D-Bus claim boundary
 
@@ -256,7 +271,9 @@ call is at `0x100bb0`.
 The package does **not** resolve complete producer provenance. It also leaves
 unknown:
 
-- actual runtime invocation and argument values;
+- runtime invocation of this exact recovered ELF and complete argument values
+  (the separate public log observes normalized path classes on a build whose
+  binary identity is unavailable);
 - external, IPC, D-Bus, UI, update-state, or service reachability;
 - attacker influence over `encFile`, `destPath`, object construction, or call
   timing;

@@ -1,0 +1,539 @@
+{
+  "identity_and_mechanism": {
+    "exact_elf_sha256_for_separate_static_evidence": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "invocation_mechanism_status": "unknown_log_does_not_distinguish_direct_meta_or_indirect_dispatch",
+    "logged_build_equals_exact_elf_status": "unknown",
+    "logged_build_identity_status": "unknown_no_binary_identity_in_log"
+  },
+  "input": {
+    "expected_sha256_status": "matched",
+    "mode": "expected-public-log",
+    "sha256": "84d5bb69270dd610b132c8950c31dd98adad844c5a2c108b4df617381685de86",
+    "size_bytes": 2106504
+  },
+  "observation": {
+    "copy_context_status_counts": {
+      "matched_copyWhatsNewFiles_context": 7
+    },
+    "copy_whats_new_files_record_count": 49,
+    "decryption_file_record_count": 7,
+    "destination_path_classes": [
+      {
+        "class": "update_whatsnew_temp_archive",
+        "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+      }
+    ],
+    "events": [
+      {
+        "context": {
+          "records": [
+            {
+              "line": 1410,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "05-31-24 13:53:46:667"
+            },
+            {
+              "line": 1411,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "05-31-24 13:53:46:672"
+            },
+            {
+              "line": 1412,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "05-31-24 13:53:46:674"
+            },
+            {
+              "line": 1413,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "05-31-24 13:53:46:676"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 1415,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "05-31-24 13:53:51:174"
+            },
+            {
+              "count": 8,
+              "line": 1416,
+              "record": "count_system",
+              "timestamp": "05-31-24 13:53:53:349"
+            },
+            {
+              "count": 0,
+              "line": 1417,
+              "record": "count_control",
+              "timestamp": "05-31-24 13:53:54:207"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 1414,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "05-31-24 13:53:48:659"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 1694,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "05-31-24 13:54:11:601"
+            },
+            {
+              "line": 1696,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "05-31-24 13:54:11:602"
+            },
+            {
+              "line": 1698,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "05-31-24 13:54:11:605"
+            },
+            {
+              "line": 1701,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "05-31-24 13:54:11:608"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 1711,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "05-31-24 13:54:13:885"
+            },
+            {
+              "count": 8,
+              "line": 1712,
+              "record": "count_system",
+              "timestamp": "05-31-24 13:54:15:482"
+            },
+            {
+              "count": 0,
+              "line": 1713,
+              "record": "count_control",
+              "timestamp": "05-31-24 13:54:16:178"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 1710,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "05-31-24 13:54:12:657"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 7264,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "06-02-24 17:24:53:221"
+            },
+            {
+              "line": 7266,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "06-02-24 17:24:53:224"
+            },
+            {
+              "line": 7269,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "06-02-24 17:24:53:229"
+            },
+            {
+              "line": 7272,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "06-02-24 17:24:53:247"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 7280,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "06-02-24 17:24:56:730"
+            },
+            {
+              "count": 8,
+              "line": 7281,
+              "record": "count_system",
+              "timestamp": "06-02-24 17:24:58:446"
+            },
+            {
+              "count": 0,
+              "line": 7282,
+              "record": "count_control",
+              "timestamp": "06-02-24 17:24:59:000"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 7279,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "06-02-24 17:24:55:243"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 11710,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "08-12-24 16:24:42:313"
+            },
+            {
+              "line": 11711,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "08-12-24 16:24:42:314"
+            },
+            {
+              "line": 11712,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "08-12-24 16:24:42:315"
+            },
+            {
+              "line": 11713,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "08-12-24 16:24:42:317"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 11715,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "08-12-24 16:24:45:534"
+            },
+            {
+              "count": 8,
+              "line": 11716,
+              "record": "count_system",
+              "timestamp": "08-12-24 16:24:47:211"
+            },
+            {
+              "count": 0,
+              "line": 11717,
+              "record": "count_control",
+              "timestamp": "08-12-24 16:24:47:879"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 11714,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "08-12-24 16:24:43:310"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 11960,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "08-12-24 16:25:36:684"
+            },
+            {
+              "line": 11962,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "08-12-24 16:25:36:686"
+            },
+            {
+              "line": 11965,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "08-12-24 16:25:36:689"
+            },
+            {
+              "line": 11967,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "08-12-24 16:25:36:708"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 11976,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "08-12-24 16:25:38:587"
+            },
+            {
+              "count": 8,
+              "line": 11977,
+              "record": "count_system",
+              "timestamp": "08-12-24 16:25:39:948"
+            },
+            {
+              "count": 0,
+              "line": 11978,
+              "record": "count_control",
+              "timestamp": "08-12-24 16:25:40:577"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 11975,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "08-12-24 16:25:37:403"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 17189,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "08-13-24 16:49:50:599"
+            },
+            {
+              "line": 17191,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "08-13-24 16:49:50:600"
+            },
+            {
+              "line": 17193,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "08-13-24 16:49:50:603"
+            },
+            {
+              "line": 17195,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "08-13-24 16:49:50:606"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 17206,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "08-13-24 16:49:54:229"
+            },
+            {
+              "count": 8,
+              "line": 17207,
+              "record": "count_system",
+              "timestamp": "08-13-24 16:49:55:611"
+            },
+            {
+              "count": 0,
+              "line": 17208,
+              "record": "count_control",
+              "timestamp": "08-13-24 16:49:56:106"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 17205,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "08-13-24 16:49:52:234"
+      },
+      {
+        "context": {
+          "records": [
+            {
+              "line": 21698,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_systemdir",
+              "timestamp": "09-12-24 16:45:05:354"
+            },
+            {
+              "line": 21700,
+              "normalized_path": "/media/usb/{slot}/{volume}/whatsnew/whatsnew_controls",
+              "path_class": "removable_usb_whatsnew_tree",
+              "record": "s_package_controlsdir",
+              "timestamp": "09-12-24 16:45:05:357"
+            },
+            {
+              "line": 21703,
+              "normalized_path": "/update/whatsnew/whatsnew_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_systemdir",
+              "timestamp": "09-12-24 16:45:05:360"
+            },
+            {
+              "line": 21706,
+              "normalized_path": "/update/whatsnew/whatsnew_controls_new",
+              "path_class": "update_whatsnew_destination_tree",
+              "record": "s_whatsnew_controlsdir",
+              "timestamp": "09-12-24 16:45:05:379"
+            },
+            {
+              "destination": {
+                "class": "update_whatsnew_temp_archive",
+                "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+              },
+              "line": 21714,
+              "record": "archive_transfer",
+              "source": {
+                "class": "removable_usb_whatsnew_archive",
+                "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+              },
+              "timestamp": "09-12-24 16:45:10:492"
+            },
+            {
+              "count": 8,
+              "line": 21715,
+              "record": "count_system",
+              "timestamp": "09-12-24 16:45:11:784"
+            },
+            {
+              "count": 0,
+              "line": 21716,
+              "record": "count_control",
+              "timestamp": "09-12-24 16:45:12:290"
+            }
+          ],
+          "status": "matched_copyWhatsNewFiles_context"
+        },
+        "destination": {
+          "class": "update_whatsnew_temp_archive",
+          "normalized": "/update/whatsnew/temp/.whatsnew.tar.gz"
+        },
+        "line": 21713,
+        "source": {
+          "class": "removable_usb_whatsnew_archive",
+          "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+        },
+        "timestamp": "09-12-24 16:45:08:601"
+      }
+    ],
+    "runtime_invocation_status": "observed_in_supplied_log",
+    "source_path_classes": [
+      {
+        "class": "removable_usb_whatsnew_archive",
+        "normalized": "/media/usb/{slot}/{volume}/.whatsnew.tar.gz"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "tool": {
+    "name": "appfumo-decryption-log-model",
+    "version": "1.0.0"
+  },
+  "unknowns": [
+    "binary identity of the AppUpgrade build that wrote the log",
+    "whether the logged build equals the separately recovered exact ELF",
+    "whether any logged invocation used a direct call, generated Qt meta-call, or another mechanism",
+    "external or D-Bus reachability",
+    "attacker control of either pathname or invocation timing",
+    "update acceptance, effective privilege, root, and persistence"
+  ]
+}

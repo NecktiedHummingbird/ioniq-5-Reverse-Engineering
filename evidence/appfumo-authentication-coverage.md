@@ -98,7 +98,7 @@ A whole-`.text` direct-call scan of the exact ELF found six calls to `0x45820`:
 | `0x80095` | `[0x7fe40,0x80595)` | `%1/HU/firmware/update.tar.gz` firmware archive |
 | `0x802f0` | `[0x7fe40,0x80595)` | `QFileInfo::absoluteFilePath()` from firmware-directory enumeration |
 | `0x9d1d2` | `[0x9cbc0,0x9e260)` | caller-assembled input; complete producer set not bounded here |
-| `0x100bb0` | `[0x100b30,0x10110c)` | `AppUpgradeEngine::decryptionFile(QString encFile, QString destPath)` verifier input; generated local metadata row 64 forwards `a[1]` as `encFile` and `a[2]` as `destPath`, while complete producers remain unresolved |
+| `0x100bb0` | `[0x100b30,0x10110c)` | `AppUpgradeEngine::decryptionFile(QString encFile, QString destPath)` verifier input; generated local row 64 forwards `a[1]`/`a[2]`, and three direct calls in row-60 `copyWhatsNewFiles()` FDE `[0x101110,0x104c1b)` now resolve archive/system/control producer families; complete dynamic/indirect/external producers remain unresolved |
 | `0x140092` | `[0x140030,0x1405da)` | parameterized navigation verify/decryption input; immediate caller traced, complete upstream producer set not bounded here |
 
 The descriptor path is itself conditional: one branch calls the verifier at
@@ -113,12 +113,24 @@ generated dispatcher now resolve `0x16e030` as local `AppUpgradeEngine` metadata
 row 64, `QString decryptionFile(QString encFile, QString destPath)`: `a[1]` is copied
 to the `%rdx` `encFile` local, `a[2]` to the `%rcx` `destPath` local, and the
 QString result is assigned to `a[0]`. This names one forwarding edge but does not
-bound its dynamic meta-invokers or argument producers. The retained artifacts
+bound its dynamic meta-invokers or argument producers. Follow-up exact-static analysis binds local row 60
+`void copyWhatsNewFiles()` through generated call `0x16e59f` to FDE entry
+`0x101110`; all three direct calls at `0x10281c`, `0x102de9`, and `0x103398`
+are in that FDE. They receive, respectively, enumerated system-tree paths, the
+branch-selected package-base `.whatsnew.tar.gz` and fixed update-temp archive,
+and enumerated controls-tree paths. The common nonzero mode branch selects
+`decryptionFile`; normal and USB-in-OTA destination suffix constants are
+resolved. Generated row-64 call `0x16e030` remains separate.
+
+A hash-bound public log separately records seven runtime invocations in
+`copyWhatsNewFiles` temporal context, but contains no installed-binary identity
+and cannot identify direct versus meta-call dispatch. The retained artifacts
 therefore keep complete target-producer classification incomplete. Virtual and
 indirect calls, dynamic Qt meta-invocation, and external-service behavior are
 also not silently treated as absent. Row 64 is not asserted as an absolute
 method index; `methodOffset()` and inheritance context would be required. See
-`evidence/appfumo-qt-metaobject-provenance.md`.
+`evidence/appfumo-qt-metaobject-provenance.md` and
+`evidence/appfumo-decryption-runtime-provenance.md`.
 
 ## Complete direct-call inventory for file MD5
 
@@ -204,9 +216,10 @@ verifier targets remain parameterized and incompletely traced. These also remain
 unresolved:
 
 - complete producer provenance for the parameterized signature-verifier targets;
-  local `AppUpgradeEngine` metadata row 64 is now named and its argument
-  forwarding is resolved, but dynamic meta-invokers and upstream producers
-  remain unbounded;
+  local `AppUpgradeEngine` rows 60 and 64 now bind the selected direct
+  `copyWhatsNewFiles()` producers and generated `decryptionFile` forwarding,
+  but dynamic meta-invokers, indirect/external paths, and complete upstream
+  producers remain unbounded;
 - indirect and virtual call targets not statically resolved by the direct-call
   inventory;
 - all consumers of the four additional
