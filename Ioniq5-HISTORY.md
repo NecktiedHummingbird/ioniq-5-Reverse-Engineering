@@ -3161,3 +3161,12 @@ and are superseded by corrections rather than silently rewritten.
   quietly left standing.
 - Two of my last three hypotheses have now been killed by my own measurements. That is the process working, however
   it feels.
+
+## 2026-10-31 — knowing when to stop building instruments
+
+- With a validated setup the answer was still no: no shared-memory file, no device socket, and the buses already proven
+  reachable. Two mechanisms are now excluded by evidence instead of argument, which is progress of the durable kind.
+- The instruction to stop matters as much as the result. Each new instrument for this question has first been wrong in a
+  subtle way, and the cost of discovering that has exceeded what the question is worth today.
+- What remains is bounded and nameable, and the next attempt should be a full syscall trace or vendor source, not another
+  experiment of my own design.

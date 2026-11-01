@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.90.0 - boot-info attach: file-backed and D-Bus both eliminated; stopping the instrument loop
+
+- Re-ran the `openat` trace with conditions **verified** rather than assumed: system bus actually running
+  (`/run/dbus/system_bus_socket` present), compositor up, and `ApplicationManager` demonstrably reaching `initBootInfo`
+  (`attach fail` and retry 1 at `00:00:12`). Result: **22 traced calls, no `qipc_sharedmemory_*`, no `/dev/shm/*`**.
+- Combined with the earlier run where both bus connects returned `0`, that eliminates **both** candidates this thread has
+  been testing: not a D-Bus reachability problem, not a Qt key-file shared-memory attach.
+- **Stopping the instrument loop deliberately.** Three instruments were built for this question and each was first
+  invalid in a way I had to discover: a process that exited early, a trace that captured three lines, and a run with no
+  bus at all. The next honest step is a **full untargeted `strace -f`** in this validated setup, or vendor source —
+  not another variant of a shim.
+- V-036's cause therefore remains **unresolved but tightly bounded**: `ApplicationManager` needs an object supplied by a
+  component that never runs in this projection, and the two obvious mechanisms have been excluded by measurement.
+
 ## 1.89.0 - D-Bus eliminated; the earlier openat trace withdrawn as invalid
 
 - Traced `ApplicationManager` inside the **systemd** boot, where the bus exists. Connections **succeed**:

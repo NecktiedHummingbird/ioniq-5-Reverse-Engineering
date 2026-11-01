@@ -841,9 +841,18 @@ vulnerability is claimed, and this test does not move either entry.
 - **My earlier `openat` trace was invalid and is withdrawn.** It produced only 15 calls because `ApplicationManager`
   exited almost immediately in that configuration — the trace recorded a process that never reached the code of interest.
   Using it to conclude "the attach is not file-backed" was the same mistake as reading a zero from an unreached path.
-- **Next task, now correctly scoped:** repeat the `openat` trace **inside the systemd boot with the compositor up**, where
-  `ApplicationManager` demonstrably reaches `initBootInfo`, and look for `qipc_sharedmemory_*`. That is the measurement
-  that can actually answer whether this attach is file-backed.
+- **File-backed attach eliminated under a validated instrument.** The trace was repeated with conditions verified rather
+  than assumed: a system bus actually running (`/run/dbus/system_bus_socket` present), the compositor up, and
+  `ApplicationManager` demonstrably reaching `initBootInfo` (its log shows `attach fail` and retry 1 at `00:00:12`).
+  Result: **22 traced `openat` calls and no `qipc_sharedmemory_*` and no `/dev/shm/*` path**.
+- Combined with the earlier run in which both bus connections succeeded, that eliminates **both** candidates this thread
+  has been testing: it is not a D-Bus reachability problem, and it is not a Qt key-file shared-memory attach. What
+  remains is either an object created by a component that never runs in this projection, or an in-process condition —
+  neither of which `openat` or `connect` will show.
+- **Where this stops, deliberately.** Three instruments have now been built for this one question and each was first
+  invalid in a way that had to be discovered (a process that exited early, a trace that captured three lines, a run with
+  no bus at all). The next honest step is not another variant but a **full syscall trace** (`strace -f` untargeted) in
+  this validated setup, or vendor source. Continuing to guess at instruments has cost more than it has returned.
 
 ## Rejected / out-of-scope items
 
