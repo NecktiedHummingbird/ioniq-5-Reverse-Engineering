@@ -404,6 +404,48 @@ followed by stateful service/CAN/persistence reconstruction.
 - The recovered policy permits the floor label and 22 named `App::*` labels to write an object labelled `App::upgrade`, but staged object/directory labels, DAC metadata, process uid/gid/labels, loaded rules and update serialization remain runtime gates. Actor write access and V-031 substitution remain unproved.
 - Extended `tools/uk_fw/bench_state_bundle.py` to capture `/update` namespace metadata, complete process uid/gid sets plus supplementary groups, and read-only `SMACK64`/`SMACK64EXEC` results for source/trust paths. Absent paths, absent attributes, unavailable provider, query errors, malformed labels and successes remain distinct. Focused validation passed `23 tests, 20 subtests`; the full suite passed `556 tests, 148497 subtests`; the public harness passed; corrected independent review returned **ACCEPT**. See `evidence/update-source-runtime-policy.md`.
 
+## AppFUMO exact shell-boundary checkpoint — 2026-11-08
+
+- Exact embedded ELF identity remains SHA-256
+  `464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7`,
+  size `5,066,264`, Build ID `863a8730e66a1c5245a1bf458fe2554adee0351a`.
+  Homebrew LLVM `.eh_frame` binds `decryptionFile` to
+  `[0x100b30,0x10110c)` and its direct command-helper target to separate FDE
+  `[0x1397c0,0x1398fb)`.
+- The exact split QString chain uses fixed helper, UUID-derived `/tmp` key
+  pathname, incoming `encFile`, and incoming `destPath`. The pathname arguments
+  occupy command fields without an observed quote/escape/filter step.
+  `0x100e0c` calls the shared helper, which appends fixed stderr redirection,
+  converts to bytes, and calls `popen` at `0x139867` with read mode. Under the
+  libc interface this supplies shell interpretation.
+- The helper drains output through a `0x200`-byte `fgets` buffer, does not
+  accumulate it, calls `pclose` at `0x1398b0`, and ignores its status. The
+  neighboring output-accumulating helper begins at `0x139900` and has its own
+  FDE; it is not an alternate entry. After the call, `decryptionFile` removes
+  the transient key, calls `sync`, and returns `destPath` without helper-status,
+  destination-existence, or size checks. Its only ordinary fixed-failure returns
+  precede the sink.
+- Corrected literal provenance: full templates at `0x20b500` and `0x20b530`
+  are selected by object byte `+0x22` in separate FDE `[0x60ac0,0x6178f)`, which
+  calls the same shared helper and later checks destination existence/size. They
+  are not the split templates referenced by `decryptionFile`. Prior direct
+  producer calls `0x10281c`, `0x102de9`, `0x103398` remain in
+  `copyWhatsNewFiles()`; generated row-64 call `0x16e030` remains separate.
+- Added bounded exact evidence, `evidence/appfumo-shell-command-boundary.md`, a
+  strict Boolean-only tri-state model, and focused tests. Pre-recorded output
+  establishes exact unquoted shell-sink structure while leaving pathname
+  influence, shell-character survival, invocation, authentication acceptance,
+  process security context, command success, privilege/domain amplification,
+  root, and persistence independently `null`. Static artifact SHA-256 is
+  `a6bbe8e74630e7a64001a8bad2b5f67846f465473612a14e8bccf3aad47c5510`;
+  deterministic default report SHA-256 is
+  `7702f40e87033dfb9bbb271b3615c0ec5212d17c16c3965b151306e62b38bfc3`.
+- Validation status is retained in
+  `docs/agent-work/appfumo-shell-boundary/CHECKPOINT.md`. No target, recovered
+  executable/helper, archive/update, operational shell payload/trigger,
+  signature bypass, privilege action, root action, or persistence mechanism was
+  executed or created.
+
 ## AppFUMO decryption producer/runtime provenance checkpoint — 2026-11-03
 
 - Exact local `AppUpgradeEngine` row 60 is public slot `void copyWhatsNewFiles()`; generated row-60 case `0x16e59f` calls entry `0x101110`. Homebrew LLVM `.eh_frame` places selected direct calls `0x10281c`, `0x102de9`, and `0x103398` in the same FDE `[0x101110,0x104c1b)`, so all three belong to that implementation.

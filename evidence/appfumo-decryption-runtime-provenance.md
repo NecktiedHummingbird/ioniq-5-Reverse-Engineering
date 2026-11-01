@@ -159,6 +159,33 @@ make the prior bounded textual direct-reference scan complete for dynamic,
 indirect, reflective, queued, virtual, external-process, or cross-library
 invocation.
 
+## Exact downstream shell boundary
+
+A separate bounded review now follows the selected inputs through
+`decryptionFile` FDE `[0x100b30,0x10110c)`. The exact split QString construction
+substitutes the fixed helper, UUID-derived transient key pathname, incoming
+`encFile`, and incoming `destPath`; `encFile` and `destPath` occupy shell-command
+fields without an observed quoting or escaping operation. Direct call
+`0x100e0c` reaches shared helper FDE `[0x1397c0,0x1398fb)`, which appends fixed
+stderr redirection, converts to bytes, and calls `popen` at `0x139867` with read
+mode. Under the libc interface contract this is shell interpretation. The helper
+drains and discards output, calls `pclose`, and ignores its status. The adjacent
+output-accumulating code at `0x139900` has a distinct FDE and is not an alternate
+entry.
+
+After the helper, `decryptionFile` removes its transient key, calls `sync`, and
+returns `destPath` without using process status or checking destination
+existence/size. Similar full command templates at `0x20b500` and `0x20b530`,
+plus later destination checks, are referenced by separate FDE
+`[0x60ac0,0x6178f)` and must not be attributed to `decryptionFile`. See
+[`appfumo-shell-command-boundary.md`](appfumo-shell-command-boundary.md).
+
+This advances the consumer boundary only. The producer results above and the
+public-log observations below do not prove pathname influence,
+shell-sensitive-character survival, exact-ELF runtime invocation,
+authentication acceptance, process uid/capabilities/SMACK domain, command
+success, privilege/domain amplification, root, or persistence.
+
 ## Public-log observation
 
 Source:

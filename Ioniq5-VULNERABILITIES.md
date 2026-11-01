@@ -821,10 +821,17 @@ vulnerability is claimed, and this test does not move either entry.
 - **`ApplicationManager` contains no literal boot-info segment key.** Its strings show no `BOOTINFO*` name, so if it
   attaches shared memory the key is composed at runtime — which is why the zero payload's *shape* may be irrelevant and
   the missing object is the real fault.
-- **Next task, corrected and now concrete:** run `ApplicationManager` under `strace -f -e trace=openat` and capture which
-  `qipc_sharedmemory_*` paths it opens. The same technique produced the exact segment names for `AppHomeScreen` after
-  guessing had failed, and it would tell us precisely what to create. Then the payload question resolves itself — we
-  would be filling a structure the client told us the name of.
+- **The `openat` trace came back empty of qipc paths, which is itself informative.** Running `ApplicationManager`
+  detached under `strace -f -e trace=openat` while it reached the same failure (`initBootInfo attach fail`, retries 1–2)
+  produced only **15 traced calls and no `qipc_sharedmemory_*` path at all**. So this attach is **not file-backed**: it
+  is not the Qt key-file mechanism that `AppHomeScreen` used, and the technique that solved the earlier problem does
+  not apply unchanged.
+- That points at either a direct **`shmget`/`shmat`** with a key the process derives itself, or a **D-Bus** call — neither
+  of which `openat` observes.
+- **Next task, corrected again:** trace the syscalls that would show it —
+  `strace -f -e trace=shmget,shmat,shmdt,socket,connect,sendmsg,recvmsg` — on `ApplicationManager` while it fails. One of
+  those will name the object: a SysV key if it is shared memory, or the service and member if it is D-Bus. Guessing has
+  now been tried and failed twice here; this is the instrument that would actually show it.
 
 ## Rejected / out-of-scope items
 

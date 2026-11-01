@@ -3,6 +3,18 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.87.0 - the attach is not file-backed: openat shows no qipc path
+
+- Ran `ApplicationManager` detached under `strace -f -e trace=openat` while it reached its usual failure
+  (`initBootInfo attach fail`, retries 1–2). The trace contains **15 calls and no `qipc_sharedmemory_*` path**.
+- So this attach is **not** the Qt key-file mechanism that `AppHomeScreen` used, and the technique that produced six
+  correct segment names earlier does not transfer. It is either a direct **`shmget`/`shmat`** with a self-derived key,
+  or a **D-Bus** call — and `openat` sees neither.
+- **Corrected next step:** trace `shmget,shmat,shmdt,socket,connect,sendmsg,recvmsg`. One of those names the object
+  directly: a SysV key if it is shared memory, or the service and member if it is D-Bus.
+- Recorded because it is the second time in this thread that a technique which worked on one binary did not work on
+  another, and the difference is worth stating rather than assuming.
+
 ## 1.86.0 - V-036 cause narrowed: length gate passes, so the fault is downstream
 
 - Read the validation block properly. `cmpl $0x1c, 0x4(%rax)` compares a **length** against 28 and leaves early only on

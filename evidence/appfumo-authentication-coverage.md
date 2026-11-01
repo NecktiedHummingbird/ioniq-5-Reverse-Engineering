@@ -128,9 +128,26 @@ and cannot identify direct versus meta-call dispatch. The retained artifacts
 therefore keep complete target-producer classification incomplete. Virtual and
 indirect calls, dynamic Qt meta-invocation, and external-service behavior are
 also not silently treated as absent. Row 64 is not asserted as an absolute
-method index; `methodOffset()` and inheritance context would be required. See
-`evidence/appfumo-qt-metaobject-provenance.md` and
-`evidence/appfumo-decryption-runtime-provenance.md`.
+method index; `methodOffset()` and inheritance context would be required.
+
+Follow-up exact-static analysis bounds the command consumer inside
+`decryptionFile`: its split QString templates substitute the fixed helper,
+UUID-derived transient key pathname, `encFile`, and `destPath`; the two pathname
+arguments are inserted without an observed quoting/escaping step; and direct
+call `0x100e0c` reaches shared helper FDE `[0x1397c0,0x1398fb)`. That helper
+appends fixed stderr redirection and calls `popen` at `0x139867` in read mode,
+which supplies shell interpretation under the libc contract. It drains and
+discards output, ignores `pclose` status, and returns no result. The neighboring
+output-accumulating helper at `0x139900` has a separate FDE. After the sink,
+`decryptionFile` removes the transient key, syncs, and returns `destPath` without
+checking helper status or destination existence/size. Similar full templates at
+`0x20b500`/`0x20b530` and subsequent file checks belong to separate FDE
+`[0x60ac0,0x6178f)`, not `decryptionFile`. This proves exact unquoted shell-sink
+structure, not pathname influence, character survival, reachability,
+authentication acceptance, command success, privilege, root, or persistence.
+See `evidence/appfumo-qt-metaobject-provenance.md`,
+`evidence/appfumo-decryption-runtime-provenance.md`, and
+`evidence/appfumo-shell-command-boundary.md`.
 
 ## Complete direct-call inventory for file MD5
 

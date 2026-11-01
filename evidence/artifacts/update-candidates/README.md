@@ -27,6 +27,22 @@ unknown; dynamic/indirect/external producer completeness and attacker control
 are not established. Assessment:
 [`../../appfumo-decryption-runtime-provenance.md`](../../appfumo-decryption-runtime-provenance.md).
 
+## AppFUMO exact shell boundary
+
+- [`appfumo-shell-boundary-exact-static.asm`](appfumo-shell-boundary-exact-static.asm):
+  bounded Homebrew LLVM FDE, literal, substitution, direct-call, `popen`, read,
+  close, return-path, and separate-function excerpts (SHA-256
+  `a6bbe8e74630e7a64001a8bad2b5f67846f465473612a14e8bccf3aad47c5510`).
+
+The exact `decryptionFile` FDE substitutes `encFile` and `destPath` into command
+fields without an observed quoting/escaping operation, then directly reaches a
+shared `popen` helper. Similar full templates and destination checks are retained
+as a separate-FDE correction, and the adjacent output-returning helper has its
+own FDE. This establishes static shell-sink structure, not pathname influence,
+character survival, runtime reachability, command success, privilege, root, or
+persistence. Assessment:
+[`../../appfumo-shell-command-boundary.md`](../../appfumo-shell-command-boundary.md).
+
 ## AppFUMO Qt 5 local meta-method 64
 
 - [`appfumo-qt-metaobject-exact-static.txt`](appfumo-qt-metaobject-exact-static.txt):

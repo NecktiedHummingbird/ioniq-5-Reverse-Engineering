@@ -3134,3 +3134,10 @@ and are superseded by corrections rather than silently rewritten.
   down, and the more likely culprit is a shared-memory object that does not exist rather than bytes that are wrong.
 - The next move is one this project has already used successfully: watch which qipc files the binary opens. Guessing
   produced six wrong segment names once; strace produced the right ones immediately.
+
+## 2026-10-31 — the tool that worked before was the wrong shape this time
+
+- openat found no qipc path because there is no file: ApplicationManager's boot-info attach is shm or D-Bus, and the file
+  tracing that cracked AppHomeScreen simply does not see it.
+- Recording the failure of a favourite technique is worth as much as recording its success — otherwise the next attempt
+  starts from the same wrong assumption I did.
