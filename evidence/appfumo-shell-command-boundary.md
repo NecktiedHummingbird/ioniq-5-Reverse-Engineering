@@ -201,6 +201,37 @@ All three direct calls are in `copyWhatsNewFiles()` FDE
 separate producer edge. The exact shell-boundary result does not complete dynamic
 Qt meta-invokers, indirect calls, external dispatch, or all upstream producers.
 
+The USB provenance review follows dispatcher `0x3a50..0x3b49`: exact
+`usb-automount` uses `/media/usb/<port>/<ID_FS_UUID-or-no-UUID-alternate>`, while
+label and model are separate D-Bus fields. Exact stock
+`./lib/libblkid.so.1.1.0` is SHA-256
+`56a6b8b7fd08dcec92a6c1ad84bc7a7cc44071f33c571339415e1cbf00d60701`,
+Build ID `c6f98d98cb2cbc2ff864167f37048233d90a8fef`.
+
+The VFAT/exFAT/NTFS/ext/UDF UUID-family negatives remain bounded to those
+constrained producers. ISO9660 is different: exact FDE
+`[0x1c4c0,0x1c654)` copies 16 raw modified/created-date bytes, tests only the
+all-ASCII-`'0'` case, and formats them through raw `%c` conversions at format
+`0x35368`. Version-matched util-linux v2.27.1 `iso9660.c` lines 110-151 has
+SHA-256 `601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
+Subsequent `blkid_safe_string` preserves allowed shell/path-sensitive byte
+classes, and the dispatcher places that UUID in the mount component. This
+establishes a static ISO9660 byte route to the automounter path.
+
+Label `$`/`?`/`/` preservation remains a separate non-path D-Bus fact, and the
+sanitized no-UUID word still has no useful shell-active effect. Exact
+AppDMClient callback-to-staging and AppUpgrade suffix edge `0x102de9` remain
+separate. Physical ISO9660 control, source acceptance/mount, installed delivery,
+the AppDMClient launch-argument/inner-AppUpgrade constructor bridge, and
+invocation of the relevant `decryptionFile` call with that path remain unknown.
+Those gates would establish only pre-auth delivery to the decryption input.
+Because verifier acceptance dominates command construction and `popen`, actual
+physical shell-sink delivery additionally requires authentication acceptance.
+Therefore this sink remains structurally unquoted without establishing physical
+shell-syntax delivery, command success, or arbitrary command execution. Command
+success and amplification remain route-generic observations rather than
+ISO9660-specific outcomes.
+
 ## Non-operational Boolean/tri-state model
 
 [`../tools/uk_fw/appfumo_shell_boundary_model.py`](../tools/uk_fw/appfumo_shell_boundary_model.py)

@@ -404,6 +404,88 @@ followed by stateful service/CAN/persistence reconstruction.
 - The recovered policy permits the floor label and 22 named `App::*` labels to write an object labelled `App::upgrade`, but staged object/directory labels, DAC metadata, process uid/gid/labels, loaded rules and update serialization remain runtime gates. Actor write access and V-031 substitution remain unproved.
 - Extended `tools/uk_fw/bench_state_bundle.py` to capture `/update` namespace metadata, complete process uid/gid sets plus supplementary groups, and read-only `SMACK64`/`SMACK64EXEC` results for source/trust paths. Absent paths, absent attributes, unavailable provider, query errors, malformed labels and successes remain distinct. Focused validation passed `23 tests, 20 subtests`; the full suite passed `556 tests, 148497 subtests`; the public harness passed; corrected independent review returned **ACCEPT**. See `evidence/update-source-runtime-policy.md`.
 
+## AppFUMO USB pathname-provenance checkpoint — 2026-11-01
+
+- First independent review returned **CHANGES_REQUIRED** with a P0 dispatcher
+  reversal. The corrected package follows dispatcher `0x3a50..0x3b49` instead
+  of carrying event-caller `r8/r9` directly into mount entry `0x4c00`.
+  `0x3a59` preserves UUID/alternate, `0x3a5e` label, `0x3a8d` model; the mount
+  branch remaps FS type to `rdx`, label to `rcx`, UUID/alternate to `r8`, model
+  to `r9`, then tail-jumps at `0x3b49`.
+- At mount entry, FS type becomes `rbx`, label `r15`, UUID/alternate `r13`, and
+  model stack `+8`. `0x4d16` pushes UUID/alternate as final `%s`, proving stock
+  `/media/usb/<port>/<UUID-or-alternate>`. Label and model are separate D-Bus
+  fields. This matches `evidence/vm-bringup/usb-root-vector-map.md`.
+- Canonical archive SHA-256 remains
+  `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`.
+  Direct extraction binds `./lib/libblkid.so.1.1.0` SHA-256
+  `56a6b8b7fd08dcec92a6c1ad84bc7a7cc44071f33c571339415e1cbf00d60701`,
+  Build ID `c6f98d98cb2cbc2ff864167f37048233d90a8fef`. It matches the reviewed
+  extracted copy. `usb-automount` remains SHA-256
+  `7db44d8e34fbece4d5b8ef4896a99239cb540a22d1d756335dde4bc219af3802`,
+  Build ID `20748cf9928ba155ac4201a33bb1e29e64ae9139`.
+- Second independent review returned **CHANGES_REQUIRED** with a P0 ISO9660
+  exception to the blanket UUID-family negative. Constrained VFAT/exFAT/NTFS/
+  ext/UDF forms remain negative, but exact libblkid `[0x1c4c0,0x1c654)` copies
+  16 raw modified/created-date bytes, checks only whether all equal ASCII `'0'`,
+  and formats raw `%c` values with format `0x35368`. Matching util-linux v2.27.1
+  `iso9660.c` lines 110-151 has SHA-256
+  `601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
+  UUID `blkid_safe_string` preserves allowed `$`/`?`/`/` byte classes, and the
+  dispatcher places them in the mount component. The ISO9660 static
+  parser/transform/path byte route is established; the combined filesystem-
+  metadata rejection is withdrawn.
+- Label preservation remains confined to a separate D-Bus field. The no-UUID
+  alternate still has no useful shell-active effect after serial sanitization
+  in the prefixed word. Physical ISO9660 source control, media acceptance and
+  successful mount remain unknown; no media/input example or arbitrary command
+  execution claim was created.
+- Exact per-binary edges remain separate: automounter D-Bus path output;
+  AppDMClient callback pathname to `this+0x128` and staging; AppUpgrade package
+  base plus `.whatsnew.tar.gz` at `0x102de9`, verifier, and unquoted sink. The
+  AppDMClient launch-argument/inner-AppUpgrade constructor bridge, installed
+  delivery, authentication, success, process context, privilege, root, and
+  persistence remain unknown.
+- Direct-call mapping remains corrected: `0x102de9` top-level package archive,
+  `0x10281c` enumerated system-tree, `0x103398` enumerated controls-tree.
+  Extraction QProcess operands exclude member names; member-name signature
+  binding remains unknown.
+- Third independent review returned **CHANGES_REQUIRED** only on sink-delivery
+  causality. The runtime gate now means invocation of the relevant
+  `decryptionFile` call with the delivered path, not generic AppUpgrade process
+  startup. Physical source + mount + cross-process bridge + relevant invocation
+  establishes only pre-auth decryption-input delivery. Overall physical
+  shell-sensitive sink delivery additionally requires authentication acceptance
+  because the verifier dominates command construction and `popen`.
+- Schema-v4 strict Boolean/tri-state model separates constrained-family
+  negatives, ISO9660 static byte route `true`, pre-auth physical
+  decryption-input delivery `null`, and actual authenticated shell-sink delivery
+  `null`. Command success still requires installed delivery, relevant
+  `decryptionFile` invocation, and authentication; command success and
+  amplification remain route-generic observations. Persistence stays
+  independent. Tests pin all model outputs, exhaustive formulas, the explicit
+  pre-auth-without-authentication case, ISO9660 exact binary rows/format bytes,
+  source hash, dispatcher rows, archive identities, and encoding-independent
+  output. Focused validation passed `18 tests`; retained artifact SHA-256 is
+  `932510a860b40cce280f217670cbf2c213e31b0a90008ac5c011c933cd584e8f`, and
+  frozen schema-v4 report SHA-256 is
+  `026b421772bd708c7f6ccec9200ed8fb47fee3307b1821415c3b9db516854aa3`.
+  Full details are recorded in the checkpoint.
+- Repository provenance: planning baseline `394e76a`, worker-open base `9955460`,
+  earlier concurrent heads `1c43670`, `72fd667`, and `4bb85f5`; current
+  concurrent `HEAD` is `e74d96c`. Prior failed worker attempts and corrected
+  staging deviation remain recorded. This P0 cycle used no delegation, staging,
+  commit, push, reset, or history rewrite; coordinator `PLAN.md` remains
+  immutable.
+- Fourth independent review returned **ACCEPT** for the corrected frozen package.
+  Focused validation passed `18 tests`; the required tests-scoped full suite
+  passed `712 tests, 351445 subtests`; `py_compile`, deterministic encoding,
+  exact-byte/hash, UTF-8/LF, and diff checks passed; the public harness passed
+  `pass=3 info=4 pending=0 blocked=0 fail=0`. Static/read-only analysis only: no
+  recovered target/helper execution, payload, media/input example, update,
+  trigger, D-Bus request, mount, target syscall, privilege action, root action,
+  or persistence action occurred.
+
 ## AppFUMO exact shell-boundary checkpoint — 2026-11-08
 
 - Exact embedded ELF identity remains SHA-256

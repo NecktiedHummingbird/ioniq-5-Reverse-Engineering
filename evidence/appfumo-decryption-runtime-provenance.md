@@ -180,11 +180,34 @@ plus later destination checks, are referenced by separate FDE
 `[0x60ac0,0x6178f)` and must not be attributed to `decryptionFile`. See
 [`appfumo-shell-command-boundary.md`](appfumo-shell-command-boundary.md).
 
-This advances the consumer boundary only. The producer results above and the
-public-log observations below do not prove pathname influence,
-shell-sensitive-character survival, exact-ELF runtime invocation,
-authentication acceptance, process uid/capabilities/SMACK domain, command
-success, privilege/domain amplification, root, or persistence.
+This advances the consumer boundary only. The corrected USB dispatcher proves
+that exact `usb-automount` places `ID_FS_UUID` or the serial/partition alternate,
+not label, in the mount pathname. Exact stock `./lib/libblkid.so.1.1.0` is
+SHA-256 `56a6b8b7fd08dcec92a6c1ad84bc7a7cc44071f33c571339415e1cbf00d60701`,
+Build ID `c6f98d98cb2cbc2ff864167f37048233d90a8fef`.
+
+Constrained VFAT/exFAT/NTFS/ext/UDF producer negatives remain. They cannot be
+generalized to ISO9660: exact `[0x1c4c0,0x1c654)` copies 16 raw date bytes,
+checks only the all-ASCII-`'0'` case, and uses raw `%c` format `0x35368`.
+Version-matched util-linux v2.27.1 `iso9660.c` lines 110-151 is SHA-256
+`601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
+`blkid_safe_string` preserves allowed shell/path-sensitive byte classes, and the
+dispatcher puts the resulting UUID in the mount component. The static ISO9660
+parser-to-mount-path byte route is therefore established. Label remains a
+separate non-path field, and the no-UUID sanitizer/context negative remains.
+
+Exact AppDMClient and AppUpgrade producer edges remain compatible with the
+hash-bound log class below, but physical ISO9660 control, media acceptance/mount,
+installed signal delivery, the AppDMClient launch-argument/inner-AppUpgrade
+constructor bridge, and invocation of the relevant `decryptionFile` call with
+that path remain unknown. Even if those pre-auth delivery gates were later
+established, verifier acceptance would still be required for command
+construction and `popen`; actual shell-sink delivery therefore includes that
+authentication gate. The observations do not establish end-to-end exact-ELF
+invocation, verifier acceptance, process uid/capabilities/SMACK domain, command
+success, arbitrary command execution, amplification, root, or persistence.
+Command success and amplification remain route-generic observations, not
+ISO9660-specific outcomes.
 
 ## Public-log observation
 

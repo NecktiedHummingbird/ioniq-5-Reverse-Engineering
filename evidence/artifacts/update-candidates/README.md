@@ -27,6 +27,45 @@ unknown; dynamic/indirect/external producer completeness and attacker control
 are not established. Assessment:
 [`../../appfumo-decryption-runtime-provenance.md`](../../appfumo-decryption-runtime-provenance.md).
 
+## AppFUMO USB pathname provenance
+
+- [`appfumo-usb-pathname-provenance-exact-static.asm`](appfumo-usb-pathname-provenance-exact-static.asm):
+  archive-member identities plus complete dispatcher, mount, shipped
+  systemd-udevd/libblkid, AppDMClient, and AppUpgrade excerpts (SHA-256
+  `932510a860b40cce280f217670cbf2c213e31b0a90008ac5c011c933cd584e8f`).
+
+The complete dispatcher proves that exact `usb-automount` uses `ID_FS_UUID` or
+the serial/partition no-UUID alternate—not `ID_FS_LABEL`—as the final
+`/media/usb/<port>/<component>`. Label and model are separate D-Bus fields.
+Exact stock `./lib/libblkid.so.1.1.0` is SHA-256
+`56a6b8b7fd08dcec92a6c1ad84bc7a7cc44071f33c571339415e1cbf00d60701`,
+Build ID `c6f98d98cb2cbc2ff864167f37048233d90a8fef`. Constrained
+VFAT/exFAT/NTFS/ext/UDF UUID-family negatives remain, but ISO9660 exact code
+`[0x1c4c0,0x1c654)` copies 16 raw date bytes, checks only the all-ASCII-`'0'`
+case, formats raw `%c` values at `0x35368`, and passes through UUID
+`blkid_safe_string`. The matching util-linux v2.27.1 `iso9660.c` lines 110-151
+has SHA-256
+`601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
+Allowed shell/path-sensitive byte classes can therefore reach the UUID mount
+component statically. Label preservation remains non-path, and the no-UUID
+sanitizer/context negative remains.
+
+Separate exact AppDMClient and AppUpgrade edges do not bind the AppDMClient
+launch argument to inner AppUpgrade's package-base constructor. Physical
+ISO9660 source control, media acceptance/mount, end-to-end installed delivery,
+and invocation of the relevant `decryptionFile` call with that path remain
+unknown. Those gates would establish only pre-auth decryption-input delivery;
+actual shell-sink delivery additionally requires authentication because the
+verifier dominates command construction and `popen`. Command success and
+amplification remain route-generic observations. Authentication acceptance,
+command success, privilege/domain, root, and persistence remain unknown;
+arbitrary command execution is not claimed. The
+post-extraction route remains structural: `0x10281c` is system-tree,
+`0x103398` controls-tree, and `0x102de9` top-level archive; decrypted-member-name
+signature binding remains unknown.
+Assessment:
+[`../../appfumo-usb-pathname-provenance.md`](../../appfumo-usb-pathname-provenance.md).
+
 ## AppFUMO exact shell boundary
 
 - [`appfumo-shell-boundary-exact-static.asm`](appfumo-shell-boundary-exact-static.asm):

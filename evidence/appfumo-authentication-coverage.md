@@ -149,6 +149,34 @@ See `evidence/appfumo-qt-metaobject-provenance.md`,
 `evidence/appfumo-decryption-runtime-provenance.md`, and
 `evidence/appfumo-shell-command-boundary.md`.
 
+The USB pathname-provenance result does not alter this authentication boundary.
+Complete dispatcher flow proves UUID/no-UUID alternate is the path component;
+label/model remain separate D-Bus fields. Exact stock
+`./lib/libblkid.so.1.1.0` is SHA-256
+`56a6b8b7fd08dcec92a6c1ad84bc7a7cc44071f33c571339415e1cbf00d60701`,
+Build ID `c6f98d98cb2cbc2ff864167f37048233d90a8fef`.
+
+The constrained UUID-family negatives remain, but ISO9660 exact code
+`[0x1c4c0,0x1c654)` formats 16 raw date bytes after only an all-ASCII-`'0'`
+test. util-linux v2.27.1 `iso9660.c` lines 110-151 is SHA-256
+`601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
+Subsequent safe-string handling preserves allowed shell/path-sensitive byte
+classes before dispatcher mount-path use. This establishes static byte
+provenance, while physical source control, media acceptance/mount, installed
+end-to-end delivery, and the AppDMClient launch-argument/inner-AppUpgrade bridge
+remain unknown. Label-path and no-UUID shell-active routes remain rejected.
+
+Even if the physical source, successful mount, cross-process pathname bridge,
+and invocation of the relevant `decryptionFile` call with that path were later
+observed, that would establish only pre-auth delivery to the decryption input.
+`decryptionFile` calls verifier `0x45820` at `0x100bb0`, rejects nonzero at
+`0x100bc3`, and only then constructs the command and reaches `popen`. Actual
+shell-sink delivery therefore additionally requires authentication acceptance.
+Static byte provenance establishes neither candidate acceptance, arbitrary
+command execution, a successful child command, process context, root, nor
+persistence. Command success and amplification remain route-generic
+observations rather than ISO9660-specific outcomes.
+
 ## Complete direct-call inventory for file MD5
 
 File-hash helper FDE `[0x140f50,0x1413e4)` receives a pathname in `%rdx`,
