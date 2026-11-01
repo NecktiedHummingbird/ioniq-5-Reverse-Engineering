@@ -3217,3 +3217,13 @@ and are superseded by corrections rather than silently rewritten.
   documents I maintain, tool sources tracked, binaries ignored.
 - The worktree also holds a parallel workstream's uncommitted edits, which I have left exactly alone and noted here so the
   record does not imply otherwise.
+
+## 2026-10-31 — the parser was never the whole story
+
+- Reading further into the same log produced the most useful line of the day: after failing the boot-info attach, the
+  client initialises a MICOM shared-memory region and reports its source pointer as NULL. The missing thing is a provider
+  of that region, not a nicer D-Bus payload.
+- That single line explains two earlier puzzles at once — why every payload variant was rejected, and why no qipc file was
+  ever opened. I had been looking for a file when the code wanted a pointer.
+- The narrower claim I was about to hand off would have sent the next person into the parser for a fault that lives one
+  layer below it.

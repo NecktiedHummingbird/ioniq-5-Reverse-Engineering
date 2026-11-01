@@ -3,6 +3,22 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.97.0 - reframed: the boot-info path ends in `initMicomShareMem() -> pszSrc NULL`
+
+- Read more of the same log with the peer answering. The sequence is:
+
+  `initBootInfo attach fail` → `retryCount 1/2/3` → `initBootInfo read error` → `askSoundSetupInfo():iface is VALID` →
+  `initMicomShareMem() -> Start` → **`initMicomShareMem() -> pszSrc NULL`**
+
+- That last line reframes the whole thread. `ApplicationManager` initialises a **MICOM shared-memory region** and finds
+  its **source pointer NULL**. So the object it needs is a **shared-memory region populated by the MICOM side**, not a
+  better D-Bus `ay` payload — which explains both why three payload variants were rejected and why no `qipc` file open
+  was ever observed: the region is consumed by pointer, and its provider never runs in this projection.
+- **"The 35 bytes are wrong" is therefore too narrow.** The accurate statement is that the boot-info path terminates with
+  no shared-memory source. The next task is to find that region's key or creation path — a provider, not a payload.
+- The oracle remains useful: `reply is VALID` would still be the signal that the D-Bus half is satisfied, so it should be
+  re-read once a region provider exists.
+
 ## 1.96.0 - integrity check after the long stretch: clean, and one caveat recorded
 
 - Verified at hand-off time, read-only:

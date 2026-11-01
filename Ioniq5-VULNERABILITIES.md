@@ -898,6 +898,22 @@ vulnerability is claimed, and this test does not move either entry.
   counterpart**, so the rejection path is silent rather than logged. Searching the disassembly for branches into the
   validity block at `0x258808` found **none**, which means it is reached by fall-through or a computed path rather than a
   direct conditional jump — so the deciding comparison is not adjacent to the message that reports it.
+- **A fuller read of the same log reframes the failure toward shared memory.** With the peer answering
+  (`AskSysBootinfo -> 35 bytes variant 0`), `ApplicationManager` logs in sequence:
+
+  `initBootInfo attach fail` → `retryCount : 1/2/3` → `initBootInfo read error`
+  → `askSoundSetupInfo():iface is VALID`
+  → `initMicomShareMem() -> Start`
+  → **`initMicomShareMem() -> pszSrc NULL`**
+
+  The last line is the informative one: after the boot-info attempt, `ApplicationManager` initialises a **MICOM shared
+  memory** region and finds its **source pointer NULL**. So the object it ultimately wants is a **shared-memory region
+  populated by the MICOM side**, and a D-Bus `ay` reply alone does not satisfy it — which explains why every payload
+  variant was rejected *and* why no `qipc` file open was ever seen: the region may be created by a component that never
+  runs here, and consumed by pointer rather than by name.
+- **Consequence:** the "35 bytes are wrong" reading is now too narrow. The more accurate statement is that the boot-info
+  path terminates in `initMicomShareMem` with no source, so what is missing is a **provider of that region**, not a
+  better D-Bus payload. Locating that region's key or creation path is the next concrete task.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty
