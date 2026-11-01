@@ -97,8 +97,8 @@ project-local `TMPDIR` was set.
 - deterministic report comparison under ASCII, Latin-1, and UTF-16
   `PYTHONIOENCODING`: byte-identical, one LF, expected hash;
 - public harness: `pass=3 info=4 pending=0 blocked=0 fail=0`;
-- privacy: `375` files, zero blocking findings, three informational
-  public/reserved identifiers;
+- privacy: pre-stage `375` files and post-stage `378` files; both had zero
+  blocking findings and three informational public/reserved identifiers;
 - tracked and untracked whitespace checks: passed after correcting the initial
   checkpoint trailing whitespace.
 
