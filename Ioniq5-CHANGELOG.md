@@ -3,6 +3,19 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.89.0 - D-Bus eliminated; the earlier openat trace withdrawn as invalid
+
+- Traced `ApplicationManager` inside the **systemd** boot, where the bus exists. Connections **succeed**:
+  `/var/run/dbus/system_bus_socket` → `0`, session bus → `0`, and it creates its own SysV segments
+  (`shmget(0x51121397, 416, IPC_CREAT|IPC_EXCL|0600)`). It **still** fails `initBootInfo attach fail` with retries 1–3.
+- So boot-info initialisation is **not** a bus problem. The `ENOENT` I found earlier was an artefact of a research-init run
+  with no bus — I had already declined to call it a finding, and this confirms that caution was right.
+- **WITHDRAWN: my `openat` trace.** It recorded 15 calls because `ApplicationManager` exited almost immediately in that
+  configuration, so it never reached the code under investigation. Concluding from it that "the attach is not
+  file-backed" was the same error as reading a zero from an unreached path — the exact trap this project keeps logging.
+- **Next task, correctly scoped:** repeat `openat` inside the systemd boot with the compositor up, where the binary
+  demonstrably reaches `initBootInfo`, and look for `qipc_sharedmemory_*`.
+
 ## 1.88.0 - provenance incident: a scoped `git add` still committed the shared index
 
 - **What happened:** commit `3f6bd7e` (mine, the `openat` finding) captured **14 files** instead of the 3 I intended. A

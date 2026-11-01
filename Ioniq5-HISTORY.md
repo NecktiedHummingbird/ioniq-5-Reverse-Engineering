@@ -3152,3 +3152,12 @@ and are superseded by corrections rather than silently rewritten.
   discovering it afterwards.
 - Held off all staging while the other workstream corrected the record, then wrote this note into a clean tree so it could
   not contaminate their commit. That part at least was done in the right order.
+
+## 2026-10-31 — the bus was fine, and my last trace was worthless
+
+- Inside the real boot the connections succeed and the failure persists, which retires the D-Bus explanation cleanly.
+- More important: the openat trace I built the previous conclusion on was taken from a process that had already exited. The
+  conclusion drawn from it, that the attach is not file-backed, was therefore unsupported and is withdrawn rather than
+  quietly left standing.
+- Two of my last three hypotheses have now been killed by my own measurements. That is the process working, however
+  it feels.

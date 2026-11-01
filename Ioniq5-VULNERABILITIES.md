@@ -828,10 +828,22 @@ vulnerability is claimed, and this test does not move either entry.
   not apply unchanged.
 - That points at either a direct **`shmget`/`shmat`** with a key the process derives itself, or a **D-Bus** call — neither
   of which `openat` observes.
-- **Next task, corrected again:** trace the syscalls that would show it —
-  `strace -f -e trace=shmget,shmat,shmdt,socket,connect,sendmsg,recvmsg` — on `ApplicationManager` while it fails. One of
-  those will name the object: a SysV key if it is shared memory, or the service and member if it is D-Bus. Guessing has
-  now been tried and failed twice here; this is the instrument that would actually show it.
+- **The D-Bus hypothesis is now eliminated by measurement.** Repeating the trace inside the **systemd** boot, where the
+  bus exists, gives:
+
+  `connect(9, {sun_path="/var/run/dbus/system_bus_socket"}) = 0`  ← bus reachable
+  `connect(8, {sun_path=@"/tmp/dbus-GaG2OzbkNE"}) = 0`            ← session bus reachable
+  `shmget(0x51121397, 416, IPC_CREAT|IPC_EXCL|0600) = 0`          ← creates its own segments
+
+  and yet `ArgParserBase::initBootInfo attach fail` **still** occurs, with retries 1–3. So boot-info initialisation is
+  **not** a bus problem, and the research-init `ENOENT` seen earlier was an artefact of that test (no bus was running),
+  not the fault.
+- **My earlier `openat` trace was invalid and is withdrawn.** It produced only 15 calls because `ApplicationManager`
+  exited almost immediately in that configuration — the trace recorded a process that never reached the code of interest.
+  Using it to conclude "the attach is not file-backed" was the same mistake as reading a zero from an unreached path.
+- **Next task, now correctly scoped:** repeat the `openat` trace **inside the systemd boot with the compositor up**, where
+  `ApplicationManager` demonstrably reaches `initBootInfo`, and look for `qipc_sharedmemory_*`. That is the measurement
+  that can actually answer whether this attach is file-backed.
 
 ## Rejected / out-of-scope items
 
