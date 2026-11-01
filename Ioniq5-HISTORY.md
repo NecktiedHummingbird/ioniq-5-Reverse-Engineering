@@ -3127,3 +3127,10 @@ and are superseded by corrections rather than silently rewritten.
   at all. The corrected plan is harder and is now stated as harder.
 - What the disassembly did yield was a map: the strings, their references, and a comparison against 0x1c right before the
   validity log. That is a foothold rather than a finding, and it is labelled as such.
+
+## 2026-10-31 — the check I found was not the one rejecting us
+
+- The length comparison looked like the answer and is not: our payload passes it comfortably. The rejection is further
+  down, and the more likely culprit is a shared-memory object that does not exist rather than bytes that are wrong.
+- The next move is one this project has already used successfully: watch which qipc files the binary opens. Guessing
+  produced six wrong segment names once; strace produced the right ones immediately.

@@ -813,8 +813,18 @@ vulnerability is claimed, and this test does not move either entry.
   (`cmpl $0x1c, 0x4(%rax)` at `0x258705`) and indexes bytes from `+0x1c` (`movzbl 0x1c(%rax,%rdx)` at `0x25872a`).
   That is the shape of a length-prefixed structure with payload starting at offset `0x1c` — a starting point for
   establishing what "VALID" requires, not the answer.
-- **Next task, corrected:** reconstruct the validation from that address range rather than from debug info. This is real
-  reverse engineering work on a stripped Qt binary, not a quick read.
+- **The length gate is passed, so the rejection is elsewhere.** Reading the block properly:
+  `cmpl $0x1c, 0x4(%rax)` compares a **length** field against 28 and `jle` leaves on `<= 28`; the accepted path then
+  reads `movzbl 0x1c(%rax,%rdx)` — **byte 28 of the payload**. Our reply is **35 bytes**, so `0x23 > 0x1c` and this gate
+  is satisfied. Whatever rejects our payload happens **downstream** of it, in content checks or in a separate
+  shared-memory attach.
+- **`ApplicationManager` contains no literal boot-info segment key.** Its strings show no `BOOTINFO*` name, so if it
+  attaches shared memory the key is composed at runtime — which is why the zero payload's *shape* may be irrelevant and
+  the missing object is the real fault.
+- **Next task, corrected and now concrete:** run `ApplicationManager` under `strace -f -e trace=openat` and capture which
+  `qipc_sharedmemory_*` paths it opens. The same technique produced the exact segment names for `AppHomeScreen` after
+  guessing had failed, and it would tell us precisely what to create. Then the payload question resolves itself — we
+  would be filling a structure the client told us the name of.
 
 ## Rejected / out-of-scope items
 

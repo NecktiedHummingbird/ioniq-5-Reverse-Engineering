@@ -3,6 +3,47 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.86.0 - V-036 cause narrowed: length gate passes, so the fault is downstream
+
+- Read the validation block properly. `cmpl $0x1c, 0x4(%rax)` compares a **length** against 28 and leaves early only on
+  `<= 28`; the accepted path reads `movzbl 0x1c(%rax,%rdx)` — **byte 28 of the payload**. Our 35-byte reply is `0x23`,
+  so the gate passes and the rejection is **downstream**, in content checks or a separate shared-memory attach.
+- **`ApplicationManager` has no literal boot-info segment key** in its strings, so any attach target is composed at
+  runtime. That reframes the problem: the payload's *shape* may be irrelevant and the missing **object** may be the real
+  fault.
+- **Next step is concrete and already proven in this project:** `strace -f -e trace=openat` on `ApplicationManager`,
+  grepping for `qipc_sharedmemory_*`. That is exactly how the six real segment names were obtained for `AppHomeScreen`
+  after derivation had failed — and it would tell us what to create rather than what to guess.
+
+## 1.86.0 - bind AppFUMO `decryptionFile` to its exact shell boundary
+
+- Bound exact `decryptionFile` FDE `[0x100b30,0x10110c)` through direct call
+  `0x100e0c` to shared helper FDE `[0x1397c0,0x1398fb)`. Its split QString
+  templates substitute the fixed decrypt helper, UUID-derived transient key
+  pathname, incoming encrypted-file pathname, and incoming destination pathname.
+  The two incoming pathname fields are inserted without an observed quoting,
+  escaping, or shell-character filtering operation.
+- The helper appends fixed stderr redirection, converts the QString to bytes, and
+  calls `popen` at `0x139867` in read mode. It drains and discards output, calls
+  `pclose`, and ignores its status. The adjacent output-accumulating helper at
+  `0x139900` has a separate FDE and is not an alternate entry.
+- Proved return propagation: verifier/key-operation failures return a fixed
+  failure QString before the sink. After the sink, the function removes the
+  transient key, calls `sync`, and returns the destination QString without using
+  process status or checking destination existence/size.
+- Corrected similar-literal provenance. Full templates at `0x20b500` and
+  `0x20b530`, including the branch-selected throughput-limited variant, belong
+  to separate FDE `[0x60ac0,0x6178f)`, which performs later destination checks;
+  they are not the templates referenced by `decryptionFile`.
+- Added bounded exact evidence, a focused assessment, and a strict Boolean-only
+  tri-state model with deterministic UTF-8/LF output. The static unquoted shell
+  structure is established; pathname influence, shell-character survival,
+  invocation, authentication acceptance, process security context, command
+  success, privilege/domain amplification, root, and persistence remain
+  independently unknown. No recovered target/helper, operational payload,
+  trigger, archive/update package, signature bypass, privilege action, or
+  persistence mechanism was executed or created.
+
 ## 1.85.0 - correction: ApplicationManager is stripped; validation anchored by address instead
 
 - The previous entry said to read `parseMicomBootInfo` "in `ApplicationManager` (it carries debug information)". **That
