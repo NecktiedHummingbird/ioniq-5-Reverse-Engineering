@@ -216,3 +216,31 @@ persistence action was created or executed.
 
 Status: **ACCEPT**; staged validation passed and the final documentation-only
 validation delta awaits bounded review.
+
+## Post-delivery follow-up (2026-11-08; prior acceptance unchanged)
+
+A separate bounded package now resolves the named canonical recovered EU 260128
+kernel mount prerequisites without rewriting the acceptance above. Userspace ISO9660
+recognition, ordinary `sd*` builtin-blkid routing, generic direct `mount(2)`,
+read-only retry, and success-signal dominance are present. Canonical archive
+SHA-256 `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`
+now binds bzImage -> bounded legacy-LZ4 vmlinux SHA-256
+`f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`
+-> unique gzip IKCONFIG/config SHA-256
+`987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`.
+That config disables `BLK_DEV_SR`, `ISO9660_FS`, and `UDF_FS`; the 163-member
+inventory/metadata lack the tested isofs/ISO9660, UDF, sr/sr_mod identities and
+SCSI CD-ROM aliases. This does not exclude every renamed, inline, or vendor-
+equivalent implementation. Named canonical ISO9660 and SCSI CD-ROM routes are
+therefore false, while broad exact-stack ISO9660 and physical-optical routes
+remain unknown despite the accepted pre-mount UUID byte route.
+
+Schema v5 emits named prerequisite absence `true`, named exact routes `false`,
+and broad exact route outputs `null`. It keeps unidentified installed-unit
+acceptance/mount tri-state `null` and permits an
+explicit true installed mount only with a materially different runtime identity.
+Exact mixed-case/dot ISO naming extensions, successful port-1 callback on such a
+different runtime, and the AppDMClient-to-inner-AppUpgrade bridge remain
+unknown. See `evidence/appfumo-iso9660-mount-prerequisite.md` and
+`docs/agent-work/appfumo-iso9660-mount-prerequisite/CHECKPOINT.md`. The original
+fourth-review **ACCEPT** and its recorded hashes remain historical facts.

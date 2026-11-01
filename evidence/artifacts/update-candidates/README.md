@@ -32,7 +32,15 @@ are not established. Assessment:
 - [`appfumo-usb-pathname-provenance-exact-static.asm`](appfumo-usb-pathname-provenance-exact-static.asm):
   archive-member identities plus complete dispatcher, mount, shipped
   systemd-udevd/libblkid, AppDMClient, and AppUpgrade excerpts (SHA-256
-  `932510a860b40cce280f217670cbf2c213e31b0a90008ac5c011c933cd584e8f`).
+  `932510a860b40cce280f217670cbf2c213e31b0a90008ac5c011c933cd584e8f`);
+- [`appfumo-iso9660-mount-prerequisite-exact-static.txt`](appfumo-iso9660-mount-prerequisite-exact-static.txt):
+  compact post-delivery binding of canonical bzImage -> vmlinux -> IKCONFIG,
+  config offsets, bounded 163-member module identities/aliases, generic type
+  dispatch, direct mount calls, read-only retry, and success-signal dominance.
+  LZ4 literal/match and aggregate growth are preflighted before extension;
+  overlap copying is chunk-bounded and uses no repeated-pattern multiplication
+  (SHA-256
+  `7935f331841eed2374a8318ce5f4d9c287cc76225ebefbfd9dd4e5a94b62cc0e`).
 
 The complete dispatcher proves that exact `usb-automount` uses `ID_FS_UUID` or
 the serial/partition no-UUID alternate—not `ID_FS_LABEL`—as the final
@@ -51,10 +59,23 @@ component statically. Label preservation remains non-path, and the no-UUID
 sanitizer/context negative remains.
 
 Separate exact AppDMClient and AppUpgrade edges do not bind the AppDMClient
-launch argument to inner AppUpgrade's package-base constructor. Physical
-ISO9660 source control, media acceptance/mount, end-to-end installed delivery,
-and invocation of the relevant `decryptionFile` call with that path remain
-unknown. Those gates would establish only pre-auth decryption-input delivery;
+launch argument to inner AppUpgrade's package-base constructor. The follow-up
+cryptographically binds canonical archive bzImage to bounded legacy-LZ4
+vmlinux SHA-256 `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`
+and unique gzip IKCONFIG/config SHA-256
+`987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`.
+`CONFIG_ISO9660_FS`, `CONFIG_UDF_FS`, and `CONFIG_BLK_DEV_SR` are unset. The
+canonical 163-member inventory/metadata lack the tested isofs/ISO9660, UDF,
+sr/sr_mod identities and SCSI CD-ROM aliases, without excluding every renamed,
+inline, or vendor-equivalent implementation. The named canonical routes are
+false, while broad exact-stack ISO9660 and physical-optical routes remain
+unknown. Userspace recognition, generic direct `mount(2)`, and read-only retry
+remain, and the success signal is post-mount only.
+
+Physical ISO9660 source control, accepted/mounted media on an unidentified or
+materially different installed runtime, end-to-end installed delivery, and
+invocation of the relevant `decryptionFile` call with that path remain unknown.
+Those gates would establish only pre-auth decryption-input delivery;
 actual shell-sink delivery additionally requires authentication because the
 verifier dominates command construction and `popen`. Command success and
 amplification remain route-generic observations. Authentication acceptance,
@@ -63,8 +84,10 @@ arbitrary command execution is not claimed. The
 post-extraction route remains structural: `0x10281c` is system-tree,
 `0x103398` controls-tree, and `0x102de9` top-level archive; decrypted-member-name
 signature binding remains unknown.
-Assessment:
-[`../../appfumo-usb-pathname-provenance.md`](../../appfumo-usb-pathname-provenance.md).
+Assessments:
+[`../../appfumo-usb-pathname-provenance.md`](../../appfumo-usb-pathname-provenance.md)
+and
+[`../../appfumo-iso9660-mount-prerequisite.md`](../../appfumo-iso9660-mount-prerequisite.md).
 
 ## AppFUMO exact shell boundary
 

@@ -197,10 +197,23 @@ parser-to-mount-path byte route is therefore established. Label remains a
 separate non-path field, and the no-UUID sanitizer/context negative remains.
 
 Exact AppDMClient and AppUpgrade producer edges remain compatible with the
-hash-bound log class below, but physical ISO9660 control, media acceptance/mount,
-installed signal delivery, the AppDMClient launch-argument/inner-AppUpgrade
-constructor bridge, and invocation of the relevant `decryptionFile` call with
-that path remain unknown. Even if those pre-auth delivery gates were later
+hash-bound log class below. A post-delivery exact-kernel follow-up rejects only
+the named canonical ISO9660/UDF/SCSI-CD-ROM routes: canonical bzImage -> bounded
+legacy-LZ4 vmlinux -> unique gzip IKCONFIG binds
+config SHA-256 `987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`,
+where `CONFIG_ISO9660_FS`, `CONFIG_UDF_FS`, and `CONFIG_BLK_DEV_SR` are unset.
+The canonical 163-member inventory and metadata lack the specifically tested
+isofs/ISO9660, UDF, sr/sr_mod identities and SCSI CD-ROM aliases; this does not
+exclude every renamed, inline, or vendor-equivalent implementation, so broad
+exact-stack ISO9660 and physical-optical routes remain unknown. Userspace
+recognition, generic direct `mount(2)`, and its
+read-only retry remain present; the success signal follows mount success.
+
+Physical ISO9660 control and accepted/mounted media on an unidentified or
+materially different installed runtime, installed signal delivery, the
+AppDMClient launch-argument/inner-AppUpgrade constructor bridge, and invocation
+of the relevant `decryptionFile` call with that path remain unknown. Even if
+those pre-auth delivery gates were later
 established, verifier acceptance would still be required for command
 construction and `popen`; actual shell-sink delivery therefore includes that
 authentication gate. The observations do not establish end-to-end exact-ELF

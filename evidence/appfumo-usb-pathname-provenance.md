@@ -22,8 +22,12 @@ The corrected bounded disposition is:
 - ISO9660 raw-date UUID static byte route: **established** from parser fields,
   through UUID formatting and `blkid_safe_string`, into the dispatcher-selected
   mount-path component;
-- physical ISO9660 source control, media acceptance, and successful mount:
-  **unknown**;
+- physical ISO9660 source control: **unknown**;
+- named canonical recovered-stock ISO9660 mount route: **rejected** by the
+  exact config rows and tested stock module names/aliases;
+- broad exact recovered-stack ISO9660 mount route: **unknown**, because inline,
+  renamed, and vendor-equivalent implementations were not exhaustively excluded;
+- accepted/mounted ISO9660 media on an unidentified installed unit: **unknown**;
 - no-UUID serial/partition route: **no shell-active effect established** after
   the exact stock USB serial precheck and sanitizer in the already-prefixed
   unquoted command word;
@@ -73,6 +77,34 @@ SHA-256
 `932510a860b40cce280f217670cbf2c213e31b0a90008ac5c011c933cd584e8f`.
 Full binaries, full disassemblies, and version-matched source remain under
 ignored `work/`.
+
+### Post-delivery mount-prerequisite follow-up
+
+This is a bounded follow-up to, not a rewrite of, the accepted pathname result.
+Exact userspace recognizes ISO9660, ordinary USB `sd*` events can reach builtin
+blkid and the automounter, and the generic non-NTFS/exFAT branch copies
+`iso9660` into a direct `mount(2)` call. Initial failure reaches an explicit
+read-only retry; `UsbMount` is emitted only after either call succeeds.
+
+Canonical archive bzImage -> bounded legacy-LZ4 vmlinux SHA-256
+`f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`
+-> unique gzip IKCONFIG binds recovered config SHA-256
+`987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`.
+It has `# CONFIG_BLK_DEV_SR is not set`, `# CONFIG_ISO9660_FS is not set`, and
+`# CONFIG_UDF_FS is not set`. The 163-member inventory/metadata lack the tested
+isofs/ISO9660, UDF, sr/sr_mod identities and SCSI CD-ROM aliases, without
+proving every renamed, inline, or vendor-equivalent implementation absent.
+Named canonical ISO9660/UDF and SCSI CD-ROM routes are therefore false, while
+broad exact-stack ISO9660 and physical-optical routes remain unknown. The pre-
+mount UUID byte route remains established. Installed identity/extra modules
+remain unknown, and this is not generalized to another kernel or all filesystems.
+
+The compact record and full bounded assessment are
+[`artifacts/update-candidates/appfumo-iso9660-mount-prerequisite-exact-static.txt`](artifacts/update-candidates/appfumo-iso9660-mount-prerequisite-exact-static.txt)
+and [`appfumo-iso9660-mount-prerequisite.md`](appfumo-iso9660-mount-prerequisite.md).
+AppDMClient root-entry processing remains conditional on a successful port-1
+callback. Exact mixed-case/dot ISO naming extensions and the
+AppDMClient-to-inner-AppUpgrade bridge remain unknown.
 
 ## 1. Property acquisition and caller state
 
@@ -321,7 +353,18 @@ The pre-recorded state reports:
 - ISO9660 static shell/path-sensitive UUID byte route: `true`;
 - no-UUID alternate shell-active effect: `false`;
 - shell-sensitive label-byte preservation in the separate D-Bus field: `true`;
-- physical ISO9660 source control and accepted/mounted delivery: `null`;
+- physical ISO9660 source control: `null`;
+- canonical bzImage-to-vmlinux identity chain: `true`;
+- embedded IKCONFIG-to-recovered-config identity chain: `true`;
+- named recovered-kernel ISO9660 prerequisite absence: `true`;
+- broad recovered-kernel ISO9660 prerequisite absence: `null`;
+- exact named canonical ISO9660 mount route: `false`;
+- broad `exact_recovered_stack_iso9660_mount_route`: `null`;
+- exact named canonical physical-optical SCSI CD-ROM route: `false`;
+- broad exact physical-optical route: `null`;
+- installed accepted/mounted ISO9660 delivery on an unidentified unit: `null`;
+- a true installed-mount state is accepted only with an explicitly materially
+  different runtime identity;
 - cross-process package-base delivery and invocation of the relevant
   `decryptionFile` call with that path: `null`;
 - pre-auth physical ISO9660 path delivery to that decryption input: `null`;
@@ -337,8 +380,10 @@ true. Command success and amplification remain route-generic observations; they
 are not ISO9660-specific outcomes. Persistence remains an independent
 observation, consistent with the accepted shell-boundary model. The model emits
 no path, command, payload, trigger, update, archive, mount, D-Bus request, or
-syscall material. Its frozen schema-v4 default report SHA-256 is
-`026b421772bd708c7f6ccec9200ed8fb47fee3307b1821415c3b9db516854aa3`.
+syscall material. Its frozen schema-v5 default report SHA-256 is
+`56b7a941a4180472292af59e60b5b1bdf5b3e369205b75519a3d3c4f073f1804`.
+The exact named-stock negative does not suppress generic hypothetical classification
+for an explicitly materially different runtime identity.
 
 ## Bottom line
 
@@ -350,8 +395,10 @@ the prefixed word. But exact ISO9660 code formats 16 raw date bytes after only a
 all-`'0'` test, and `blkid_safe_string` preserves allowed shell/path-sensitive
 bytes before the dispatcher uses the UUID as the path component. The combined
 filesystem-metadata rejection is withdrawn and the ISO9660 static byte route is
-established. Physical source control, media acceptance/mount, cross-process
-package-base bridge, invocation of the relevant `decryptionFile` call with that
+established. Named canonical recovered-stock mount routes are rejected, while
+the broad exact-stack route, physical source control, and accepted/mounted
+delivery on an unidentified installed runtime remain unknown. Cross-process package-base
+bridge, invocation of the relevant `decryptionFile` call with that
 path, authentication, command success, process context, privilege, root, and
 persistence remain unknown. Pre-auth delivery to the decryption input is
 separate from actual shell-sink delivery, which requires authentication because

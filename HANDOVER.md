@@ -404,6 +404,70 @@ followed by stateful service/CAN/persistence reconstruction.
 - The recovered policy permits the floor label and 22 named `App::*` labels to write an object labelled `App::upgrade`, but staged object/directory labels, DAC metadata, process uid/gid/labels, loaded rules and update serialization remain runtime gates. Actor write access and V-031 substitution remain unproved.
 - Extended `tools/uk_fw/bench_state_bundle.py` to capture `/update` namespace metadata, complete process uid/gid sets plus supplementary groups, and read-only `SMACK64`/`SMACK64EXEC` results for source/trust paths. Absent paths, absent attributes, unavailable provider, query errors, malformed labels and successes remain distinct. Focused validation passed `23 tests, 20 subtests`; the full suite passed `556 tests, 148497 subtests`; the public harness passed; corrected independent review returned **ACCEPT**. See `evidence/update-source-runtime-policy.md`.
 
+## AppFUMO ISO9660 mount-prerequisite post-delivery follow-up — 2026-11-08
+
+- This is a bounded follow-up to the accepted V-033 pathname package below, not
+  a rewrite of its prior acceptance. The worker opened at `ec93aed`; initial
+  review used `fe3d363`; non-overlapping integration commits advanced through
+  `a1f1351` to final-check HEAD
+  `750cfcfbd88937576fde9ee61e83fd6c1980f28d`. The ISO9660 raw-date UUID byte
+  route remains established through libblkid/udev into the automounter's path
+  component.
+- Exact userspace also has the missing intermediate behavior: ordinary USB
+  mass-storage `sd*` events can reach builtin blkid; the generic non-NTFS/exFAT
+  branch copies filesystem type `iso9660` into direct `mount(2)`; initial
+  failure reaches explicit read-only flags `0xc0ed000b`; and `UsbMount` is sent
+  only after either mount succeeds (`0x4d70`, `0x4df1`, `0x4e34`).
+- Canonical archive SHA-256
+  `423491fd8b86bd815d4e12f47054e08a589a5159f87213f08980fcc3a0e47c84`
+  contains bzImage SHA-256 `2fec21219b4e52c90d287687f3cfd4fbdc55ad00f71117b02c32134487277582`.
+  Boot-header-derived bounded legacy-LZ4 decode yields vmlinux SHA-256
+  `f5ee9c2f97eed44f9827153c273125bf131a9ca9a96c63bb6e93cfc5af6b102b`,
+  Build ID `273378887b4cf563c10862fdf18b2292765df781`; its unique gzip IKCONFIG is
+  byte-identical to config SHA-256
+  `987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`.
+  That config has `CONFIG_BLK_DEV_SR`, `CONFIG_ISO9660_FS`, and `CONFIG_UDF_FS`
+  unset at byte offsets `0x861a`, `0x17e34`, and `0x17e53`.
+- The 163-member inventory has no exact tested isofs/ISO9660, UDF, `sr_mod`, or
+  `sr` module basename/path; 11 hash-bound metadata payloads have none of the
+  bounded filesystem identifiers or SCSI type-5/block-major-11 aliases. This
+  does not prove every renamed, inline, or vendor-equivalent implementation
+  absent; the embedded config `n` rows decide the named built-in paths.
+- These bindings reject only the named canonical ISO9660/UDF and SCSI CD-ROM
+  routes. Broad exact recovered-stack ISO9660 and physical-optical routes remain
+  unknown because inline, renamed, and vendor-equivalent implementations were
+  not exhaustively excluded. The pre-mount UUID route remains established.
+- AppDMClient root-entry processing remains conditional on a successful port-1
+  callback. Installed-unit identity/extra modules, physical source control,
+  accepted mount on a materially different runtime, exact mixed-case/dot ISO
+  naming extensions, and the AppDMClient-to-inner-AppUpgrade bridge remain
+  unknown.
+- Schema v5 emits named prerequisite absence `true`, named canonical ISO9660
+  and physical-optical routes `false`, and broad exact-stack route outputs
+  `null`. The pre-recorded installed mount remains `null`; explicit true still
+  requires a materially different runtime identity. Identity-chain outputs
+  remain positive. Deterministic default report SHA-256 is
+  `56b7a941a4180472292af59e60b5b1bdf5b3e369205b75519a3d3c4f073f1804`.
+- LZ4 literal/match lengths and aggregate output are checked against remaining
+  capacity before extension; overlap copy is chunk-bounded without repeated-
+  pattern multiplication. Compact retained artifact SHA-256 is
+  `7935f331841eed2374a8318ce5f4d9c287cc76225ebefbfd9dd4e5a94b62cc0e`.
+  Assessment, validation, residual gates, and final package hashes are in
+  `evidence/appfumo-iso9660-mount-prerequisite.md` and
+  `docs/agent-work/appfumo-iso9660-mount-prerequisite/CHECKPOINT.md`.
+- Independent review required two correction cycles (identity/alias binding,
+  then bounded LZ4 allocation and broad-claim scope); the corrected package
+  returned **ACCEPT**. Focused validation passed `24 tests`; the full
+  tests-scoped suite passed `718 tests, 351445 subtests`; and the post-stage
+  public harness passed `pass=3 info=4 pending=0 blocked=0 fail=0`, scanning
+  `383` files with zero privacy blockers and three informational identifiers.
+- Static/read-only target analysis only. No target execution, mount,
+  media/image/archive, malformed input, path/command/payload, D-Bus request,
+  target syscall, privilege/root action, or persistence action occurred. The
+  implementation worker did not delegate or alter repository state; the parent
+  used a separate read-only reviewer. Unrelated
+  `tools/uk_fw/ias_backend_soft/micom_service.c` was not touched or staged.
+
 ## AppFUMO USB pathname-provenance checkpoint — 2026-11-01
 
 - First independent review returned **CHANGES_REQUIRED** with a P0 dispatcher

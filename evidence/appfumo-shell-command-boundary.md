@@ -221,10 +221,21 @@ establishes a static ISO9660 byte route to the automounter path.
 Label `$`/`?`/`/` preservation remains a separate non-path D-Bus fact, and the
 sanitized no-UUID word still has no useful shell-active effect. Exact
 AppDMClient callback-to-staging and AppUpgrade suffix edge `0x102de9` remain
-separate. Physical ISO9660 control, source acceptance/mount, installed delivery,
-the AppDMClient launch-argument/inner-AppUpgrade constructor bridge, and
-invocation of the relevant `decryptionFile` call with that path remain unknown.
-Those gates would establish only pre-auth delivery to the decryption input.
+separate. A post-delivery follow-up binds canonical bzImage through bounded
+legacy-LZ4 vmlinux and unique gzip IKCONFIG to exact recovered config SHA-256
+`987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`:
+ISO9660/UDF and SCSI CD-ROM paths are not configured. The canonical 163-member
+inventory/metadata lack the tested stock isofs/ISO9660, UDF, sr/sr_mod
+identities and SCSI CD-ROM aliases. The named canonical routes are false, while
+broad exact-stack ISO9660 and physical-optical routes remain unknown because
+renamed, inline, and vendor-equivalent implementations are not excluded.
+Userspace recognition, generic direct `mount(2)`, and read-only retry remain.
+
+Physical ISO9660 control and accepted/mounted media on an unidentified or
+materially different installed runtime, installed delivery, the AppDMClient
+launch-argument/inner-AppUpgrade constructor bridge, and invocation of the
+relevant `decryptionFile` call with that path remain unknown. Those gates would
+establish only pre-auth delivery to the decryption input.
 Because verifier acceptance dominates command construction and `popen`, actual
 physical shell-sink delivery additionally requires authentication acceptance.
 Therefore this sink remains structurally unquoted without establishing physical

@@ -16,6 +16,20 @@ establish acceptance of a modified update, model/region bypass, payload
 authentication bypass, partition writes, slot selection, boot acceptance,
 health, mark-good, root, or persistence.
 
+Post-delivery USB prerequisite follow-up: the AppDMClient root-entry structure
+below is only conditional after a successful port/index-1 mounted callback. The
+named canonical ISO9660/UDF/SCSI-CD-ROM routes are rejected: canonical archive
+bzImage -> bounded legacy-LZ4 vmlinux -> unique gzip IKCONFIG binds their exact
+configuration `n` rows, while the canonical inventory lacks their tested stock
+module identities and aliases. Broad exact-stack mount completion remains
+unknown because renamed/inline/vendor-equivalent implementations are not
+excluded. Userspace recognition and mount dispatch alone do not satisfy the
+callback.
+Installed-unit identity/extra modules, exact
+mixed-case/dot ISO naming extensions, and the AppDMClient-to-inner-AppUpgrade
+constructor bridge remain unknown. See
+`evidence/appfumo-iso9660-mount-prerequisite.md`.
+
 ## Exact artifact
 
 | Property | Value |

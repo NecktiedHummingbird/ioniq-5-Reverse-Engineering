@@ -162,9 +162,18 @@ test. util-linux v2.27.1 `iso9660.c` lines 110-151 is SHA-256
 `601d9311b1a68b5fbccf7d6af28f089b4f919494b36edb7f144786cec651477b`.
 Subsequent safe-string handling preserves allowed shell/path-sensitive byte
 classes before dispatcher mount-path use. This establishes static byte
-provenance, while physical source control, media acceptance/mount, installed
-end-to-end delivery, and the AppDMClient launch-argument/inner-AppUpgrade bridge
-remain unknown. Label-path and no-UUID shell-active routes remain rejected.
+provenance. A post-delivery exact-kernel follow-up binds canonical bzImage
+through bounded legacy-LZ4 vmlinux and unique embedded gzip IKCONFIG to config
+SHA-256 `987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`;
+its named canonical ISO9660/UDF and SCSI CD-ROM paths are not configured. The
+canonical 163-member inventory/metadata lack the tested stock identities and
+aliases. Those named routes are false; broad exact-stack completion remains
+unknown because renamed, inline, or vendor-equivalent implementation absence is
+not established.
+Physical source control and accepted/mounted media on an unidentified or
+materially different installed runtime, installed end-to-end delivery, and the
+AppDMClient launch-argument/inner-AppUpgrade bridge remain unknown. Label-path
+and no-UUID shell-active routes remain rejected.
 
 Even if the physical source, successful mount, cross-process pathname bridge,
 and invocation of the relevant `decryptionFile` call with that path were later

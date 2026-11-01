@@ -3,6 +3,20 @@
 Date: 2026-11-01. Target: `work/decrypted-eu-260128/extracted-safe/mango-rootfs` (build `NE_E.EUR.S5W_L.001.001.260128`).
 Mode: **static analysis only.** No VM boot, no QEMU, no execution of target binaries. Rootfs read read-only.
 
+> **Post-delivery ISO9660 prerequisite follow-up:** this map's generic direct
+> mount flow is present, including a read-only retry, but exact recovered config
+> SHA-256 `987268a1a4b333d67c219c63b690c3828811136a7a3b203eb6f20552e82dad56`,
+> linked from canonical bzImage through bounded legacy-LZ4 vmlinux and unique
+> gzip IKCONFIG, disables `CONFIG_ISO9660_FS`, `CONFIG_UDF_FS`, and
+> `CONFIG_BLK_DEV_SR`. The 163-member inventory/metadata lack only the tested
+> isofs/ISO9660, UDF, sr/sr_mod identities and SCSI CD-ROM aliases; renamed,
+> inline, or vendor-equivalent implementations are not exhaustively excluded.
+> The named canonical ISO9660/UDF and SCSI CD-ROM routes are false; broad exact-
+> stack ISO9660 and physical-optical routes remain unknown. Ordinary USB `sd*`
+> plus builtin blkid remains a valid pre-mount route. Installed identity/extra
+> modules and other kernels/filesystems are
+> not inferred. See `evidence/appfumo-iso9660-mount-prerequisite.md`.
+
 > **2026-11-01 dynamic supersession of the ranking below:** absence of
 > `MS_NODEV` is verified and exact Tuxera NTFS `3016.7.1.2.3` now preserves a
 > character-node representation across remount. A numeric uid/gid 65534 process
