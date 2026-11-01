@@ -3210,3 +3210,10 @@ and are superseded by corrections rather than silently rewritten.
 - The value of this stretch is the consolidated hand-off: three mechanisms excluded by measurement, the blocker confirmed,
   three payloads tested and rejected, an oracle that works, and anchors with the specific obstacle named.
 - Stopping here is right. The remaining task has a defined shape and needs disassembly time, not another design of mine.
+
+## 2026-10-31 — checking the repository is part of the work
+
+- A read-only pass confirmed what matters for a public repository: no duplicate register numbers, no host paths in the
+  documents I maintain, tool sources tracked, binaries ignored.
+- The worktree also holds a parallel workstream's uncommitted edits, which I have left exactly alone and noted here so the
+  record does not imply otherwise.

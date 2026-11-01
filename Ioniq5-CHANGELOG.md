@@ -3,6 +3,21 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.96.0 - integrity check after the long stretch: clean, and one caveat recorded
+
+- Verified at hand-off time, read-only:
+  - **Register**: 36 numbered entries, **no duplicate numbers**, provenance note present.
+  - **Host paths**: zero `/Users/` or `/opt/homebrew/` occurrences in `Ioniq5-CHANGELOG.md`, `Ioniq5-HISTORY.md`,
+    `Ioniq5-VULNERABILITIES.md` and `HANDOVER.md` — this repository has been rejected by its harness for exactly that
+    before.
+  - **Sources tracked**: `ias-backend-soft.c`, `ias_protocol.c`, `ihu_shim.c`, `micom_responder.c`, `micom_service.c`,
+    `vnbuf_shim.c` all in the index; built binaries (`micom-service`, `*.so`) ignored by the scaffold `.gitignore`.
+- **Caveat, stated because it is not mine to fix:** the worktree currently carries **another workstream's** uncommitted
+  changes (`HANDOVER.md`, `docs/agent-work/appfumo-usb-pathname-provenance/CHECKPOINT.md`,
+  `evidence/appdmclient-fumo-usb-eligibility.md`). They are untouched by this commit, which is scoped to my three files.
+- This entry exists because two of my earlier commits in this session had provenance problems (an absorbed bundle and a
+  silently mis-scoped add). Checking is cheaper than being told.
+
 ## 1.95.0 - V-036 handed off: what is proven, excluded, and where the reading stalled
 
 - One step further into the parser and then a deliberate stop. The `.rodata` around the VALID message holds
