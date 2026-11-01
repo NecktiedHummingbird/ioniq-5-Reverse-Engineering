@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.95.0 - V-036 handed off: what is proven, excluded, and where the reading stalled
+
+- One step further into the parser and then a deliberate stop. The `.rodata` around the VALID message holds
+  `AskSysBootinfo`, `AskSysBootinfo Retry = %1` and `AskSysBootinfo reply is VALID` — **no "not valid" counterpart**, so
+  rejection is silent. Searching for branches into the validity block at `0x258808` found **none**, meaning it is reached
+  by fall-through or a computed path, not a direct conditional jump; the deciding comparison is therefore not adjacent to
+  the message that reports it.
+- **Consolidated hand-off for V-036:**
+  - excluded **by measurement**: D-Bus reachability, interface construction, file-backed shared-memory attach
+  - **confirmed**: the reply's *content* is the blocker
+  - **tested and rejected**: three plausible payloads against a live client (`valid=0` each)
+  - **available**: a working oracle (`result_valid`) for any future candidate, documented in this entry
+  - **remaining**: read `parseMicomBootInfo` — stripped binary, silent rejection path, no direct branch to the validity
+    block; anchors `0x258808`, `cmpl $0x1c` at `0x258705`, byte read at `0x25872a`, tag at `0x317c40`
+- Recorded so the next attempt begins where this one stopped. Further work on this thread is a static-analysis task with a
+  defined shape, not an experiment.
+
 ## 1.94.0 - variant probing rejected; the criteria must be read, not guessed
 
 - Used the working oracle to test three plausible payloads in one boot: all zeros, byte 28 = `0x01`, byte 28 = `0xFF`.

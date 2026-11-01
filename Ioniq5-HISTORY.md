@@ -3202,3 +3202,11 @@ and are superseded by corrections rather than silently rewritten.
   negative credible rather than another artefact.
 - Stopping here is the right call. Thirty-five bytes with unknown meaning is not a search space to brute-force, and the
   next real step is reading the parser on a stripped binary — work with a defined shape, not another experiment.
+
+## 2026-10-31 — handing off rather than grinding
+
+- One more step into the parser showed why it is slow: the rejection is silent and the validity block has no direct branch
+  into it. That is a real difficulty, recorded as such, rather than a lack of effort.
+- The value of this stretch is the consolidated hand-off: three mechanisms excluded by measurement, the blocker confirmed,
+  three payloads tested and rejected, an oracle that works, and anchors with the specific obstacle named.
+- Stopping here is right. The remaining task has a defined shape and needs disassembly time, not another design of mine.

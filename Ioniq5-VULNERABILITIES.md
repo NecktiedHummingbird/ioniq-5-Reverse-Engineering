@@ -891,9 +891,18 @@ vulnerability is claimed, and this test does not move either entry.
   So plausible single-field guesses are all rejected. The space is 35 bytes with unknown semantics, and blind variants
   will not find it — the signal is clean but the search is unguided.
 - **Conclusion for this thread, stated plainly:** the payload's acceptance criteria must be **read from the parser**, not
-  guessed. The anchors for that work are already recorded (`0x258808` validity block, `cmpl $0x1c` at `0x258705`, byte read
-  at `0x25872a`, plus the `parseMicomBootInfo` tag at `0x317c40`), and the binary is stripped, so it is genuine
-  disassembly work — or vendor source. No further variant guessing is warranted.
+  guessed. The anchors for that work are already recorded, and the binary is stripped, so it is genuine disassembly work —
+  or vendor source. No further variant guessing is warranted.
+- **A first step in that reading was taken and did not resolve it.** The `.rodata` neighbourhood of the VALID message
+  contains `AskSysBootinfo`, `AskSysBootinfo Retry = %1` and `AskSysBootinfo reply is VALID` but **no "not valid"
+  counterpart**, so the rejection path is silent rather than logged. Searching the disassembly for branches into the
+  validity block at `0x258808` found **none**, which means it is reached by fall-through or a computed path rather than a
+  direct conditional jump — so the deciding comparison is not adjacent to the message that reports it.
+- **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
+  measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
+  for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty
+  (silent rejection path, no direct branch to the validity block, stripped binary) recorded so the next attempt starts
+  where this one stopped rather than at the beginning.
 
 ## Rejected / out-of-scope items
 
