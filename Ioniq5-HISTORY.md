@@ -3267,3 +3267,11 @@ and are superseded by corrections rather than silently rewritten.
   reading assembly. The daemon creates no such region, so the shortcut is closed and the honest route is disassembly.
 - Worth recording precisely because it was the best remaining idea: knowing it is unavailable stops the next person from
   spending a session on it.
+
+## 2026-10-31 — publishing, with the one thing I would not do silently
+
+- The README now carries the session's outcome with two real captures: one showing the compositor rendering through our
+  backend, one showing the black HMI frame and saying why it is black.
+- Publishing to the second repository required a judgement: it shares no history with this one and is nineteen commits
+  ahead in its own right, so a main push would have destroyed work. A branch is the reversible option, and reversible is
+  what an unasked-for force-push is not.

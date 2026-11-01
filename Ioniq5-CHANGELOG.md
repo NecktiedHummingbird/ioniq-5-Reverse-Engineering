@@ -3,6 +3,25 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 2.03.0 - README refreshed with VM images; work published to both repositories
+
+- **README** gained a "Latest bring-up — 2026-10-31" section: what now works (authentic multi-user boot, our Weston backend
+  with the vendor-ABI patch, EGL via injected `swrast_dri.so`, frame capture, and the MICOM adaptors that let the launcher
+  register) and what remains blocked (`initMicomShareMem() -> pszSrc NULL`, seven excluded hypotheses, V-036).
+- **Two fresh captures** from the VM, both captioned for what they actually show:
+  `docs/vm/05-compositor-control-2026-10-31.png` — the compositor control frame, **173 distinct colours**, verified by eye
+  as a real test pattern; and `docs/vm/06-hmi-frame-2026-10-31.png` — uniformly black, which is the honest current HMI
+  state, with the reason stated rather than cropped away. Native capture is 240×90; both are shown upscaled 4× and the
+  caption says so.
+- **Published to both repositories.** `JaredReabow/Ioniq-5` `main` and `JaredReabow/ioniq-5-Reverse-Engineering` branch
+  `vm-bringup-2026-10-31` both carry commit `6ecb151`.
+- **Deliberate choice, recorded:** the second repository could not be pushed to `main`. It shares **no merge base** with this
+  one, differs in **771 files**, and is **19 commits ahead** of us even though we are **228 ahead** of it. A `main` push
+  would have force-overwritten those 19 commits, so the work was published as a reviewable branch and their `main` is
+  untouched. Merging the two lineages is a decision for the owner, not something to do silently.
+- Caveat noted in the README work: because the histories share no ancestry, the branch reviews as a standalone tree rather
+  than a diff against that repository's `main`.
+
 ## 2.02.0 - the harvest route is closed: the vendor daemon publishes no region
 
 - Tested the most promising remaining idea — take the structure's layout from the component that would populate it. Ran
