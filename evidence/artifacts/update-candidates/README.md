@@ -5,6 +5,32 @@ reports supporting update-path assessments. Original firmware and recovered
 executables remain ignored under `work/`; retained files must not contain target
 payloads, bypasses, private operator paths, or executable target material.
 
+## AppFUMO PartitionUpdater integrity and target selection
+
+- [`appfumo-partition-write-integrity-exact-static.asm`](appfumo-partition-write-integrity-exact-static.asm):
+  selected FDEs, complete direct-transfer inventories, literal/blob identities,
+  and machine anchors without raw instruction bytes or target command/pathname
+  text (SHA-256
+  `e3acf80fdc76df6f1defd29d74fedcd1a62a90ef74ebe170f4a48591b20ec61c`);
+- [`appfumo-partition-write-integrity-manifest.json`](appfumo-partition-write-integrity-manifest.json):
+  strict exact ELF/Build-ID/LLVM, complete instruction/FDE identity,
+  direct-transfer, anchor, literal, blob, and provenance expectations (SHA-256
+  `5d3ca7bf8261805ca10d02d61d75ec1ee54c1205c66cb15be03a3e009dd0c5c5`);
+- [`appfumo-partition-write-integrity.json`](appfumo-partition-write-integrity.json):
+  normalized deterministic report (SHA-256
+  `e84e0771dea6aabe8f76fbe5a495084d0d6ef42650d7c39bec54fe68ab55c612`).
+
+The nonzero mode routes selected-primary and non-excluded entry source
+pathnames through exact-zero integrity gates before the write starter; zero mode
+reaches the writer directly. Verifier and writer reuse a stored pathname value
+but reopen it independently, so object, byte, transformed-output, and final
+partition identity remain unknown. Static inactive-target machinery, record
+lookup, and the writer target field are bound, but the exact helper-return to
+runtime-record assignment and all bootloader activation/mark-good behavior
+remain unknown. The named post-write FDEs have no direct edge to five inventoried
+file signature/hash helpers; broader absence is not claimed. Assessment:
+[`../../appfumo-partition-write-integrity.md`](../../appfumo-partition-write-integrity.md).
+
 ## AppFUMO parameterized verifier provenance
 
 - [`appfumo-parameterized-verifier-provenance-exact-static.asm`](appfumo-parameterized-verifier-provenance-exact-static.asm):

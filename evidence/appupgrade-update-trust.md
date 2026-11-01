@@ -479,6 +479,29 @@ conditional marker/path verifier contracts. Later model/region eligibility,
 payload binding, and every authentication decision inside the selected embedded
 updater remain incomplete.
 
+## Inner FUMO PartitionUpdater integrity and target selection
+
+Exact-static follow-up maps the embedded FUMO `PartitionUpdater` route without
+executing it. Nonzero mode byte `0x6d20b4` routes through `slotHashCheck`; zero
+mode reaches `startPartitionUpdate` directly. In the hash-gated route, exact-zero
+checks cover the selected primary source when present and non-excluded entry
+source pathnames before the post-hash starter reaches the writer. Nonzero
+results take failure paths.
+
+This is source-path authentication, not cryptographic destination readback. The
+verifier and writer reuse a stored QString pathname value but independently
+reopen it, leaving object/byte continuity and final partition identity unknown.
+Static active/inactive helpers, partition map, selected-record lookup, and the
+writer target field are now mapped without publishing operational device
+mapping. The exact helper-return assignment to the selected runtime record,
+bootloader slot activation, mark-good, and rollback behavior remain unresolved.
+
+The process-completion, fstab-state, and finalization FDEs contain no direct edge
+to five inventoried file signature/hash helpers. That negative is bounded to
+those exact FDEs and complete direct target inventories; it does not exclude
+indirect, virtual, external, inlined, dynamic, loader, or boot-stage checks. See
+`evidence/appfumo-partition-write-integrity.md`.
+
 ## Route synthesis
 
 The recovered architecture now supports this conditional model:
@@ -511,8 +534,9 @@ The verdicts below are deliberately separate.
 | package signature/authentication | AppScomoDM requires exact-zero verification of extracted AppUpgrade/XML; AppDMClient's unequal path conditionally requires retained `0/0` or `-404/-404`, where exact linked code identifies `-404` as no recognized fixed-size `TER`/`TE2` trailer rather than verification success; its intended local-relaunch equal path skips those repeated pair checks. Exact caller review proves a pathname-reopen boundary with no retained open description or identity revalidation, but runtime source mutability and object substitution remain unproved. V-032 inventories every direct inner FUMO signature/file-hash call. Fixed/enumerated operands authenticate descriptors, archives, firmware entries/resources, and navigation files. Follow-up resolves formerly parameterized calls `0x9d1d2` and `0x140092` as one nested fixed controller-resource path, not running/staged updater pathname roles; both verifier and transform reopen the path, so byte binding remains unknown. The separate metadata-forwarded `0x100bb0` producer boundary, indirect/external/loader checks, and outer-executable reauthentication remain unresolved. Startup and worker relaunch contain no direct self-verification step in the reviewed FDEs. Inner FUMO has a distinct navigation-map signature gate that skips for an explicit marker, absent provider, non-encrypted mode, or no map candidate; this is not a universal package-signature bypass. Authentication state before `force_launch=run` and exact final child payload binding remain incomplete |
 | payload hashes/CRC binding | AppScomoDM linked verifier contains SHA-256, but exact covered bytes and all payload bindings remain unresolved |
 | archive extraction safety | Exact V-020 pre-auth stock BusyBox method-8 CVE-2015-9261 uninitialized/invalid-read defect; likely child crash, dynamic target impact unproven |
-| inactive-slot write | Publicly reported; exact recovered write/target reconstruction incomplete |
-| slot selection | Unresolved exact mechanism |
+| inactive-slot write | Exact FUMO writer and its source/target record fields are mapped; source gate is mode-dependent, writer reopens the pathname, write success and final partition byte identity remain unknown |
+| slot selection | Static active/inactive map and writer target consumption are mapped; exact helper-output assignment to the selected runtime record is incomplete, and bootloader activation remains unresolved |
+| post-write verification | No direct edge from the named completion/fstab/finalization FDEs to five inventoried file signature/hash helpers; indirect/external/inlined/dynamic/loader/boot-stage absence is not proved |
 | boot-time image trust | Separate from userspace package acceptance; existing boot-container evidence still applies |
 | userspace health/mark-good | Unresolved |
 

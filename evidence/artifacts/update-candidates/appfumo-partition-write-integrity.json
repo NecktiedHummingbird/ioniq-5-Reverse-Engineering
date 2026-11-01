@@ -1,0 +1,302 @@
+{
+  "artifact": {
+    "build_id": "863a8730e66a1c5245a1bf458fe2554adee0351a",
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size": 5066264
+  },
+  "evidence": {
+    "direct_transfers": {
+      "0x140f50": {
+        "calls": [
+          "0x1432f6",
+          "0x15170c"
+        ],
+        "jumps": []
+      },
+      "0x18f700": {
+        "calls": [
+          "0x45f68",
+          "0x4b4ee",
+          "0x18f797"
+        ],
+        "jumps": []
+      },
+      "0x45820": {
+        "calls": [
+          "0x7be3a",
+          "0x80095",
+          "0x802f0",
+          "0x9d1d2",
+          "0x100bb0",
+          "0x140092"
+        ],
+        "jumps": []
+      },
+      "0x45d80": {
+        "calls": [
+          "0x5c21b",
+          "0xc22eb"
+        ],
+        "jumps": []
+      },
+      "0xa0e10": {
+        "calls": [
+          "0xb1a4e",
+          "0xd0dbf",
+          "0xd0f0c"
+        ],
+        "jumps": []
+      },
+      "0xa14c0": {
+        "calls": [
+          "0xa1c2a",
+          "0xa1d07",
+          "0xa1de3",
+          "0xa1ee6",
+          "0xa1fda",
+          "0xa20ce",
+          "0xb2971",
+          "0xd0dfb",
+          "0xd0f48",
+          "0xd1f47"
+        ],
+        "jumps": []
+      },
+      "0xa1b70": {
+        "calls": [
+          "0xa075b"
+        ],
+        "jumps": []
+      },
+      "0xa2480": {
+        "calls": [
+          "0xa30b5",
+          "0xa9951",
+          "0xcd692",
+          "0x148fa2"
+        ],
+        "jumps": []
+      },
+      "0xbfb20": {
+        "calls": [
+          "0xc54ca"
+        ],
+        "jumps": []
+      },
+      "0xc1ff0": {
+        "calls": [
+          "0xcd6fa",
+          "0xcdbae"
+        ],
+        "jumps": []
+      },
+      "0xc53d0": {
+        "calls": [
+          "0xcc646"
+        ],
+        "jumps": [
+          "0xcd5db",
+          "0xce110"
+        ]
+      },
+      "0xcc480": {
+        "calls": [
+          "0xcfa2e"
+        ],
+        "jumps": [
+          "0x16b9e0"
+        ]
+      },
+      "0xcd560": {
+        "calls": [
+          "0xcdea7"
+        ],
+        "jumps": []
+      },
+      "0xcd640": {
+        "calls": [],
+        "jumps": [
+          "0x16ba9c"
+        ]
+      },
+      "0xce070": {
+        "calls": [],
+        "jumps": []
+      },
+      "0xcf9b0": {
+        "calls": [],
+        "jumps": [
+          "0x16ba28"
+        ]
+      },
+      "0xd0c80": {
+        "calls": [
+          "0xd2400"
+        ],
+        "jumps": []
+      },
+      "0xd1e70": {
+        "calls": [],
+        "jumps": []
+      }
+    },
+    "fde_count": 3789,
+    "fde_sha256": "2c71813a3f098f8f949c6acee1080c0147df182e589f8b8b576798ce4807eb07",
+    "instruction_count": 470739,
+    "instruction_sha256": "693dce0d89faabeea30512fe0a696a733e9bdd64fd7be7379dba98a44d2dc0c8",
+    "llvm_version": "Homebrew LLVM version 23.1.3",
+    "manifest_sha256": "5d3ca7bf8261805ca10d02d61d75ec1ee54c1205c66cb15be03a3e009dd0c5c5",
+    "selected_fdes": {
+      "active-partition-name": {
+        "end_exclusive": "0xa14b2",
+        "start": "0xa0e10"
+      },
+      "finalization": {
+        "end_exclusive": "0xd327f",
+        "start": "0xd1e70"
+      },
+      "fstab-state-update": {
+        "end_exclusive": "0xd1e6c",
+        "start": "0xd0c80"
+      },
+      "inactive-partition-name": {
+        "end_exclusive": "0xa1b64",
+        "start": "0xa14c0"
+      },
+      "mode-orchestrator": {
+        "end_exclusive": "0xce217",
+        "start": "0xce070"
+      },
+      "partition-map-population": {
+        "end_exclusive": "0xa247e",
+        "start": "0xa1b70"
+      },
+      "partition-record-lookup": {
+        "end_exclusive": "0xbfe67",
+        "start": "0xbfb20"
+      },
+      "partition-updater-constructor": {
+        "end_exclusive": "0xc0518",
+        "start": "0xc0130"
+      },
+      "partition-updater-meta-dispatch": {
+        "end_exclusive": "0x16bac6",
+        "start": "0x16b910"
+      },
+      "partition-write-starter": {
+        "end_exclusive": "0xcc479",
+        "start": "0xc53d0"
+      },
+      "post-hash-write-starter": {
+        "end_exclusive": "0xcd637",
+        "start": "0xcd560"
+      },
+      "primary-image-selector": {
+        "end_exclusive": "0xa2c17",
+        "start": "0xa2480"
+      },
+      "process-completion-handler": {
+        "end_exclusive": "0xd0c79",
+        "start": "0xcf9b0"
+      },
+      "process-counter": {
+        "end_exclusive": "0xcc6b4",
+        "start": "0xcc480"
+      },
+      "process-thread-starter": {
+        "end_exclusive": "0x1458bd",
+        "start": "0x145250"
+      },
+      "public-key-source-verifier": {
+        "end_exclusive": "0x461e8",
+        "start": "0x45d80"
+      },
+      "record-key-verification": {
+        "end_exclusive": "0x18f6fc",
+        "start": "0x18f5a0"
+      },
+      "signed-trailer-parser": {
+        "end_exclusive": "0x18e9ee",
+        "start": "0x18e520"
+      },
+      "slot-hash-check": {
+        "end_exclusive": "0xce067",
+        "start": "0xcd640"
+      },
+      "source-integrity-gate": {
+        "end_exclusive": "0xc255d",
+        "start": "0xc1ff0"
+      }
+    }
+  },
+  "pre_write_integrity": {
+    "accepted_three_byte_trailer_families": [
+      "family-1",
+      "family-2"
+    ],
+    "both_source_verifier_results_must_equal_zero": true,
+    "digest_algorithm_for_this_route": null,
+    "eligible_nonexcluded_entry_source_paths_verified": true,
+    "exact_signed_byte_ranges": null,
+    "fixed_public_key_identity_bound_by_literal_hashes": true,
+    "hash_gated_mode": "nonzero mode byte dispatches the asynchronous source-integrity route",
+    "mismatch_reaches_write_starter": false,
+    "non_hash_mode": "zero mode byte reaches the write starter directly",
+    "rsa_padding_or_signature_encoding": null,
+    "selected_primary_source_verified_when_primary_candidate_is_present": true,
+    "signed_trailer_size": 16420
+  },
+  "schema_version": 1,
+  "scope": {
+    "boot_acceptance": null,
+    "dynamic_signal_invocation_complete": false,
+    "exact_static_direct_coverage": true,
+    "installed_runtime_identity_or_reachability": null,
+    "operator_paths_emitted": false,
+    "partition_write_success": null,
+    "persistence": null,
+    "proprietary_binary_bytes_emitted": false,
+    "root": null,
+    "slot_change": null,
+    "target_pathnames_or_commands_emitted": false,
+    "update_acceptance": null
+  },
+  "source_binding": {
+    "record_source_path_field_offset": "0x10",
+    "retained_file_descriptor_or_open_object": false,
+    "same_source_byte_identity": null,
+    "same_source_object_identity": null,
+    "same_stored_qstring_pathname_value_reaches_verifier_and_writer": true,
+    "source_package_integrity_bound_to_transformed_final_partition_bytes": null,
+    "verifier_and_writer_reopen_pathname_independently": true
+  },
+  "target_selection": {
+    "active_and_inactive_name_helpers_bound": true,
+    "bootloader_mark_good": null,
+    "bootloader_slot_activation": null,
+    "inactive_helper_output_to_exact_runtime_record_instance": null,
+    "normalized_inactive_target_selection": "present",
+    "record_lookup_precedes_writer_start": true,
+    "selected_record_name_field_offset": "0x20",
+    "static_partition_map_bound": true,
+    "writer_target_field_offset": "0x28"
+  },
+  "tool": {
+    "name": "appfumo-partition-write-integrity",
+    "version": "1.0.0"
+  },
+  "write_and_completion": {
+    "all_indirect_external_or_inlined_destination_verification_absent": null,
+    "bounded_post_write_fdes": [
+      "process-completion-handler",
+      "fstab-state-update",
+      "finalization"
+    ],
+    "final_partition_byte_identity": null,
+    "image_backed_and_clone_branches_are_distinct": true,
+    "known_file_signature_or_hash_helpers_directly_called_in_reviewed_post_write_fdes": false,
+    "process_completion_handler_bound": true,
+    "process_completion_is_cryptographic_readback": false,
+    "same_source_verifier_directly_reinvoked_post_write": false
+  }
+}

@@ -1,0 +1,773 @@
+{
+  "artifact": {
+    "build_id": "863a8730e66a1c5245a1bf458fe2554adee0351a",
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size": 5066264
+  },
+  "expected": {
+    "anchors": [
+      {
+        "mnemonic": "leaq",
+        "operands": "0x1c3fd1(%rip), %rdi    # 0x209d5a",
+        "va": 286082
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x1c3f85(%rip), %rdi    # 0x209d43",
+        "va": 286135
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22d00 <_ZN5QFileC1ERK7QString@plt>",
+        "va": 286372
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x18f700 <.text+0x16aed0>",
+        "va": 286568
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x623c90(%rip), %rsi    # 0x6c51a0",
+        "va": 660745
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22010 <memcpy@plt>",
+        "va": 660760
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 662570
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x10, %edx",
+        "va": 662652
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 662791
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x10, %edx",
+        "va": 662871
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 663011
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x10, %edx",
+        "va": 663097
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 663270
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x221e0 <strncpy@plt>",
+        "va": 663364
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 663514
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x221e0 <strncpy@plt>",
+        "va": 663608
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa14c0 <.text+0x7cc90>",
+        "va": 663758
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x221e0 <strncpy@plt>",
+        "va": 663852
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x6321ea(%rip), %rax    # 0x6d46a0 <_ZN10QArrayData11shared_nullE>",
+        "va": 664751
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "0x62fb17(%rip), %eax    # 0x6d20b0",
+        "va": 664979
+      },
+      {
+        "mnemonic": "cmpl",
+        "operands": "$0xa, %ebx",
+        "va": 785267
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x229e0 <_ZeqRK7QStringS1_@plt>",
+        "va": 785379
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0xffffffff, %eax       # imm = 0xFFFFFFFF",
+        "va": 785703
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "%ebx, %eax",
+        "va": 785808
+      },
+      {
+        "mnemonic": "movb",
+        "operands": "$0x0, 0x38(%rbx)",
+        "va": 786773
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%rax, 0x28(%rbx)",
+        "va": 786830
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x0, 0x90(%rbx)",
+        "va": 786869
+      },
+      {
+        "mnemonic": "movb",
+        "operands": "$0x0, 0x3b(%rbx)",
+        "va": 786899
+      },
+      {
+        "mnemonic": "movb",
+        "operands": "$0x0, 0x9c(%rbx)",
+        "va": 787257
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x232e0 <_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE@plt>",
+        "va": 787309
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%r14, %rsi",
+        "va": 794791
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x239a0 <_ZNK5QFile6existsEv@plt>",
+        "va": 794802
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x4a0a0 <.text+0x25870>",
+        "va": 794960
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x45d80 <.text+0x21550>",
+        "va": 795371
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x43b20 <.text+0x1f2f0>",
+        "va": 795399
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x28(%r15), %rax",
+        "va": 807969
+      },
+      {
+        "mnemonic": "addq",
+        "operands": "$0x20, %rsi",
+        "va": 807994
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xbfb20 <.text+0x9b2f0>",
+        "va": 808138
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "(%rax), %rsi",
+        "va": 808503
+      },
+      {
+        "mnemonic": "addq",
+        "operands": "$0x10, %rsi",
+        "va": 808523
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22d00 <_ZN5QFileC1ERK7QString@plt>",
+        "va": 808879
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22690 <_ZN5QFile4openE6QFlagsIN9QIODevice12OpenModeFlagEE@plt>",
+        "va": 808892
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "-0x5493(%rip), %rax     # 0xc1340 <.text+0x9cb10>",
+        "va": 813004
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x220b0 <_ZN7QObject11connectImplEPKS_PPvS1_S3_PN9QtPrivate15QSlotObjectBaseEN2Qt14ConnectionTypeEPKiPK11QMetaObject@plt>",
+        "va": 813115
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x915a(%rip), %rbx      # 0xcf9b0 <.text+0xab180>",
+        "va": 813135
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x145250 <.text+0x120a20>",
+        "va": 814185
+      },
+      {
+        "mnemonic": "addq",
+        "operands": "$0x28, %rsi",
+        "va": 816128
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xd3600 <.text+0xaedd0>",
+        "va": 816163
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0xc53d0 <.text+0xa0ba0>",
+        "va": 841179
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xa2480 <.text+0x7dc50>",
+        "va": 841362
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xc1ff0 <.text+0x9d7c0>",
+        "va": 841466
+      },
+      {
+        "mnemonic": "testl",
+        "operands": "%ebp, %ebp",
+        "va": 841481
+      },
+      {
+        "mnemonic": "addq",
+        "operands": "%r12, %rax",
+        "va": 842614
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "0x10(%rax), %rdx",
+        "va": 842622
+      },
+      {
+        "mnemonic": "movq",
+        "operands": "%r15, %rsi",
+        "va": 842664
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xc1ff0 <.text+0x9d7c0>",
+        "va": 842670
+      },
+      {
+        "mnemonic": "testl",
+        "operands": "%r13d, %r13d",
+        "va": 842711
+      },
+      {
+        "mnemonic": "je",
+        "operands": "0xcd788 <.text+0xa8f58>",
+        "va": 842714
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xcd560 <.text+0xa8d30>",
+        "va": 843431
+      },
+      {
+        "mnemonic": "cmpb",
+        "operands": "$0x0, 0x604012(%rip)    # 0x6d20b4",
+        "va": 843931
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0xc53d0 <.text+0xa0ba0>",
+        "va": 844048
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0x16b850 <.text+0x147020>",
+        "va": 844084
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xcc480 <.text+0xa7c50>",
+        "va": 850478
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0xd0c80 <.text+0xac450>",
+        "va": 861184
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x23670 <_ZN8QProcess5startERK7QStringRK11QStringList6QFlagsIN9QIODevice12OpenModeFlagEE@plt>",
+        "va": 861460
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x22e90 <_ZN8QProcess15waitForFinishedEi@plt>",
+        "va": 861505
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x245e0 <umount@plt>",
+        "va": 862496
+      },
+      {
+        "mnemonic": "jmp",
+        "operands": "0xcd640 <.text+0xa8e10>",
+        "va": 1489564
+      },
+      {
+        "mnemonic": "cmpq",
+        "operands": "$0x4024, %rax           # imm = 0x4024",
+        "va": 1631653
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "-0x4024(%rax), %rsi",
+        "va": 1631661
+      },
+      {
+        "mnemonic": "movl",
+        "operands": "$0x4024, %esi           # imm = 0x4024",
+        "va": 1631741
+      },
+      {
+        "mnemonic": "cmpb",
+        "operands": "$0x54, (%rbp)",
+        "va": 1631760
+      },
+      {
+        "mnemonic": "cmpb",
+        "operands": "$0x45, 0x1(%rbp)",
+        "va": 1631872
+      },
+      {
+        "mnemonic": "movzbl",
+        "operands": "0x2(%rbp), %eax",
+        "va": 1631878
+      },
+      {
+        "mnemonic": "cmpb",
+        "operands": "$0x52, %al",
+        "va": 1631882
+      },
+      {
+        "mnemonic": "je",
+        "operands": "0x18e996 <.text+0x16a166>",
+        "va": 1631884
+      },
+      {
+        "mnemonic": "cmpb",
+        "operands": "$0x32, %al",
+        "va": 1631898
+      },
+      {
+        "mnemonic": "leaq",
+        "operands": "0x2c9889(%rip), %rsi    # 0x458ea0",
+        "va": 1635856
+      },
+      {
+        "mnemonic": "callq",
+        "operands": "0x24290 <memcmp@plt>",
+        "va": 1635950
+      }
+    ],
+    "blobs": [
+      {
+        "length": 160,
+        "role": "static-partition-map",
+        "sha256": "26a0c82e3dcef110631d6102e044a90b088c19abc02a7484e6ebdcba2c579702",
+        "va": 7098784
+      },
+      {
+        "length": 1,
+        "role": "mode-byte-initializer",
+        "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a",
+        "va": 7151796
+      }
+    ],
+    "direct_transfers": [
+      {
+        "call_vas": [
+          507450,
+          524437,
+          525040,
+          643538,
+          1051568,
+          1310866
+        ],
+        "jump_vas": [],
+        "target": 284704
+      },
+      {
+        "call_vas": [
+          377371,
+          795371
+        ],
+        "jump_vas": [],
+        "target": 286080
+      },
+      {
+        "call_vas": [
+          286568,
+          308462,
+          1636247
+        ],
+        "jump_vas": [],
+        "target": 1636096
+      },
+      {
+        "call_vas": [
+          1323766,
+          1382156
+        ],
+        "jump_vas": [],
+        "target": 1314640
+      },
+      {
+        "call_vas": [
+          727630,
+          855487,
+          855820
+        ],
+        "jump_vas": [],
+        "target": 658960
+      },
+      {
+        "call_vas": [
+          662570,
+          662791,
+          663011,
+          663270,
+          663514,
+          663758,
+          731505,
+          855547,
+          855880,
+          859975
+        ],
+        "jump_vas": [],
+        "target": 660672
+      },
+      {
+        "call_vas": [
+          657243
+        ],
+        "jump_vas": [],
+        "target": 662384
+      },
+      {
+        "call_vas": [
+          667829,
+          694609,
+          841362,
+          1347490
+        ],
+        "jump_vas": [],
+        "target": 664704
+      },
+      {
+        "call_vas": [
+          808138
+        ],
+        "jump_vas": [],
+        "target": 785184
+      },
+      {
+        "call_vas": [
+          841466,
+          842670
+        ],
+        "jump_vas": [],
+        "target": 794608
+      },
+      {
+        "call_vas": [
+          837190
+        ],
+        "jump_vas": [
+          841179,
+          844048
+        ],
+        "target": 807888
+      },
+      {
+        "call_vas": [
+          850478
+        ],
+        "jump_vas": [
+          1489376
+        ],
+        "target": 836736
+      },
+      {
+        "call_vas": [
+          843431
+        ],
+        "jump_vas": [],
+        "target": 841056
+      },
+      {
+        "call_vas": [],
+        "jump_vas": [
+          1489564
+        ],
+        "target": 841280
+      },
+      {
+        "call_vas": [],
+        "jump_vas": [],
+        "target": 843888
+      },
+      {
+        "call_vas": [],
+        "jump_vas": [
+          1489448
+        ],
+        "target": 850352
+      },
+      {
+        "call_vas": [
+          861184
+        ],
+        "jump_vas": [],
+        "target": 855168
+      },
+      {
+        "call_vas": [],
+        "jump_vas": [],
+        "target": 859760
+      }
+    ],
+    "fdes": [
+      {
+        "end_exclusive": 660658,
+        "role": "active-partition-name",
+        "start": 658960
+      },
+      {
+        "end_exclusive": 662372,
+        "role": "inactive-partition-name",
+        "start": 660672
+      },
+      {
+        "end_exclusive": 664702,
+        "role": "partition-map-population",
+        "start": 662384
+      },
+      {
+        "end_exclusive": 666647,
+        "role": "primary-image-selector",
+        "start": 664704
+      },
+      {
+        "end_exclusive": 786023,
+        "role": "partition-record-lookup",
+        "start": 785184
+      },
+      {
+        "end_exclusive": 787736,
+        "role": "partition-updater-constructor",
+        "start": 786736
+      },
+      {
+        "end_exclusive": 795997,
+        "role": "source-integrity-gate",
+        "start": 794608
+      },
+      {
+        "end_exclusive": 836729,
+        "role": "partition-write-starter",
+        "start": 807888
+      },
+      {
+        "end_exclusive": 837300,
+        "role": "process-counter",
+        "start": 836736
+      },
+      {
+        "end_exclusive": 841271,
+        "role": "post-hash-write-starter",
+        "start": 841056
+      },
+      {
+        "end_exclusive": 843879,
+        "role": "slot-hash-check",
+        "start": 841280
+      },
+      {
+        "end_exclusive": 844311,
+        "role": "mode-orchestrator",
+        "start": 843888
+      },
+      {
+        "end_exclusive": 855161,
+        "role": "process-completion-handler",
+        "start": 850352
+      },
+      {
+        "end_exclusive": 859756,
+        "role": "fstab-state-update",
+        "start": 855168
+      },
+      {
+        "end_exclusive": 864895,
+        "role": "finalization",
+        "start": 859760
+      },
+      {
+        "end_exclusive": 287208,
+        "role": "public-key-source-verifier",
+        "start": 286080
+      },
+      {
+        "end_exclusive": 1632750,
+        "role": "signed-trailer-parser",
+        "start": 1631520
+      },
+      {
+        "end_exclusive": 1636092,
+        "role": "record-key-verification",
+        "start": 1635744
+      },
+      {
+        "end_exclusive": 1333437,
+        "role": "process-thread-starter",
+        "start": 1331792
+      },
+      {
+        "end_exclusive": 1489606,
+        "role": "partition-updater-meta-dispatch",
+        "start": 1489168
+      }
+    ],
+    "literals": [
+      {
+        "length": 22,
+        "role": "public-key-directory",
+        "sha256": "99c31169875a3478b5a0bf4ef49d2f3848176e14d4cdd7627f96ec40193300ff",
+        "va": 2137411
+      },
+      {
+        "length": 16,
+        "role": "public-key-basename",
+        "sha256": "938fe66045604ba5121110f6c9a98a0a40d92e23d11b341680ac348e8cd797de",
+        "va": 2137434
+      },
+      {
+        "length": 31,
+        "role": "mode-marker",
+        "sha256": "256835f02a090e6e026917e9594e914f51f6e2fe7dd5b3576801e7a361377077",
+        "va": 2169328
+      },
+      {
+        "length": 16,
+        "role": "integrity-slot-signature",
+        "sha256": "64ee9193f512cf992472c800a08b54a16270bd1bba3d10499025b5a19ade5518",
+        "va": 2206176
+      },
+      {
+        "length": 15,
+        "role": "integrity-signal-signature",
+        "sha256": "5c4fd065b20c907a9d1a7f3a69f94f1ccfbe5992469a1bf9e14021c90a6ffda0",
+        "va": 2206240
+      },
+      {
+        "length": 8,
+        "role": "primary-selector-0",
+        "sha256": "b631f67a287e8250ba085f508909a53772229c66caa5a1f6ad85da6de95e85da",
+        "va": 2188192
+      },
+      {
+        "length": 13,
+        "role": "primary-selector-1",
+        "sha256": "cc6bc985f7846782712f9bd3a13152360ae9a738d8c4c6c6d6d19734537852bc",
+        "va": 2188201
+      },
+      {
+        "length": 16,
+        "role": "primary-selector-2",
+        "sha256": "d0ace5154fa5dfc8254665a11176225366806a45bac9a464754de914d7fa9898",
+        "va": 2188215
+      },
+      {
+        "length": 11,
+        "role": "primary-selector-3",
+        "sha256": "3ead2280ba83d31de0aebcadb620974423330f79eae9d64c7ccec9472df99e92",
+        "va": 2188232
+      },
+      {
+        "length": 16,
+        "role": "primary-selector-4",
+        "sha256": "01887aa06dbe98ba2ccd3b9f0fd3d928f34f8abd12d2d6ab048be6a2dac5dc5a",
+        "va": 2188244
+      },
+      {
+        "length": 19,
+        "role": "primary-selector-5",
+        "sha256": "a982aa336f3d2e9f5ff8dd0df7a2e32e961247a0f86983fe7b1c24f5dd6746a4",
+        "va": 2188261
+      },
+      {
+        "length": 11,
+        "role": "primary-selector-6",
+        "sha256": "d75c180592fbfefbe7f42677dc90c153c172fd9460839949293009aaad6ab7ac",
+        "va": 2188281
+      },
+      {
+        "length": 16,
+        "role": "primary-selector-7",
+        "sha256": "466f17e1907c2de49a6349b22a9383d54fd1e264ca0775bd4edfade7b8df9218",
+        "va": 2188293
+      },
+      {
+        "length": 19,
+        "role": "primary-selector-8",
+        "sha256": "d888ac6356279a8c5f55c5e8ecd1ea1957c9f5b3f86c0e7f33d98ebf1ce4eee9",
+        "va": 2188310
+      }
+    ]
+  },
+  "llvm": {
+    "fde_count": 3789,
+    "fde_sha256": "2c71813a3f098f8f949c6acee1080c0147df182e589f8b8b576798ce4807eb07",
+    "instruction_count": 470739,
+    "instruction_sha256": "693dce0d89faabeea30512fe0a696a733e9bdd64fd7be7379dba98a44d2dc0c8",
+    "objdump_sha256": "7b04d723638c0793efbd31b99b2389f36ceb8c803bdc1008e43ea7525958376f",
+    "objdump_size": 813808,
+    "readelf_sha256": "80a1f8ffc44c5a1e4dbeaa5c409cd98a01cb2fa73e1ccc2eeb22a3b7ee2e1cb0",
+    "readelf_size": 1805104,
+    "version": "Homebrew LLVM version 23.1.3"
+  },
+  "schema_version": 1
+}

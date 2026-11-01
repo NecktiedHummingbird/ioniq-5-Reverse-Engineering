@@ -213,6 +213,31 @@ command execution, a successful child command, process context, root, nor
 persistence. Command success and amplification remain route-generic
 observations rather than ISO9660-specific outcomes.
 
+## PartitionUpdater pre-write source gate and bounded post-write negative
+
+Exact-static follow-up now maps the named `PartitionUpdater` route. Nonzero
+mode byte `0x6d20b4` dispatches `slotHashCheck`; zero mode reaches the writer
+directly. In hash-gated mode, exact-zero checks cover the selected primary
+source when present and every non-excluded entry source before the post-hash
+starter reaches `startPartitionUpdate`. The complete direct-call inventory for
+source gate `0xc1ff0` is `0xcd6fa` and `0xcdbae`, both inside
+`slotHashCheck`; mismatch paths do not reach the writer in this route.
+
+This does not close final-payload identity. Verifier and writer consume the same
+stored QString pathname value from record field `+0x10` but reopen it
+independently, so descriptor, object, byte, transformed-output, and final
+partition identity remain unknown. The static partition map, active/inactive
+helpers, selected-name field `+0x20`, record lookup, and writer target field
+`+0x28` are bound, while the exact inactive-helper return to selected runtime
+record instance remains incomplete. Bootloader activation and mark-good are
+unresolved.
+
+Complete direct inventories find no edge from the mapped completion,
+fstab-state, or finalization FDEs to the five selected file-signature/hash
+helpers. That is a bounded direct-edge negative, not a global absence claim;
+indirect, virtual, external, inlined, dynamic, loader, and boot-stage checks
+remain unknown. See `evidence/appfumo-partition-write-integrity.md`.
+
 ## Complete direct-call inventory for file MD5
 
 File-hash helper FDE `[0x140f50,0x1413e4)` receives a pathname in `%rdx`,
@@ -314,9 +339,12 @@ remain unresolved:
 - whether the verified and consumed outer executables ever differ;
 - whether the owner unit has this exact installed artifact;
 - successful process creation and resulting uid/SMACK label;
-- exact final-payload binding after decryption/extraction;
-- partition-write eligibility, inactive-slot selection, loader verification,
-  rollback policy, boot acceptance, health, and mark-good.
+- exact final-payload binding after decryption/extraction and after the
+  independent pathname reopen at the mapped partition writer;
+- complete inactive-helper-output assignment to the selected runtime record,
+  loader verification, rollback policy, boot activation/acceptance, health, and
+  mark-good. The static target-selection helpers and writer target field are now
+  mapped, but these later boundaries remain unresolved.
 
 Consequently this is not proof of a signature bypass, accepted modified update,
 root, flashing, or persistence. Even if an outer executable identity mismatch
