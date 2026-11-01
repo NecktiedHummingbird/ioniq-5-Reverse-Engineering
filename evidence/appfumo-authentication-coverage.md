@@ -43,7 +43,7 @@ partition writes, slot selection, boot acceptance, root, or persistence.
 
 Addresses are link-time virtual addresses in the embedded ELF's image-base-zero
 namespace. FDE ranges came from the exact `.eh_frame`. Instruction claims were
-confirmed with `/opt/homebrew/opt/llvm/bin/llvm-objdump`; advisory decompiler
+confirmed with Homebrew LLVM `llvm-objdump`; advisory decompiler
 records were used only to assist naming. Every retained excerpt begins at a real
 instruction boundary.
 
@@ -98,7 +98,7 @@ A whole-`.text` direct-call scan of the exact ELF found six calls to `0x45820`:
 | `0x80095` | `[0x7fe40,0x80595)` | `%1/HU/firmware/update.tar.gz` firmware archive |
 | `0x802f0` | `[0x7fe40,0x80595)` | `QFileInfo::absoluteFilePath()` from firmware-directory enumeration |
 | `0x9d1d2` | `[0x9cbc0,0x9e260)` | caller-assembled input; complete producer set not bounded here |
-| `0x100bb0` | `[0x100b30,0x10110c)` | parameterized verify/decryption input; direct callers include enumerated paths and a meta-call argument-forwarding route |
+| `0x100bb0` | `[0x100b30,0x10110c)` | `AppUpgradeEngine::decryptionFile(QString encFile, QString destPath)` verifier input; generated local metadata row 64 forwards `a[1]` as `encFile` and `a[2]` as `destPath`, while complete producers remain unresolved |
 | `0x140092` | `[0x140030,0x1405da)` | parameterized navigation verify/decryption input; immediate caller traced, complete upstream producer set not bounded here |
 
 The descriptor path is itself conditional: one branch calls the verifier at
@@ -108,12 +108,17 @@ which mode is selected on an installed unit.
 
 The first three rows have bounded descriptor/archive/enumeration provenance.
 The latter parameterized routes do not contain an explicit fixed updater path,
-but that negative observation is insufficient: at `0x100bb0`, for example, the
-target is copied from the function's `%rdx` argument, and direct meta-call caller
-`0x16e030` forwards a QString from its argument structure. The retained artifact
-therefore includes the direct callers and records target classification as
-incomplete. Virtual calls, indirect calls, and external-service behavior are
-also not silently treated as absent.
+but that negative observation is insufficient. The Qt 5 revision-7 metadata and
+generated dispatcher now resolve `0x16e030` as local `AppUpgradeEngine` metadata
+row 64, `QString decryptionFile(QString encFile, QString destPath)`: `a[1]` is copied
+to the `%rdx` `encFile` local, `a[2]` to the `%rcx` `destPath` local, and the
+QString result is assigned to `a[0]`. This names one forwarding edge but does not
+bound its dynamic meta-invokers or argument producers. The retained artifacts
+therefore keep complete target-producer classification incomplete. Virtual and
+indirect calls, dynamic Qt meta-invocation, and external-service behavior are
+also not silently treated as absent. Row 64 is not asserted as an absolute
+method index; `methodOffset()` and inheritance context would be required. See
+`evidence/appfumo-qt-metaobject-provenance.md`.
 
 ## Complete direct-call inventory for file MD5
 
@@ -198,8 +203,10 @@ FUMO paths close V-031's outer-executable identity boundary, because some direct
 verifier targets remain parameterized and incompletely traced. These also remain
 unresolved:
 
-- complete producer provenance for the parameterized signature-verifier targets,
-  including the meta-call argument-forwarding route;
+- complete producer provenance for the parameterized signature-verifier targets;
+  local `AppUpgradeEngine` metadata row 64 is now named and its argument
+  forwarding is resolved, but dynamic meta-invokers and upstream producers
+  remain unbounded;
 - indirect and virtual call targets not statically resolved by the direct-call
   inventory;
 - all consumers of the four additional

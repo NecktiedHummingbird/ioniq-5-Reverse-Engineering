@@ -646,13 +646,13 @@ belongs to the parallel Kona programme and is not modified by IONIQ work.
   libraries — neither attempted.
 - Neither V-007 nor V-014 moves on this. No parser vulnerability is claimed.
 
-## 1.66.0 - resolve AppUpgradeEngine local Qt meta-method 64 without overclaiming producers
+## 1.66.0 - resolve AppUpgradeEngine local Qt metadata row 64 without overclaiming producers
 
-- Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` method 64 to public slot `QString decryptionFile(QString encFile, QString destPath)`. The index is local to that meta-object, not inherited/global and not signal number 64; signal count is seven.
+- Exact Qt 5 revision-7 metadata resolves local `AppUpgradeEngine` row 64 to public slot `QString decryptionFile(QString encFile, QString destPath)`. The value 64 is the selected local row index, is not asserted as the absolute `QMetaObject` method index, and is not signal number 64; signal count is seven. The absolute index remains unknown without `methodOffset()` and inheritance context.
 - The relocation-bound generated dispatcher resolves `a[1] -> encFile -> %rdx`, `a[2] -> destPath -> %rcx`, call `0x100b30`, and QString return -> `a[0]`. The function's verifier call remains `0x100bb0`.
-- Added an explicit-selection, read-only decoder with strict ELF/Qt bounds, synthetic and optional exact tests, bounded static excerpts, a schema-checked forwarding manifest, and a deterministic report (SHA-256 `1aab186debb6a338097cd3a3e39f1f09cf31af1cba4e302a3079d2922f370d61`).
+- Added an explicit-selection, read-only decoder with strict ELF/Qt bounds, checked metadata intervals, synthetic and optional exact tests, bounded static excerpts, and a schema-checked forwarding manifest. Forwarding can resolve only when the manifest and the current instruction-evidence excerpt are both supplied and their SHA-256 binding matches. The deterministic report SHA-256 is `330799c5215a0d3fda7c8870820240cb023c9b3a6c9673100778a038fe1d14a3`.
 - Metadata binding and machine-code forwarding are resolved separately; complete producer provenance remains unresolved. Dynamic meta-invocation, indirect/external paths, runtime invocation, external/D-Bus reachability, attacker control, update acceptance, root, and persistence remain unknown. V-032's fail-closed Boolean model is unchanged.
-- Focused validation passed `24 tests, 8215 subtests`; the full suite passed `659 tests, 351237 subtests`; the public and privacy harnesses passed; deterministic exact-report comparison passed.
+- Focused validation passed `29 tests, 8228 subtests`; the full suite passed `664 tests, 351250 subtests`; the public and privacy harnesses passed; deterministic exact-report comparison passed.
 - No recovered target or helper was executed; no device, network/radio path, malformed target input, payload, bypass, package, partition, root action, or persistence material was exercised or created.
 
 ## 1.65.0 - map inner FUMO authentication coverage and its unresolved parameters

@@ -1,0 +1,272 @@
+{
+  "analysis_status": {
+    "forwarding": {
+      "argument_semantics": {
+        "a_1": "encFile",
+        "a_2": "destPath",
+        "call_rcx": "destPath",
+        "call_rdx": "encFile",
+        "return": "QString -> a[0]"
+      },
+      "basis": "explicit bounded instruction-evidence manifest; not metadata decoding",
+      "callee_va": "0x100b30",
+      "case_target_va": "0x16dfc6",
+      "dispatcher_range": {
+        "end_va_exclusive": "0x16e085",
+        "start_va": "0x16df80"
+      },
+      "jump_table_base_va": "0x444600",
+      "jump_table_entry_file_offset": 4474624,
+      "jump_table_entry_raw_u32": "0xffd299c6",
+      "jump_table_entry_va": "0x444700",
+      "jump_table_signed_displacement": -2975290,
+      "static_metacall_va": "0x16df80",
+      "status": "resolved",
+      "verifier_call_va": "0x100bb0"
+    },
+    "metadata_binding": {
+      "basis": "bounded Qt 5 revision-7 metadata decoding",
+      "status": "resolved"
+    },
+    "producer_provenance": {
+      "bounded_direct_reference_observation": {
+        "complete_producer_absence_proven": false,
+        "generated_metacall_call_va": "0x16e030",
+        "kind": "x86-64 direct call/lea",
+        "observed_internal_call_vas": [
+          "0x10281c",
+          "0x102de9",
+          "0x103398",
+          "0x16e030"
+        ],
+        "target_va": "0x100b30"
+      },
+      "remaining_unknowns": [
+        "dynamic meta-invocation",
+        "indirect calls",
+        "external paths",
+        "runtime invocation",
+        "external reachability",
+        "attacker control"
+      ],
+      "status": "unresolved"
+    }
+  },
+  "claim_boundary": {
+    "attacker_control_established": false,
+    "complete_producer_provenance_established": false,
+    "external_reachability_established": false,
+    "metadata_decoder_establishes_machine_code_forwarding": false,
+    "persistence_established": false,
+    "root_established": false,
+    "runtime_invocation_established": false,
+    "update_acceptance_established": false
+  },
+  "evidence_manifest": {
+    "evidence_excerpt_sha256": "31a90d0d633d22823fe1e4e61aa1c7df159c1a1acef379fe4e7aa38c7195c1ee",
+    "evidence_excerpt_size_bytes": 6759,
+    "manifest_schema_version": 1,
+    "manifest_sha256": "ecf48b2ec0d5f5c6014e2ef7c4efbfdd25899a3b79da2f4cf808dda062bf16bb"
+  },
+  "input": {
+    "elf": {
+      "class": "ELF64",
+      "endianness": "little-endian",
+      "machine": "x86-64"
+    },
+    "sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+    "size_bytes": 5066264
+  },
+  "metaobject": {
+    "class_name": {
+      "data_file_offset": 4480512,
+      "data_va": "0x445e00",
+      "descriptor_fields": {
+        "allocation_word": "0x00000000",
+        "refcount": -1,
+        "reserved_padding_word": 0,
+        "signed_data_offset": 2976,
+        "size_bytes": 16
+      },
+      "descriptor_file_offset": 4477536,
+      "descriptor_raw_hex": "ffffffff100000000000000000000000a00b000000000000",
+      "descriptor_va": "0x445260",
+      "string_index": 0,
+      "text": "AppUpgradeEngine"
+    },
+    "header_file_offset": 4474720,
+    "header_raw_words": [
+      7,
+      0,
+      0,
+      0,
+      85,
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7
+    ],
+    "header_va": "0x444760",
+    "header_word_count": 14,
+    "method": {
+      "absolute_method_index": null,
+      "argument_count": 2,
+      "declaration": "QString decryptionFile(QString encFile, QString destPath)",
+      "declared_in_selected_metaobject": true,
+      "flags": {
+        "access": "public",
+        "cloned": false,
+        "compatibility": false,
+        "const": false,
+        "method_type": "slot",
+        "raw": 10,
+        "raw_hex": "0x0000000a",
+        "revisioned": false,
+        "scriptable": false
+      },
+      "index_scope": "local-to-declaring-metaobject",
+      "index_scope_basis": "selected revision-7 row; QMetaObject::methodOffset and inheritance context are required for an absolute method index",
+      "local_index": 64,
+      "name": {
+        "data_file_offset": 4482169,
+        "data_va": "0x446479",
+        "descriptor_fields": {
+          "allocation_word": "0x00000000",
+          "refcount": -1,
+          "reserved_padding_word": 0,
+          "signed_data_offset": 2281,
+          "size_bytes": 14
+        },
+        "descriptor_file_offset": 4479888,
+        "descriptor_raw_hex": "ffffffff0e0000000000000000000000e908000000000000",
+        "descriptor_va": "0x445b90",
+        "string_index": 98,
+        "text": "decryptionFile"
+      },
+      "parameter_record": {
+        "file_offset": 4477244,
+        "raw_words": [
+          10,
+          10,
+          10,
+          99,
+          100
+        ],
+        "va": "0x44513c",
+        "word_count": 5,
+        "word_interval": {
+          "end_exclusive": 636,
+          "start": 631
+        },
+        "word_offset": 631
+      },
+      "parameters": [
+        {
+          "name": {
+            "data_file_offset": 4482184,
+            "data_va": "0x446488",
+            "descriptor_fields": {
+              "allocation_word": "0x00000000",
+              "refcount": -1,
+              "reserved_padding_word": 0,
+              "signed_data_offset": 2272,
+              "size_bytes": 7
+            },
+            "descriptor_file_offset": 4479912,
+            "descriptor_raw_hex": "ffffffff070000000000000000000000e008000000000000",
+            "descriptor_va": "0x445ba8",
+            "string_index": 99,
+            "text": "encFile"
+          },
+          "position": 0,
+          "type": {
+            "encoding": "built-in",
+            "metatype_id": 10,
+            "name": "QString",
+            "raw_word": 10
+          }
+        },
+        {
+          "name": {
+            "data_file_offset": 4482192,
+            "data_va": "0x446490",
+            "descriptor_fields": {
+              "allocation_word": "0x00000000",
+              "refcount": -1,
+              "reserved_padding_word": 0,
+              "signed_data_offset": 2256,
+              "size_bytes": 8
+            },
+            "descriptor_file_offset": 4479936,
+            "descriptor_raw_hex": "ffffffff080000000000000000000000d008000000000000",
+            "descriptor_va": "0x445bc0",
+            "string_index": 100,
+            "text": "destPath"
+          },
+          "position": 1,
+          "type": {
+            "encoding": "built-in",
+            "metatype_id": 10,
+            "name": "QString",
+            "raw_word": 10
+          }
+        }
+      ],
+      "raw_words": [
+        98,
+        2,
+        631,
+        2,
+        10
+      ],
+      "return_type": {
+        "encoding": "built-in",
+        "metatype_id": 10,
+        "name": "QString",
+        "raw_word": 10
+      },
+      "row_file_offset": 4476056,
+      "row_va": "0x444c98",
+      "signal_number": null,
+      "signature": "decryptionFile(QString encFile, QString destPath)",
+      "tag": {
+        "data_file_offset": 4480542,
+        "data_va": "0x445e1e",
+        "descriptor_fields": {
+          "allocation_word": "0x00000000",
+          "refcount": -1,
+          "reserved_padding_word": 0,
+          "signed_data_offset": 2958,
+          "size_bytes": 0
+        },
+        "descriptor_file_offset": 4477584,
+        "descriptor_raw_hex": "ffffffff0000000000000000000000008e0b000000000000",
+        "descriptor_va": "0x445290",
+        "string_index": 2,
+        "text": ""
+      }
+    },
+    "method_count": 85,
+    "method_row_word_count": 5,
+    "method_table_file_offset": 4474776,
+    "method_table_va": "0x444798",
+    "method_table_word_offset": 14,
+    "revision": 7,
+    "signal_count": 7
+  },
+  "request": {
+    "local_method_index": 64,
+    "metadata_va": "0x444760",
+    "stringdata_va": "0x445260"
+  },
+  "schema_version": 2,
+  "tool": {
+    "name": "qt5-metaobject-rev7",
+    "version": "1.1.0"
+  }
+}

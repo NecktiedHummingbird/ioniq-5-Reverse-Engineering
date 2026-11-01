@@ -1,0 +1,48 @@
+{
+  "artifact_sha256": "464a87646153213ce1f405743a10cff78eb90c203b619f983002358ca74ef0e7",
+  "evidence_excerpt_sha256": "31a90d0d633d22823fe1e4e61aa1c7df159c1a1acef379fe4e7aa38c7195c1ee",
+  "forwarding": {
+    "argument_semantics": {
+      "a_1": "encFile",
+      "a_2": "destPath",
+      "call_rcx": "destPath",
+      "call_rdx": "encFile",
+      "return": "QString -> a[0]"
+    },
+    "callee_va": 1051440,
+    "case_target_va": 1499078,
+    "dispatcher_end_va_exclusive": 1499269,
+    "jump_table_base_va": 4474368,
+    "jump_table_entry_raw_u32": 4291992006,
+    "jump_table_entry_size_bytes": 4,
+    "jump_table_entry_va": 4474624,
+    "static_metacall_va": 1499008,
+    "status": "resolved",
+    "verifier_call_va": 1051568
+  },
+  "local_method_index": 64,
+  "producer_provenance": {
+    "direct_reference_search": {
+      "complete_producer_absence_proven": false,
+      "generated_metacall_call_va": 1499184,
+      "kind": "x86-64 direct call/lea",
+      "observed_internal_call_vas": [
+        1058844,
+        1060329,
+        1061784,
+        1499184
+      ],
+      "target_va": 1051440
+    },
+    "remaining_unknowns": [
+      "dynamic meta-invocation",
+      "indirect calls",
+      "external paths",
+      "runtime invocation",
+      "external reachability",
+      "attacker control"
+    ],
+    "status": "unresolved"
+  },
+  "schema_version": 1
+}
