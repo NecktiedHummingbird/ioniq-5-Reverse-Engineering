@@ -180,3 +180,41 @@ x86_64-linux-gnu.2.25`, no host wayland development tree). Two details make it l
 
 Run it under weston with `--use-pixman`: the backend's default renderer is weston's noop renderer,
 whose `read_pixels` does nothing, so the buffer would come back zeroed regardless of the scene.
+
+## MICOM payload oracle — how to test a boot-info reply
+
+`ApplicationManager` accepts or rejects the 35-byte `AskSysBootinfo` `ay` and says so in its own log. That
+makes it a usable pass/fail oracle for payload work, and it took six broken instruments to get here, so the
+procedure is written down.
+
+**Precondition that cost the most time:** the helper binary must exist **in the workspace you are testing**.
+`micom-service` was injected into one clone and not another, so every run invoked a missing path, failed
+silently, and produced an empty log. Check first:
+
+```sh
+debugfs -R "stat /usr/bin/micom-service" work/vm/<workspace>/rootfs.img
+```
+
+**Procedure (research init is easiest — no systemd spinner to eat console output):**
+
+1. `mkdir -p /run/dbus /run/user/root /tmp/ias /app/data`; write `root` and `messagebus` entries to `/tmp/passwd`
+   (`/etc/passwd` is a symlink to it), then start `/usr/bin/dbus-daemon --system`.
+2. Start `/usr/bin/micom-service` (owns `com.lge.car.micom`, serves `/Ihu`). Confirm it stays up with `pidof`.
+3. Start the compositor (`ias-backend-soft.so` + `ias-shell.so`) — `ApplicationManager` will not reach
+   `initBootInfo` without one.
+4. Start `/app/bin/ApplicationManager`, wait ~10 s, then read `/tmp/am.log`.
+
+**What the log means:**
+
+| Line | Meaning |
+|---|---|
+| `askSysBootInfo():iface is VALID` | interface check passed — reachability is not your problem |
+| `AskSysBootinfo Retry = 0/1/2` | the call got no peer (no service owning the name) |
+| `AskSysBootinfo reply is VALID` | **your payload was accepted** — the signal you want |
+| `initBootInfo attach fail` | the reply was received and **rejected** |
+
+**State when this was written:** three payloads (all zeros, byte 28 = `0x01`, byte 28 = `0xFF`) were each
+rejected. The acceptance criteria live in `parseMicomBootInfo`, which is stripped, logs its rejection
+silently, and has no direct branch into the validity block at `0x258808`. Reachability, interface
+construction and file-backed shared memory were all excluded by measurement first — so the remaining work is
+reading that parser, not re-testing the plumbing.
