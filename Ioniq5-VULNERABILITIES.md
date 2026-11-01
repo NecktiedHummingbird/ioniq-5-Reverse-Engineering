@@ -794,6 +794,17 @@ vulnerability is claimed, and this test does not move either entry.
   defect than about V-028 itself.
 - **Remediation direction (defensive):** bound the launch retry with backoff and a terminal state, keep dispatching
   while a dependency is being retried, and surface a diagnosable error rather than looping silently.
+- **Why `ApplicationManager` never stays up — answered by reading its own log.** Run alone with a compositor it starts
+  (`pid 719`, alive) and then reports `ArgParserBase::initBootInfo attach fail`, retry counts 1–3, and
+  `initBootInfo read error`. Its strings name the mechanism: `AskSysBootinfo`, `AskSysBootinfo Retry`,
+  `AskSysBootinfo reply is VALID`, `parseMicomBootInfo`. Boot information comes from the MICOM service and is
+  **validated**.
+- **The break in this project's chain is therefore the payload, not the plumbing.** `micom-service` answers
+  `AskSysBootinfo` with 35 zero bytes: enough for the launcher to register, **not valid** for
+  `ApplicationManager`'s parser. AM fails, exits, the launcher retries `appId 2` forever and dispatches nothing — which
+  is why V-028's runtime tests never saw their call processed.
+- Next task is bounded static work: read `parseMicomBootInfo` in `ApplicationManager` (it carries debug information) to
+  establish the payload's validity criteria.
 
 ## Rejected / out-of-scope items
 

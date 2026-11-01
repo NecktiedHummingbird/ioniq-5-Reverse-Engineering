@@ -3,6 +3,23 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.84.0 - the causal chain closes on thirty-five bytes
+
+- Read `ApplicationManager`'s own log with it running alone: it starts (`pid 719`, alive) and fails
+  `ArgParserBase::initBootInfo attach fail`, retries three times, then `read error`. Its strings show the path uses
+  `AskSysBootinfo` and validates the reply through `parseMicomBootInfo`.
+- So **`micom-service`'s 35 zero bytes are enough for the launcher to register and not enough for
+  `ApplicationManager`**. AM fails boot-info initialisation and exits, which is what leaves the launcher retrying
+  `appId 2` and dispatching nothing — the V-036 behaviour, and the reason V-028's runtime tests never saw their call.
+- Everything built this session now sits on one causal line: MICOM exchange → boot-info payload → AM initialisation →
+  launcher dispatch → V-028. The single break is the **contents** of thirty-five bytes, not any of the plumbing.
+- Next task is static and bounded: read `parseMicomBootInfo` (the binary carries debug information) for the validity
+  criteria.
+- **Process note, recorded because it affected this commit:** the file is edited concurrently, and a `git add -A` of a
+  shared document swept another workstream's entry (`1.67.0 - bind direct decryption producers…`) into my previous
+  commit under my message, while my own edit silently failed to apply because its anchor text had changed. Only my
+  files should be staged, and anchor text must be verified before use — both are now noted in the history log.
+
 ## 1.78.0 - V-036's caveat resolved against the stronger reading: it is a spawn-fail loop
 
 - Sampled `pidof ApplicationManager` ten times, two seconds apart, across a twenty-second window while the retry loop

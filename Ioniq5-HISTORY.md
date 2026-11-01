@@ -3111,3 +3111,12 @@ and are superseded by corrections rather than silently rewritten.
 - So the loop is a failure loop, not a poll. The entry that had been hedging in the right direction now states the
   opposite conclusion, and the hedge is retired because it was tested rather than carried.
 - That leaves one log file to read, which is the cheapest possible next step and exactly where this should stop.
+
+## 2026-10-31 — thirty-five bytes, and a lesson about shared files
+
+- The whole stall reduced to one sentence from a log I had never opened: the next component asks for boot information and
+  rejects the answer we invented. Every layer we built works; the data is wrong.
+- It also caught me committing badly. A blanket add swept a parallel workstream's changelog entry into my commit under my
+  own message, and my register edit had silently not applied because the anchor had changed. Clean merges, wrong
+  contents — the same failure the numbering collision taught, in a different disguise.
+- From here: stage only my files, and verify each anchor matched rather than trusting a green commit.
