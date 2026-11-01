@@ -943,6 +943,16 @@ vulnerability is claimed, and this test does not move either entry.
   matches a segment name already seen in `AppHomeScreen`'s trace
   (`qipc_sharedmemory_MICOMSTATUSMESSAGE…`) and which `ihu-shim` is able to create. That makes a MICOM status region the
   most likely source for `pszSrc`, and testing it is a matter of ensuring that segment exists before the client starts.
+- **The named segment was created and `pszSrc` stayed NULL.** With `ihu-shim` reporting six segments created including
+  `qipc_sharedmemory_MICOMSTATUSMESSAGE…` (verified in its own output), a peer owning `com.lge.car.micom` and answering
+  `AskSysBootinfo`, and the client running to 79 log lines, the result is `PSZNULL=1` with `ATTACHFAIL=0` and
+  `HAS_BOOTINFO=0`.
+- So **segment existence is not the missing condition**. The most likely remaining explanation is that the segment must
+  contain a **valid structure**, not merely exist: `ihu-shim` creates it zero-filled, and everything this project has
+  learned says a zero-filled structure is rejected by a parser that validates — exactly as the 35-byte D-Bus payload was.
+- That collapses the last two open questions into one: whether the boot info arrives by `ay` reply or by shared region,
+  what is missing is **the layout and validity rules of the MICOM status structure**. Reachability, environment, segment
+  existence and payload length have all been excluded by measurement.
 - **Hand-off state for V-036, complete:** reachability, interface construction and shared-memory mechanisms excluded by
   measurement; reply content confirmed as the blocker; three plausible payloads rejected against a live client; the oracle
   for testing further candidates exists and is documented; and the static anchors are listed with the specific difficulty

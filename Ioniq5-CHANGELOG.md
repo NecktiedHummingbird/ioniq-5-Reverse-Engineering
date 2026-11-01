@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 2.01.0 - segment existence excluded; the layout of the MICOM status structure is the last unknown
+
+- Created the named region deliberately and verified it: `ihu-shim` reports **six segments created**, including
+  `qipc_sharedmemory_MICOMSTATUSMESSAGE…`, with a peer owning `com.lge.car.micom` and answering `AskSysBootinfo`.
+- Result: `PSZNULL=1`, `ATTACHFAIL=0`, `HAS_BOOTINFO=0`, 79 log lines. **`pszSrc` stays NULL with the segment present.**
+- So existence is not the condition. The consistent explanation is that the region must contain a **valid structure** —
+  `ihu-shim` fills it zero-filled, and this project has already established that zero-filled structures are rejected by
+  validating parsers (the 35-byte `ay` was rejected for the same class of reason).
+- **Consequence:** the two open questions collapse into one. Whether the boot info arrives by D-Bus reply or by shared
+  region, what is missing is the **layout and validity rules of the MICOM status structure**. Everything environmental —
+  reachability, `/dev/shm`, segment creation, payload length — is excluded by measurement.
+- **This is where the thread stops.** Deriving that layout is a reverse-engineering task on a stripped binary, not another
+  experiment, and the record now says so with the whole elimination list attached.
+
 ## 2.00.0 - a false positive caught, and `MICOM_STATUS_MESSAGE` named as the likely source
 
 - A run reported `attach fail = 0` and looked like a fix. It was not: the same run has `HAS_BOOTINFO=0`, meaning

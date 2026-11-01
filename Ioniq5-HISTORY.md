@@ -3251,3 +3251,12 @@ and are superseded by corrections rather than silently rewritten.
 - The ordering in the log is worth more than either error message: the shared-memory initialisation happens before the
   D-Bus ask, and its NULL source is the failure that reproduces. That points at a MICOM status region whose name the binary
   itself mentions.
+
+## 2026-10-31 — the last easy answer, gone
+
+- Creating the named segment changed nothing, which is the useful part: existence was the final cheap hypothesis and it is
+  now measured and excluded.
+- What remains is a structure layout, and this project already knows what a rejected structure looks like — the zero-filled
+  D-Bus payload that a validating parser would not accept. The same reasoning now applies to the region.
+- Stopping here is deliberate. Everything environmental is excluded by measurement, the instruments are documented, and
+  what is left is disassembly time on a stripped binary.
