@@ -803,8 +803,18 @@ vulnerability is claimed, and this test does not move either entry.
   `AskSysBootinfo` with 35 zero bytes: enough for the launcher to register, **not valid** for
   `ApplicationManager`'s parser. AM fails, exits, the launcher retries `appId 2` forever and dispatches nothing — which
   is why V-028's runtime tests never saw their call processed.
-- Next task is bounded static work: read `parseMicomBootInfo` in `ApplicationManager` (it carries debug information) to
-  establish the payload's validity criteria.
+- **Correction: `ApplicationManager` is stripped.** The previous line said it "carries debug information"; it has
+  **0 `.debug_*` sections** and no `parseMicomBootInfo` symbol. That assumption was wrong and is corrected here — the
+  analysis has to be done on disassembly, not DWARF.
+- What disassembly gives instead, as concrete anchors for whoever continues: the log tag `parseMicomBootInfo` sits at
+  vaddr `0x317c40` and is referenced at `0x25a7be` and `0x25a892`; `AskSysBootinfo` is at `0x31596a` (referenced at
+  `0x257f55`) and `AskSysBootinfo reply is VALID` at `0x315993` (referenced at `0x258810`, inside the block at
+  `0x258808` that logs validity). Immediately before that block the code compares a field at `+0x4` against **`0x1c`**
+  (`cmpl $0x1c, 0x4(%rax)` at `0x258705`) and indexes bytes from `+0x1c` (`movzbl 0x1c(%rax,%rdx)` at `0x25872a`).
+  That is the shape of a length-prefixed structure with payload starting at offset `0x1c` — a starting point for
+  establishing what "VALID" requires, not the answer.
+- **Next task, corrected:** reconstruct the validation from that address range rather than from debug info. This is real
+  reverse engineering work on a stripped Qt binary, not a quick read.
 
 ## Rejected / out-of-scope items
 

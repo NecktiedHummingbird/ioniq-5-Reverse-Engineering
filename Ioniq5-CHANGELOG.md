@@ -3,6 +3,20 @@
 All entries describe the IONIQ 5 research programme. The root `CHANGELOG.md`
 belongs to the parallel Kona programme and is not modified by IONIQ work.
 
+## 1.85.0 - correction: ApplicationManager is stripped; validation anchored by address instead
+
+- The previous entry said to read `parseMicomBootInfo` "in `ApplicationManager` (it carries debug information)". **That
+  was wrong.** The binary has **0 `.debug_*` sections** and no such symbol — checked directly. The plan it implied was
+  not available.
+- What is available: the log tag `parseMicomBootInfo` at vaddr `0x317c40` (referenced at `0x25a7be`, `0x25a892`);
+  `AskSysBootinfo` at `0x31596a`; `AskSysBootinfo reply is VALID` at `0x315993`, referenced at `0x258810` inside the
+  block at `0x258808` that logs validity.
+- Immediately before that block the code does `cmpl $0x1c, 0x4(%rax)` (`0x258705`) and reads bytes from `+0x1c`
+  (`movzbl 0x1c(%rax,%rdx)`, `0x25872a`) — a length-prefixed structure with payload at offset `0x1c`. That is a
+  starting point for the validity criteria, not the answer.
+- Recorded so the next attempt starts from addresses rather than from a wrong assumption about symbols. This is genuine
+  reverse engineering on a stripped Qt binary, and it is larger than a single read.
+
 ## 1.84.0 - the causal chain closes on thirty-five bytes
 
 - Read `ApplicationManager`'s own log with it running alone: it starts (`pid 719`, alive) and fails

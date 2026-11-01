@@ -3120,3 +3120,10 @@ and are superseded by corrections rather than silently rewritten.
   own message, and my register edit had silently not applied because the anchor had changed. Clean merges, wrong
   contents — the same failure the numbering collision taught, in a different disguise.
 - From here: stage only my files, and verify each anchor matched rather than trusting a green commit.
+
+## 2026-10-31 — an assumption corrected before it wasted anyone's time
+
+- I had written that the next step was easy because the binary carried debug information. It does not: no debug sections
+  at all. The corrected plan is harder and is now stated as harder.
+- What the disassembly did yield was a map: the strings, their references, and a comparison against 0x1c right before the
+  validity log. That is a foothold rather than a finding, and it is labelled as such.
