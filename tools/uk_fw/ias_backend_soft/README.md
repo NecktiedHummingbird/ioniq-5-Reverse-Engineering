@@ -218,3 +218,45 @@ rejected. The acceptance criteria live in `parseMicomBootInfo`, which is strippe
 silently, and has no direct branch into the validity block at `0x258808`. Reachability, interface
 construction and file-backed shared memory were all excluded by measurement first — so the remaining work is
 reading that parser, not re-testing the plumbing.
+
+## Boot-info stall — complete hand-off
+
+`ApplicationManager` never completes boot-info initialisation, which keeps the launcher in its `appId 2`
+retry loop (register V-036) and blocks any runtime test of V-028. Seven hypotheses have been tested and
+excluded **by measurement**; this section exists so nobody re-walks them.
+
+### Excluded, with how each was excluded
+
+| Hypothesis | How it was excluded |
+|---|---|
+| D-Bus unreachable | `connect("/var/run/dbus/system_bus_socket") = 0`; `askSysBootInfo():iface is VALID` |
+| Interface construction | same `iface is VALID` line — the wrapper is built correctly |
+| File-backed segment path | `openat` trace: no `qipc_sharedmemory_*` and no `/dev/shm/*` opened |
+| Peer absent | a peer owning `com.lge.car.micom` answered `AskSysBootinfo`; failure unchanged |
+| Payload content (simple) | all-zero, byte 28 = `0x01`, byte 28 = `0xFF` — every variant rejected |
+| `/dev/shm` missing | mounted a `tmpfs` there (mode 1777); failure unchanged |
+| Segment existence | `ihu-shim` created the named `MICOMSTATUSMESSAGE` region; `pszSrc` still NULL |
+
+### The one remaining unknown
+
+The **layout and validity rules of the MICOM status structure**. Both the `ay` reply and the shared region
+carry the same boot info; what a validating parser rejects is a **zero-filled** structure, which is what every
+artefact this project produces contains. Evidence that this is the shape of the problem: `pszSrc NULL` is
+reported *after* `initMicomShareMem() -> Start` and *before* `askSysBootInfo`, so the region is initialised
+first, and a NULL source follows the same pattern as the rejected `ay`.
+
+### Doing the remaining work
+
+Either read `parseMicomBootInfo` / `initBootInfo` in `ApplicationManager` (stripped; anchors: `QSharedMemory::detach`
+call at `0x25a42c`, `pszSrc NULL` block at `0x25a440`, validity block `0x258808`, tag `0x317c40`), or obtain the
+structure from the vendor daemon: `micommanager_userspace` is the component that would populate it, and
+running it with the `micom_responder` peer may produce a **populated** region whose bytes can be dumped and
+used as a template — which would answer the layout question empirically instead of by reading.
+
+### Guard rails learned the hard way
+
+- **Check the code path ran before reading the result.** `attach fail = 0` once looked like a fix and meant
+  `initBootInfo` was never entered. Verify with `grep -c 'initBootInfo'` before believing any absence.
+- **Check the binary exists in the workspace under test.** Five runs were spent invoking a missing path.
+- **Console markers are unreliable under systemd** (spinner rewrites). Prefer the research init, or write
+  counts rather than prose.
